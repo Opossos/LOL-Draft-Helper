@@ -623,7 +623,7 @@ window.addEventListener("scroll",closeMenu,true);
 
 // Your notes: syn = pairs that work well together, weak = [a, b] means a is weak against b, ban = [pick, ban]
 // Team sync for GitHub Pages: paste your Supabase project URL and anon key here (see setup steps).
-const SB={url:"",key:""};
+const SB={url:"https://jddgnigdagyddbriqqaj.supabase.co",key:"sb_publishable__v2Iy4DatUS7aqXQWsAqCQ_Q9w2b9PP"};
 let sb=!!(SB.url&&SB.key);
 const sbf=(p,o={})=>fetch(SB.url+"/rest/v1/"+p,{...o,headers:{apikey:SB.key,...(SB.key.startsWith("sb_")?{}:{Authorization:"Bearer "+SB.key}),"Content-Type":"application/json",...(o.headers||{})}});
 let LOC={syn:[],weak:[],strong:[]},REL,RID={syn:[],weak:[],strong:[]},shared=null,canWrite=true;
