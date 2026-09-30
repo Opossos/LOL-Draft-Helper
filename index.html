@@ -66,6 +66,26 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+.top{position:sticky;top:0;z-index:15;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 12px;background:var(--bg);border-bottom:1px solid var(--line)}
+.top h1{margin:0}
+.tb{display:flex;gap:6px}
+.tb button{padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel)}
+.tb button[aria-expanded=true]{background:var(--gold);color:var(--bg);border-color:var(--gold)}
+.dr{position:fixed;top:0;bottom:0;width:min(420px,92vw);z-index:30;background:var(--bg);padding:calc(env(safe-area-inset-top,0px) + 8px) 10px calc(env(safe-area-inset-bottom,0px) + 10px);overflow-y:auto;box-shadow:0 0 24px rgba(0,0,0,.35);transform:translateX(-105%);transition:transform .2s,visibility .2s;visibility:hidden}
+.dl{left:0;border-right:1px solid var(--line)}
+.drr{right:0;transform:translateX(105%);border-left:1px solid var(--line)}
+.dr.open{transform:none;visibility:visible}
+.dh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.dh h2{margin:0}
+.dh button,.dh .btn{padding:5px 11px;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+.dh button[aria-pressed=true]{background:var(--gold);color:var(--bg);border-color:var(--gold)}
+@media(min-width:1300px){body.lo{padding-left:430px}body.ro{padding-right:430px}.dr{box-shadow:none}}
+details>summary{cursor:pointer;list-style:none}
+details>summary::-webkit-details-marker{display:none}
+details>summary h2{display:inline;margin:0}
+details>summary::before{content:"\25B8";display:inline-block;width:1.1em;color:var(--gold)}
+details[open]>summary::before{content:"\25BE"}
+details.card[open]>summary{margin-bottom:8px}
+.ico{width:34px;height:34px;border-radius:6px;display:block;margin-bottom:4px;background:var(--chip)}
 .mcs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.mcs:empty{display:none}.mcs .chip button{border:0;background:transparent;padding:0 0 0 4px;cursor:pointer}
 .cc{border:1px solid var(--line);border-radius:8px;padding:10px;margin:8px 0}
 .cch{display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -76,7 +96,7 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .bd{display:block;font-weight:600}.mb .bd{color:var(--red)}.mp .bd{color:var(--gold)}
 .slot.g{opacity:.6;border-style:solid;border-color:var(--gold)}
 .ban.g{opacity:.6;border-style:solid;border-color:var(--red);color:var(--red)}
-.cm{position:fixed;z-index:20;min-width:180px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.3);padding:4px}
+.cm{position:fixed;z-index:50;min-width:180px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.3);padding:4px}
 .cm button{display:block;width:100%;text-align:left;padding:8px 10px;border:0;background:transparent;border-radius:5px}
 .cm button:hover{background:var(--chip)}
 [data-me=r] .chip.en{border-color:var(--blue);color:var(--blue)}[data-me=r] .chip.al{border-color:var(--red);color:var(--red)}
@@ -91,25 +111,20 @@ summary{cursor:pointer;color:var(--mute)}
 </style>
 </head>
 <body>
+<header class="top"><h1>Draft helper</h1><div class="tb"><button id="lo" aria-expanded="false">Suggestions</button><button id="ro" aria-expanded="false">Champions</button></div></header>
 <main>
-<h1>Draft helper</h1>
-<p class="sub">Choose your side, pick a slot type, then tap champions.</p>
+<p class="sub">Open the Champions panel to pick, and the Suggestions panel for picks, combos and bans.</p>
+<details class="card tools" open><summary><h2>Draft board</h2></summary>
 <div class="tg" id="side" role="group" aria-label="Your side"></div>
 <div class="board" id="board"></div>
 <div class="tg" id="tg" role="group" aria-label="Add champion to"></div>
-<input type="search" id="q" placeholder="Search champions" aria-label="Search champions">
-<div class="rf" id="rf" role="group" aria-label="Filter by role"></div>
-<p class="note" style="margin:0 0 4px">Right-click a champion (long-press on touch) to mark a ban candidate or a prepick. Marks show as faded ghosts in your slots, and prepicks also appear under Consider champions.</p>
-<div class="grid" id="grid"></div>
-<div class="an" id="an"></div>
-<section class="card tools"><h2>Fearless bans</h2><p class="note" style="margin:0 0 6px">Banned for everyone. These do not use blue or red bans.</p><div class="cbw"><div class="mcs" id="fz-c"></div><input id="fz" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Fearless bans" placeholder="Search a champion to ban for everyone" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div></section>
-<section class="card tools">
-<h2>Consider champions</h2>
+</details>
+<details class="card tools" open><summary><h2>Fearless bans</h2></summary><p class="note" style="margin:0 0 6px">Banned for everyone. These do not use blue or red bans.</p><div class="cbw"><div class="mcs" id="fz-c"></div><input id="fz" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Fearless bans" placeholder="Search a champion to ban for everyone" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div></details>
+<details class="card tools" open><summary><h2>Consider champions</h2></summary>
 <div class="cbw"><input id="cq" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Champion to add to consider" placeholder="Search a champion to add" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
 <div id="cres"></div>
-</section>
-<section class="card tools">
-<h2>Your notes</h2>
+</details>
+<details class="card tools" open><summary><h2>Your notes</h2></summary>
 <div class="row">
 <div class="cbw"><div class="mcs" id="na-c"></div><input id="na" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="First champion" placeholder="Search champion" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
 <select id="nt" aria-label="Note type"><option value="syn">works well with</option><option value="weak">is weak against</option><option value="strong">works well into</option><option value="combo">all work well together (team combo)</option></select>
@@ -122,10 +137,17 @@ summary{cursor:pointer;color:var(--mute)}
 <textarea id="nio" aria-label="Notes backup"></textarea>
 <button class="btn" id="nexp">Show my notes</button> <button class="btn" id="nimp">Add notes from this text</button> <button class="btn" id="nmig" hidden>Copy my browser notes to shared notes</button>
 </details>
-</section>
+</details>
 <button class="reset" id="reset">Clear draft</button>
 <div class="cm" id="cm" role="menu" hidden></div>
 </main>
+<aside class="dr dl" id="dl" aria-label="Suggestions"><div class="dh"><h2>Suggestions</h2><button data-close="dl">Close</button></div><div class="an" id="an"></div></aside>
+<aside class="dr drr" id="dr" aria-label="Champions"><div class="dh"><h2>Champions</h2><span><button id="icons" aria-pressed="false">Icons</button> <button data-close="dr">Close</button></span></div>
+<input type="search" id="q" placeholder="Search champions" aria-label="Search champions">
+<div class="rf" id="rf" role="group" aria-label="Filter by role"></div>
+<p class="note" style="margin:0 0 4px">Right-click a champion (long-press on touch) to mark a ban candidate, a prepick or a fearless ban.</p>
+<p class="note" id="icost" style="margin:0 0 4px"></p>
+<div class="grid" id="grid"></div></aside>
 <script>
 const RN={T:"Top",J:"Jungle",M:"Mid",B:"Bot",S:"Support"},RO=["T","J","M","B","S"];
 // name|roles|damage (A=AD,P=AP,M=mixed)|tags: t=frontline e=engage c=crowd control s=sustain
@@ -329,6 +351,8 @@ function analyse(names){
 }
 const ORDER=["bb","rb","bb","rb","bb","rb","bp","rp","rp","bp","bp","rp","rb","bb","rb","bb","rp","bp","bp","rp"];
 const SN={bb:"Blue ban",rb:"Red ban",bp:"Blue pick",rp:"Red pick"};
+const OPEN={},op=k=>OPEN[k]===false?"":"open";
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.k)OPEN[d.dataset.k]=d.open},true);
 function stepNow(){
   const c={bb:st.bb.length,rb:st.rb.length,bp:st.bp.length,rp:st.rp.length};
   for(let i=0;i<ORDER.length;i++){const k=ORDER[i];if(c[k]>0)c[k]--;else return i}
@@ -442,27 +466,27 @@ function controls(){
 function grid(){
   const u=used(),q=query.trim().toLowerCase();
   const list=D.filter(c=>(!role||c.r.includes(role))&&(!q||c.n.toLowerCase().includes(q)));
-  $("grid").innerHTML=list.length?list.map(c=>`<button class="ch ${c.d==="P"?"P":c.d==="M"?"M":""} ${u.has(c.n)?"off":""} ${mk.ban.includes(c.n)?"mb":mk.pre.includes(c.n)?"mp":""}" data-n="${c.n}"><b>${c.n}</b><span>${c.r.map(r=>RN[r]).join(", ")}</span>${mk.ban.includes(c.n)?'<span class="bd">Ban candidate</span>':mk.pre.includes(c.n)?'<span class="bd">Prepick</span>':""}</button>`).join(""):`<p class="note">No champion matches. Clear the search or pick another role.</p>`;
+  $("grid").innerHTML=list.length?list.map(c=>`<button class="ch ${c.d==="P"?"P":c.d==="M"?"M":""} ${u.has(c.n)?"off":""} ${mk.ban.includes(c.n)?"mb":mk.pre.includes(c.n)?"mp":""}" data-n="${c.n}">${icons?icon(c.n):""}<b>${c.n}</b><span>${c.r.map(r=>RN[r]).join(", ")}</span>${mk.ban.includes(c.n)?'<span class="bd">Ban candidate</span>':mk.pre.includes(c.n)?'<span class="bd">Prepick</span>':""}</button>`).join(""):`<p class="note">No champion matches. Clear the search or pick another role.</p>`;
 }
 function analysis(){
   const mine=MY(),foe=EN(),nm=me==="b"?"blue":"red",nf=me==="b"?"red":"blue",k=me==="b"?"bp":"rp";
   const i=stepNow(),cur=i<20?ORDER[i]:"",j=nextMine(),cb=combos(),sg=pickIdeas(cb),bn=banIdeas(cb),a=analyse(mine);
   const turn=cur===k?"It is your turn to pick.":cur===(me==="b"?"bb":"rb")?"It is your turn to ban.":j>=0?`Your next pick is step ${j+1}, after ${j-i} more actions.`:"";
-  let h=`<div class="card"><h2>Your team (${nm})</h2><p class="note" style="margin:0 0 4px">${turn}</p>${dmgBar(a)}${traits(a)}${insights()}<div class="note" style="margin:0">${mine.length<5?(a.open.length?"Open roles: "+a.open.map(r=>RN[r]).join(", "):"Roles are covered by flex picks."):"Draft complete."}</div>`;
+  let h=`<details class="card" data-k="team" ${op("team")}><summary><h2>Your team (${nm})</h2></summary><p class="note" style="margin:0 0 4px">${turn}</p>${dmgBar(a)}${traits(a)}${insights()}<div class="note" style="margin:0">${mine.length<5?(a.open.length?"Open roles: "+a.open.map(r=>RN[r]).join(", "):"Roles are covered by flex picks."):"Draft complete."}</div>`;
   if(sg.length)h+=`<h3>Best picks now</h3><div class="sg">${sg.map(x=>`<button data-addmine="${esc(x.n)}"><span>${esc(x.n)}</span><em>${esc(x.w.join(", "))}</em></button>`).join("")}</div><p class="note">Ranked by your open roles, damage mix, team tools, your notes and the draft order (later enemy picks can counter early picks).</p>`;
-  h+=`</div><div class="card"><h2>Team combos</h2>`;
+  h+=`</details><details class="card" data-k="combos" ${op("combos")}><summary><h2>Team combos</h2></summary>`;
   h+=cb.length?cb.map(c=>`<div class="cc"><div>${c.C.map(x=>esc(x)+(c.mi.includes(x)?" (yours)":"")).join(" + ")}</div>${c.need.length?`<div class="sg" style="margin-top:6px">${c.need.map(x=>`<button data-addmine="${esc(x)}"><span>${esc(x)}</span><em>${BY[x].r.map(r=>RN[r]).join(", ")}</em></button>`).join("")}</div>`:`<p class="good" style="margin:4px 0 0">Complete</p>`}</div>`).join("")+`<p class="note">Combos use champions you saved as working well together. Only available champions that fit your open roles are shown.</p>`:`<p class="note">No available combo fits yet. Save a team combo in Your notes to see combos here.</p>`;
-  h+=`</div><div class="card"><h2>Ban ideas${cb.length?" for your picks and combos":""}</h2>`;
+  h+=`</details><details class="card" data-k="bans" ${op("bans")}><summary><h2>Ban ideas${cb.length?" for your picks and combos":""}</h2></summary>`;
   h+=bn.length?`<div class="sg">${bn.map(([b,o])=>`<button data-ban="${esc(b)}"><span>${esc(b)}</span><em>${esc(o.w.join(", "))}</em></button>`).join("")}</div><p class="note">Tap a champion to add it to your bans. Only champions the enemy can still play in their open roles are listed.</p>`:`<p class="note">Save weakness notes ("is weak against" or "works well into") and ban ideas will appear here.</p>`;
-  h+=`</div>`;
+  h+=`</details>`;
   if(foe.length){
     const e=analyse(foe),t=e.ad+e.ap||1,pa=e.ad/t;
     const tip=foe.length>=2?(pa>=.7?"Enemy damage is mostly physical. Armor and frontline help.":pa<=.3?"Enemy damage is mostly magic. Magic resist helps.":"Enemy damage is mixed. Build for the biggest threat."):"";
-    h+=`<div class="card"><h2>Enemy team (${nf})</h2>${dmgBar(e)}${traits(e)}${tip?`<p class="note" style="margin:0">${tip}</p>`:""}</div>`;
+    h+=`<details class="card" data-k="enemy" ${op("enemy")}><summary><h2>Enemy team (${nf})</h2></summary>${dmgBar(e)}${traits(e)}${tip?`<p class="note" style="margin:0">${tip}</p>`:""}</details>`;
   }
   $("an").innerHTML=h;
 }
-function render(){document.body.dataset.me=me;board();controls();grid();analysis();consider();notes()}
+function render(){document.body.dataset.me=me;$("icons").setAttribute("aria-pressed",icons);board();controls();grid();analysis();consider();notes()}
 function add(n,k){
   k=k||(auto&&stepNow()<20?ORDER[stepNow()]:target);
   if(used().has(n)||st[k].length>=5)return false;
@@ -495,6 +519,10 @@ document.addEventListener("click",e=>{
   else if(b.id==="nexp"){$("nio").value=JSON.stringify(REL)}
   else if(b.id==="nimp"){importNotes()}
   else if(b.id==="nmig"){migrate()}
+  else if(b.id==="lo"){DS.lo=!DS.lo;drawers()}
+  else if(b.id==="ro"){DS.ro=!DS.ro;drawers()}
+  else if(b.dataset.close){DS[b.dataset.close==="dl"?"lo":"ro"]=false;drawers()}
+  else if(b.id==="icons"){icons=!icons;try{localStorage.setItem("lolIcons",icons?"1":"0")}catch(e){}if(icons)loadIcons()}
   else return;
   render();
 });
@@ -597,7 +625,7 @@ window.addEventListener("scroll",closeMenu,true);
 // Team sync for GitHub Pages: paste your Supabase project URL and anon key here (see setup steps).
 const SB={url:"",key:""};
 let sb=!!(SB.url&&SB.key);
-const sbf=(p,o={})=>fetch(SB.url+"/rest/v1/"+p,{...o,headers:{apikey:SB.key,Authorization:"Bearer "+SB.key,"Content-Type":"application/json",...(o.headers||{})}});
+const sbf=(p,o={})=>fetch(SB.url+"/rest/v1/"+p,{...o,headers:{apikey:SB.key,...(SB.key.startsWith("sb_")?{}:{Authorization:"Bearer "+SB.key}),"Content-Type":"application/json",...(o.headers||{})}});
 let LOC={syn:[],weak:[],strong:[]},REL,RID={syn:[],weak:[],strong:[]},shared=null,canWrite=true;
 try{const s=JSON.parse(localStorage.getItem("lolRel")||"null");if(s)LOC={syn:s.syn||[],weak:s.weak||[],strong:s.strong||[]}}catch(e){}
 REL=LOC;
@@ -617,7 +645,7 @@ function nid(k,a,b){
   return k+":"+x+":"+y;
 }
 async function putNote(k,a,b){
-  if(sb){const r=await sbf("notes",{method:"POST",headers:{Prefer:"resolution=merge-duplicates"},body:JSON.stringify({id:nid(k,a,b),t:k,a,b})});if(!r.ok)throw{code:"x"};await sbLoad();return}
+  if(sb){const r=await sbf("notes",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({id:nid(k,a,b),t:k,a,b})});if(!r.ok)throw{code:"x"};await sbLoad();return}
   if(shared){await shared.doc("notes/"+nid(k,a,b)).set({t:k,a,b});return}
   if(hasNote(k,a,b))return;
   REL[k].push([a,b]);save();
@@ -764,6 +792,35 @@ function consider(){
   $("cres").innerHTML=list.length?planCard()+list.map(champBlock).join(""):`<p class="note">Search a champion above to add it here. Prepicked champions appear here automatically.</p>`;
 }
 Object.values(DRAW).forEach(f=>f());
+let DS={lo:innerWidth>=1300,ro:innerWidth>=1300},icons=false,VER="",IDS={};
+try{Object.assign(DS,JSON.parse(localStorage.getItem("lolDr")||"{}"));icons=localStorage.getItem("lolIcons")==="1"}catch(e){}
+function drawers(){
+  $("dl").classList.toggle("open",!!DS.lo);$("dr").classList.toggle("open",!!DS.ro);
+  $("lo").setAttribute("aria-expanded",!!DS.lo);$("ro").setAttribute("aria-expanded",!!DS.ro);
+  document.body.classList.toggle("lo",!!DS.lo);document.body.classList.toggle("ro",!!DS.ro);
+  try{localStorage.setItem("lolDr",JSON.stringify(DS))}catch(e){}
+}
+const IDFIX={"Wukong":"MonkeyKing","Nunu & Willump":"Nunu","Renata Glasc":"Renata","Kai'Sa":"Kaisa","Cho'Gath":"Chogath","Kha'Zix":"Khazix","Vel'Koz":"Velkoz","Bel'Veth":"Belveth","LeBlanc":"Leblanc"};
+let icoErr=0;
+document.addEventListener("error",e=>{
+  const t=e.target;
+  if(t&&t.classList&&t.classList.contains("ico")&&++icoErr===25)$("icost").textContent="Many icons failed to load. Check your connection or an ad blocker that may block Riot image servers.";
+},true);
+async function loadIcons(){
+  if(!VER){
+    $("icost").textContent="Loading icons...";
+    try{VER=(await(await fetch("https://ddragon.leagueoflegends.com/api/versions.json")).json())[0]}catch(e){VER="14.24.1"}
+    try{
+      const d=await(await fetch("https://ddragon.leagueoflegends.com/cdn/"+VER+"/data/en_US/champion.json")).json();
+      Object.values(d.data).forEach(c=>{IDS[c.name]=c.id});
+    }catch(e){}
+    $("icost").textContent="";
+  }
+  render();
+}
+const icon=n=>VER?`<img class="ico" loading="lazy" alt="" src="https://ddragon.leagueoflegends.com/cdn/${VER}/img/champion/${IDS[n]||IDFIX[n]||n.replace(/[^A-Za-z0-9]/g,"")}.png" onerror="this.style.display='none'">`:"";
+drawers();
+if(icons)loadIcons();
 setMode();
 (async()=>{
   if(sb){
