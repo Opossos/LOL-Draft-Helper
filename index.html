@@ -66,6 +66,11 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+.tools input[type=checkbox],.tools input[type=radio]{width:auto;padding:0;margin:0 5px 0 0}
+#ef>div{margin:8px 0}#ef label{display:inline-flex;align-items:center;margin:0 12px 4px 0}#ef b{display:block;margin-bottom:2px}
+dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:16px;max-width:min(92vw,380px)}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+#cfm-t{white-space:pre-line;margin:0 0 12px}
 .top{position:sticky;top:0;z-index:15;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 12px;background:var(--bg);border-bottom:1px solid var(--line)}
 .top h1{margin:0}
 .tb{display:flex;gap:6px}
@@ -124,6 +129,12 @@ summary{cursor:pointer;color:var(--mute)}
 <div class="cbw"><input id="cq" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Champion to add to consider" placeholder="Search a champion to add" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
 <div id="cres"></div>
 </details>
+<details class="card tools"><summary><h2>Edit champion data</h2></summary>
+<div class="cbw"><input id="ec" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Champion to edit" placeholder="Search a champion to edit" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
+<div id="ef"></div>
+<span id="emsg" class="note" role="status"></span>
+<p class="note" id="emode"></p>
+</details>
 <details class="card tools" open><summary><h2>Your notes</h2></summary>
 <div class="row">
 <div class="cbw"><div class="mcs" id="na-c"></div><input id="na" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="First champion" placeholder="Search champion" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
@@ -132,6 +143,7 @@ summary{cursor:pointer;color:var(--mute)}
 </div>
 <button class="btn" id="nadd">Save note</button> <span id="nmsg" class="note" role="status"></span>
 <div id="nlist"></div>
+<details><summary>History of deleted notes</summary><div id="nhist"></div></details>
 <p class="note" id="nmode">Notes are stored in this browser only.</p>
 <details><summary>Back up or restore notes</summary>
 <textarea id="nio" aria-label="Notes backup"></textarea>
@@ -140,9 +152,10 @@ summary{cursor:pointer;color:var(--mute)}
 </details>
 <button class="reset" id="reset">Clear draft</button>
 <div class="cm" id="cm" role="menu" hidden></div>
+<dialog id="cfm"><form method="dialog"><p id="cfm-t"></p><button class="btn" value="0">Cancel</button> <button class="btn" id="cfm-y" value="1">Delete</button></form></dialog>
 </main>
 <aside class="dr dl" id="dl" aria-label="Suggestions"><div class="dh"><h2>Suggestions</h2><button data-close="dl">Close</button></div><div class="an" id="an"></div></aside>
-<aside class="dr drr" id="dr" aria-label="Champions"><div class="dh"><h2>Champions</h2><span><button id="icons" aria-pressed="false">Icons</button> <button data-close="dr">Close</button></span></div>
+<aside class="dr drr" id="dr" aria-label="Champions"><div class="dh"><h2>Champions</h2><span><button id="icons" aria-pressed="false">Icons</button> <button id="hide" aria-pressed="false">Hide taken</button> <button data-close="dr">Close</button></span></div>
 <input type="search" id="q" placeholder="Search champions" aria-label="Search champions">
 <div class="rf" id="rf" role="group" aria-label="Filter by role"></div>
 <p class="note" style="margin:0 0 4px">Right-click a champion (long-press on touch) to mark a ban candidate, a prepick or a fearless ban.</p>
@@ -325,6 +338,7 @@ Veigar|MB|P|c
 Zaahen|TJ|A|ec
 Zyra|S|P|c`.split("\n").map(l=>{const[n,r,d,t]=l.split("|");return{n,r:[...r],d,t:t||""}}).sort((x,y)=>x.n.localeCompare(y.n));
 const BY=Object.fromEntries(D.map(c=>[c.n,c]));
+const BASE=Object.fromEntries(D.map(c=>[c.n,{r:c.r.slice(),d:c.d,t:c.t}]));
 const TARGETS=[["bp","Blue pick"],["rp","Red pick"],["bb","Blue ban"],["rb","Red ban"]];
 let st={bp:[],rp:[],bb:[],rb:[]},mk={ban:[],pre:[]},cons=[],role="",query="",me="b",auto=true;
 try{if(localStorage.getItem("lolMe")==="r")me="r"}catch(e){}
@@ -465,7 +479,7 @@ function controls(){
 }
 function grid(){
   const u=used(),q=query.trim().toLowerCase();
-  const list=D.filter(c=>(!role||c.r.includes(role))&&(!q||c.n.toLowerCase().includes(q)));
+  const list=D.filter(c=>(!role||c.r.includes(role))&&(!q||c.n.toLowerCase().includes(q))&&!(hide&&u.has(c.n)));
   $("grid").innerHTML=list.length?list.map(c=>`<button class="ch ${c.d==="P"?"P":c.d==="M"?"M":""} ${u.has(c.n)?"off":""} ${mk.ban.includes(c.n)?"mb":mk.pre.includes(c.n)?"mp":""}" data-n="${c.n}">${icons?icon(c.n):""}<b>${c.n}</b><span>${c.r.map(r=>RN[r]).join(", ")}</span>${mk.ban.includes(c.n)?'<span class="bd">Ban candidate</span>':mk.pre.includes(c.n)?'<span class="bd">Prepick</span>':""}</button>`).join(""):`<p class="note">No champion matches. Clear the search or pick another role.</p>`;
 }
 function analysis(){
@@ -486,7 +500,7 @@ function analysis(){
   }
   $("an").innerHTML=h;
 }
-function render(){document.body.dataset.me=me;$("icons").setAttribute("aria-pressed",icons);board();controls();grid();analysis();consider();notes()}
+function render(){document.body.dataset.me=me;$("icons").setAttribute("aria-pressed",icons);$("hide").setAttribute("aria-pressed",hide);board();controls();grid();analysis();consider();notes();histView()}
 function add(n,k){
   k=k||(auto&&stepNow()<20?ORDER[stepNow()]:target);
   if(used().has(n)||st[k].length>=5)return false;
@@ -514,11 +528,16 @@ document.addEventListener("click",e=>{
   else if(b.dataset.c){if(!cons.includes(b.dataset.c)&&!mk.pre.includes(b.dataset.c))cons.push(b.dataset.c)}
   else if(b.dataset.cx){cons=cons.filter(x=>x!==b.dataset.cx)}
   else if(b.dataset.unpre){mk.pre=mk.pre.filter(x=>x!==b.dataset.unpre)}
-  else if(b.dataset.del){const[k,i]=b.dataset.del.split(":");delNote(k,+i)}
+  else if(b.dataset.del){const[k,i]=b.dataset.del.split(":");askDel(k,+i);return}
+  else if(b.dataset.res){restore(+b.dataset.res);return}
+  else if(b.dataset.hclear){clearHist();return}
   else if(b.id==="nadd"){addNote()}
   else if(b.id==="nexp"){$("nio").value=JSON.stringify(REL)}
   else if(b.id==="nimp"){importNotes()}
   else if(b.id==="nmig"){migrate()}
+  else if(b.id==="esave"){doSaveChamp();return}
+  else if(b.id==="ereset"){doResetChamp();return}
+  else if(b.id==="hide"){hide=!hide;try{localStorage.setItem("lolHide",hide?"1":"0")}catch(e){}}
   else if(b.id==="lo"){DS.lo=!DS.lo;drawers()}
   else if(b.id==="ro"){DS.ro=!DS.ro;drawers()}
   else if(b.dataset.close){DS[b.dataset.close==="dl"?"lo":"ro"]=false;drawers()}
@@ -572,7 +591,8 @@ function combo(id,multi){
     if(v!==inp.value){inp.value=v;inp.dispatchEvent(new Event("change"))}
   });
 }
-combo("cq");combo("na",1);combo("nb",1);combo("fz",1);
+combo("cq");combo("na",1);combo("nb",1);combo("fz",1);combo("ec");
+$("ec").addEventListener("change",()=>{$("emsg").textContent="";editForm()});
 $("fz").addEventListener("mchange",()=>{saveFear();render()});
 
 
@@ -629,6 +649,61 @@ const sbf=(p,o={})=>fetch(SB.url+"/rest/v1/"+p,{...o,headers:{apikey:SB.key,...(
 let LOC={syn:[],weak:[],strong:[]},REL,RID={syn:[],weak:[],strong:[]},shared=null,canWrite=true;
 try{const s=JSON.parse(localStorage.getItem("lolRel")||"null");if(s)LOC={syn:s.syn||[],weak:s.weak||[],strong:s.strong||[]}}catch(e){}
 REL=LOC;
+let OVR={},chOK=false;
+try{const o=JSON.parse(localStorage.getItem("lolChamps")||"{}");Object.keys(o).forEach(n=>{const x=o[n];if(BY[n]&&x&&Array.isArray(x.r)&&x.r.length&&["A","P","M"].includes(x.d)&&typeof x.t==="string")OVR[n]={r:x.r.filter(k=>RO.includes(k)),d:x.d,t:x.t.replace(/[^tecs]/g,"")}})}catch(e){}
+function saveLocalOvr(){try{localStorage.setItem("lolChamps",JSON.stringify(OVR))}catch(e){}}
+function applyOvr(){D.forEach(c=>{const b=BASE[c.n],o=OVR[c.n];c.r=(o?o.r:b.r).slice();c.d=o?o.d:b.d;c.t=o?o.t:b.t})}
+async function loadChamps(){
+  try{
+    const r=await sbf("champs?select=n,r,d,t");
+    if(!r.ok){chOK=false;return}
+    chOK=true;
+    const O={};
+    (await r.json()).forEach(x=>{
+      if(!BY[x.n]||typeof x.r!=="string"||!["A","P","M"].includes(x.d)||typeof x.t!=="string")return;
+      const rr=[...x.r].filter(k=>RO.includes(k));if(!rr.length)return;
+      O[x.n]={r:rr,d:x.d,t:x.t.replace(/[^tecs]/g,"")};
+    });
+    OVR=O;applyOvr();
+  }catch(e){chOK=false}
+}
+async function saveChamp(n,r,d,t){
+  if(sb&&chOK){await sbx("champs",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({n,r:r.join(""),d,t})});await sbLoad();return}
+  OVR[n]={r,d,t};saveLocalOvr();applyOvr();render();
+}
+async function resetChamp(n){
+  if(sb&&chOK){await sbx("champs?n=eq."+encodeURIComponent(n),{method:"DELETE"});await sbLoad();return}
+  delete OVR[n];saveLocalOvr();applyOvr();render();
+}
+function editForm(){
+  const n=canon($("ec").value),c=BY[n];
+  if(!c){$("ef").innerHTML="";return}
+  const lab=(type,name,key,v,l,on)=>`<label><input type="${type}" ${name?`name="${name}" `:""}data-e="${key}" value="${v}" ${on?"checked":""}> ${l}</label>`;
+  $("ef").innerHTML=`<div><b>Roles</b>${RO.map(r=>lab("checkbox","","r",r,RN[r],c.r.includes(r))).join("")}</div><div><b>Damage</b>${[["A","AD"],["P","AP"],["M","Mixed"]].map(([v,l])=>lab("radio","ed","d",v,l,c.d===v)).join("")}</div><div><b>Team tools</b>${[["t","Frontline"],["e","Engage"],["c","Crowd control"],["s","Sustain"]].map(([v,l])=>lab("checkbox","","t",v,l,c.t.includes(v))).join("")}</div><button class="btn" id="esave">Save</button> ${OVR[n]?`<button class="btn" id="ereset">Reset to default</button> <span class="note">Edited</span>`:""}`;
+}
+async function doSaveChamp(){
+  const n=canon($("ec").value);if(!BY[n])return;
+  const q=k=>[...$("ef").querySelectorAll('input[data-e="'+k+'"]:checked')].map(x=>x.value);
+  const r=q("r"),d=q("d")[0],t=q("t").join("");
+  if(!r.length||!d){$("emsg").textContent="Choose at least one role and a damage type.";return}
+  try{await saveChamp(n,r,d,t);$("emsg").textContent="Saved."}catch(e){$("emsg").textContent=errText(e)}
+  editForm();
+}
+async function doResetChamp(){
+  const n=canon($("ec").value);if(!BY[n])return;
+  if(!await ask("Reset "+n+" to the default data?","Reset"))return;
+  try{await resetChamp(n);$("emsg").textContent="Reset."}catch(e){$("emsg").textContent=errText(e)}
+  editForm();
+}
+let LH=[],soft=false,SOFT=[];
+try{LH=JSON.parse(localStorage.getItem("lolHist")||"[]")}catch(e){}
+function saveHist(){try{localStorage.setItem("lolHist",JSON.stringify(LH))}catch(e){}}
+function pushHist(t,a,b){LH.unshift({t,a,b});LH=LH.slice(0,100);saveHist()}
+const TXT=(t,a,b)=>t==="syn"?a+" works well with "+b:t==="weak"?a+" is weak against "+b:a+" works well into "+b;
+function ask(text,yes){
+  return new Promise(res=>{const d=$("cfm");$("cfm-t").textContent=text;$("cfm-y").textContent=yes||"Delete";d.onclose=()=>res(d.returnValue==="1");d.returnValue="";d.showModal()});
+}
+async function sbx(p,o){const r=await sbf(p,o);if(!r.ok)throw{code:"x"};return r}
 function save(){if(shared||sb)return;try{localStorage.setItem("lolRel",JSON.stringify(LOC))}catch(e){}}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const canon=n=>{n=n.trim();const c=D.find(c=>c.n.toLowerCase()===n.toLowerCase());return c?c.n:n};
@@ -645,19 +720,51 @@ function nid(k,a,b){
   return k+":"+x+":"+y;
 }
 async function putNote(k,a,b){
-  if(sb){const r=await sbf("notes",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({id:nid(k,a,b),t:k,a,b})});if(!r.ok)throw{code:"x"};await sbLoad();return}
+  if(sb){const r=await sbf("notes",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(soft?{id:nid(k,a,b),t:k,a,b,deleted:false}:{id:nid(k,a,b),t:k,a,b})});if(!r.ok)throw{code:"x"};await sbLoad();return}
   if(shared){await shared.doc("notes/"+nid(k,a,b)).set({t:k,a,b});return}
   if(hasNote(k,a,b))return;
   REL[k].push([a,b]);save();
 }
-function delNote(k,i){
-  if(sb){const id=RID[k][i];if(id)sbf("notes?id=eq."+encodeURIComponent(id),{method:"DELETE"}).then(sbLoad).catch(()=>msg("Could not delete the note."));return}
-  if(shared){
-    const id=RID[k][i];
-    if(id)shared.doc("notes/"+id).delete().catch(e=>msg(errText(e)));
-    return;
-  }
-  REL[k].splice(i,1);save();
+async function delNote(k,i){
+  const[a,b]=REL[k][i]||[];if(!a)return;
+  try{
+    if(sb){
+      const id=RID[k][i],q="notes?id=eq."+encodeURIComponent(id);
+      if(soft)await sbx(q,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({deleted:true})});
+      else{pushHist(k,a,b);await sbx(q,{method:"DELETE"})}
+      await sbLoad();return;
+    }
+    pushHist(k,a,b);
+    if(shared){const id=RID[k][i];if(id)await shared.doc("notes/"+id).delete();return}
+    REL[k].splice(i,1);save();
+  }catch(e){msg(errText(e))}
+}
+async function askDel(k,i){
+  const p=REL[k][i];if(!p)return;
+  if(!await ask("Delete this note?\n"+TXT(k,p[0],p[1]),"Delete"))return;
+  await delNote(k,i);
+  render();
+}
+async function restore(i){
+  const h=soft?SOFT[i]:LH[i];if(!h)return;
+  try{
+    if(sb&&soft){await sbx("notes?id=eq."+encodeURIComponent(h.id),{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({deleted:false})});await sbLoad()}
+    else{if(!hasNote(h.t,h.a,h.b))await putNote(h.t,h.a,h.b);LH.splice(i,1);saveHist()}
+    msg("Note restored.");
+  }catch(e){msg(errText(e))}
+  render();
+}
+async function clearHist(){
+  if(!await ask("Permanently clear the history? Deleted notes can no longer be restored.","Clear history"))return;
+  try{
+    if(sb&&soft){await sbx("notes?deleted=eq.true",{method:"DELETE"});await sbLoad()}
+    else{LH=[];saveHist()}
+  }catch(e){msg(errText(e))}
+  render();
+}
+function histView(){
+  const H=soft?SOFT:LH;
+  $("nhist").innerHTML=(H.length?H.map((h,i)=>`<div class="nt"><span>${esc(TXT(h.t,h.a,h.b))}</span>${canWrite?`<button data-res="${i}">Restore</button>`:""}</div>`).join("")+(canWrite?`<button class="btn" data-hclear="1" style="margin-top:6px">Clear history</button>`:""):`<p class="note">No deleted notes.</p>`)+(sb&&!soft?`<p class="note">History is only kept in this browser. Add the deleted column in Supabase to share it.</p>`:"");
 }
 function errText(e){
   const c=e&&e.code;
@@ -666,6 +773,7 @@ function errText(e){
   return"Could not save. Please try again.";
 }
 function setMode(){
+  $("emode").textContent=sb?(chOK?"Champion edits are shared with everyone using this site.":"Champion edits are saved in this browser only. Create the champs table in Supabase to share them."):"Champion edits are saved in this browser only.";
   $("nmode").textContent=sb?"Notes are shared with everyone using this site.":shared?(canWrite?"Notes are shared with everyone who opens this page.":"You can see the shared notes but not edit them. Ask for Contributor access to add notes."):"Notes are stored in this browser only.";
   ["na","nb","nadd","nimp"].forEach(id=>{$(id).disabled=!canWrite});
   $("nmig").hidden=!((shared||sb)&&canWrite&&(LOC.syn.length+LOC.weak.length+LOC.strong.length)>0);
@@ -701,11 +809,22 @@ async function migrate(){
   render();
 }
 function applyRows(rows){
-  const R={syn:[],weak:[],strong:[]},I={syn:[],weak:[],strong:[]};
-  rows.forEach(x=>{if(["syn","weak","strong"].includes(x.t)&&typeof x.a==="string"&&typeof x.b==="string"){R[x.t].push([x.a,x.b]);I[x.t].push(x.id)}});
-  REL=R;RID=I;render();
+  const R={syn:[],weak:[],strong:[]},I={syn:[],weak:[],strong:[]},S=[];
+  rows.forEach(x=>{
+    if(!["syn","weak","strong"].includes(x.t)||typeof x.a!=="string"||typeof x.b!=="string")return;
+    if(x.deleted){S.push(x);return}
+    R[x.t].push([x.a,x.b]);I[x.t].push(x.id);
+  });
+  REL=R;RID=I;SOFT=S;render();
 }
-async function sbLoad(){const r=await sbf("notes?select=id,t,a,b&order=id");if(!r.ok)throw 0;applyRows(await r.json())}
+async function sbLoad(){
+  let r=await sbf("notes?select=id,t,a,b,deleted&order=id");
+  if(r.ok)soft=true;else{r=await sbf("notes?select=id,t,a,b&order=id");soft=false}
+  if(!r.ok)throw 0;
+  const rows=await r.json();
+  await loadChamps();
+  applyRows(rows);
+}
 function watchShared(){
   shared.collection("notes").onSnapshot(snap=>{
     const R={syn:[],weak:[],strong:[]},I={syn:[],weak:[],strong:[]};
@@ -792,8 +911,8 @@ function consider(){
   $("cres").innerHTML=list.length?planCard()+list.map(champBlock).join(""):`<p class="note">Search a champion above to add it here. Prepicked champions appear here automatically.</p>`;
 }
 Object.values(DRAW).forEach(f=>f());
-let DS={lo:innerWidth>=1300,ro:innerWidth>=1300},icons=false,VER="",IDS={};
-try{Object.assign(DS,JSON.parse(localStorage.getItem("lolDr")||"{}"));icons=localStorage.getItem("lolIcons")==="1"}catch(e){}
+let DS={lo:innerWidth>=1300,ro:innerWidth>=1300},icons=false,hide=false,VER="",IDS={};
+try{Object.assign(DS,JSON.parse(localStorage.getItem("lolDr")||"{}"));icons=localStorage.getItem("lolIcons")==="1";hide=localStorage.getItem("lolHide")==="1"}catch(e){}
 function drawers(){
   $("dl").classList.toggle("open",!!DS.lo);$("dr").classList.toggle("open",!!DS.ro);
   $("lo").setAttribute("aria-expanded",!!DS.lo);$("ro").setAttribute("aria-expanded",!!DS.ro);
@@ -820,6 +939,7 @@ async function loadIcons(){
 }
 const icon=n=>VER?`<img class="ico" loading="lazy" alt="" src="https://ddragon.leagueoflegends.com/cdn/${VER}/img/champion/${IDS[n]||IDFIX[n]||n.replace(/[^A-Za-z0-9]/g,"")}.png" onerror="this.style.display='none'">`:"";
 drawers();
+applyOvr();
 if(icons)loadIcons();
 setMode();
 (async()=>{
