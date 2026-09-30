@@ -66,6 +66,15 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+.ng{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:6px 0;background:var(--bg)}
+.ng>summary{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.ng[open]>summary{margin-bottom:4px}
+.nl{font-size:12px;color:var(--mute);margin:8px 0 3px}
+.nc{display:inline-flex;align-items:center;padding:2px 4px 2px 10px;border:1px solid var(--line);border-radius:999px;background:var(--chip);margin:0 6px 6px 0}
+.nc.syn{border-color:var(--ok)}.nc.strong{border-color:var(--gold)}.nc.weak{border-color:var(--red)}
+.nc button{border:0;background:transparent;padding:0 6px;color:var(--mute);font-size:16px;line-height:1}
+.nc button:hover{color:var(--red)}
+.ncl{display:inline-block;padding:2px 10px;margin:0 6px 6px 0}
 .tools input[type=checkbox],.tools input[type=radio]{width:auto;padding:0;margin:0 5px 0 0}
 #ef>div{margin:8px 0}#ef label{display:inline-flex;align-items:center;margin:0 12px 4px 0}#ef b{display:block;margin-bottom:2px}
 dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:16px;max-width:min(92vw,380px)}
@@ -142,6 +151,8 @@ summary{cursor:pointer;color:var(--mute)}
 <div class="cbw"><div class="mcs" id="nb-c"></div><input id="nb" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Second champion" placeholder="Search other champion" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
 </div>
 <button class="btn" id="nadd">Save note</button> <span id="nmsg" class="note" role="status"></span>
+<input type="search" id="nsearch" placeholder="Filter notes by champion" aria-label="Filter notes by champion">
+<div class="rf" id="nfil" role="group" aria-label="Note type filter"></div>
 <div id="nlist"></div>
 <details><summary>History of deleted notes</summary><div id="nhist"></div></details>
 <p class="note" id="nmode">Notes are stored in this browser only.</p>
@@ -382,25 +393,24 @@ function combos(){
     if(!P.length&&!X.length){if(R.length>=2)res.push(R);return}
     for(const v of P.slice()){bk(R.concat(v),P.filter(x=>adj[v].has(x)),X.filter(x=>adj[v].has(x)));P=P.filter(x=>x!==v);X=X.concat(v)}
   })([],nodes,[]);
-  const seen=new Set(),subs=[];
-  res.forEach(C=>{
-    const n=Math.min(C.length,8);
-    for(let m=3;m<(1<<n);m++){
-      const S=C.slice(0,n).filter((_,i)=>m>>i&1);
-      if(S.length<2||S.length>5)continue;
-      const key=[...S].sort().join("|");
-      if(!seen.has(key)){seen.add(key);subs.push(S)}
-    }
-  });
   const left=5-mine.length,good=[];
-  subs.forEach(C=>{
-    const mi=C.filter(x=>mine.includes(x)),need=C.filter(x=>!mine.includes(x));
-    if(need.length>left||(mine.length>=2&&!mi.length))return;
-    if(!assign([...mine,...need].map(n=>BY[n].r)).every(x=>x))return;
-    good.push({C,mi,need,s:mi.length*3+C.length});
+  res.forEach(full=>{
+    const n=Math.min(full.length,8);let best=null;
+    for(let m=3;m<(1<<n);m++){
+      const C=full.slice(0,n).filter((_,i)=>m>>i&1);
+      if(C.length<2||C.length>5)continue;
+      const mi=C.filter(x=>mine.includes(x)),need=C.filter(x=>!mine.includes(x));
+      if(need.length>left||(mine.length>=2&&!mi.length))continue;
+      if(!assign([...mine,...need].map(x=>BY[x].r)).every(x=>x))continue;
+      const sc=mi.length*3+C.length;
+      if(!best||sc>best.s)best={C,mi,need,s:sc};
+    }
+    if(best){best.alt=full.filter(x=>!best.C.includes(x));good.push(best)}
   });
   const out=good.filter(g=>!good.some(o=>o!==g&&o.C.length>g.C.length&&g.C.every(x=>o.C.includes(x))));
-  return out.sort((x,y)=>y.s-x.s).slice(0,4);
+  const uniq=[],keys=new Set();
+  out.forEach(g=>{const k=[...g.C].sort().join("|");if(!keys.has(k)){keys.add(k);uniq.push(g)}});
+  return uniq.sort((x,y)=>y.s-x.s).slice(0,4);
 }
 function pickIdeas(cb){
   const k=me==="b"?"bp":"rp",ek=me==="b"?"rp":"bp",mine=MY(),foe=EN(),u=used();
@@ -437,11 +447,12 @@ function banIdeas(cb){
   const put=(b,w,v)=>{
     if(!BY[b]||u.has(b))return;
     if(foe.length&&!BY[b].r.some(r=>fo.includes(r)))return;
-    const o=m.get(b)||{s:0,w:[]};o.s+=v;o.w.push(w);m.set(b,o);
+    const o=m.get(b)||{s:0,w:[]};if(o.w.includes(w))return;o.s+=v;o.w.push(w);m.set(b,o);
   };
   MY().forEach(p=>weakOf(p).forEach(b=>put(b,"counters "+p,2)));
   mk.pre.forEach(p=>weakOf(p).forEach(b=>put(b,"counters "+p+" (prepick)",1.5)));
-  cb.slice(0,3).forEach(c=>c.C.forEach(x=>weakOf(x).forEach(b=>put(b,"counters "+x+" (combo)",1))));
+  const own=new Set([...MY(),...mk.pre]);
+  [...new Set(cb.slice(0,3).flatMap(c=>c.C))].filter(x=>!own.has(x)).forEach(x=>weakOf(x).forEach(b=>put(b,"counters "+x+" (combo)",1)));
   return[...m].sort((x,y)=>y[1].s-x[1].s).slice(0,8);
 }
 function dmgBar(a){
@@ -489,7 +500,7 @@ function analysis(){
   let h=`<details class="card" data-k="team" ${op("team")}><summary><h2>Your team (${nm})</h2></summary><p class="note" style="margin:0 0 4px">${turn}</p>${dmgBar(a)}${traits(a)}${insights()}<div class="note" style="margin:0">${mine.length<5?(a.open.length?"Open roles: "+a.open.map(r=>RN[r]).join(", "):"Roles are covered by flex picks."):"Draft complete."}</div>`;
   if(sg.length)h+=`<h3>Best picks now</h3><div class="sg">${sg.map(x=>`<button data-addmine="${esc(x.n)}"><span>${esc(x.n)}</span><em>${esc(x.w.join(", "))}</em></button>`).join("")}</div><p class="note">Ranked by your open roles, damage mix, team tools, your notes and the draft order (later enemy picks can counter early picks).</p>`;
   h+=`</details><details class="card" data-k="combos" ${op("combos")}><summary><h2>Team combos</h2></summary>`;
-  h+=cb.length?cb.map(c=>`<div class="cc"><div>${c.C.map(x=>esc(x)+(c.mi.includes(x)?" (yours)":"")).join(" + ")}</div>${c.need.length?`<div class="sg" style="margin-top:6px">${c.need.map(x=>`<button data-addmine="${esc(x)}"><span>${esc(x)}</span><em>${BY[x].r.map(r=>RN[r]).join(", ")}</em></button>`).join("")}</div>`:`<p class="good" style="margin:4px 0 0">Complete</p>`}</div>`).join("")+`<p class="note">Combos use champions you saved as working well together. Only available champions that fit your open roles are shown.</p>`:`<p class="note">No available combo fits yet. Save a team combo in Your notes to see combos here.</p>`;
+  h+=cb.length?cb.map(c=>`<div class="cc"><div>${c.C.map(x=>esc(x)+(c.mi.includes(x)?" (yours)":"")).join(" + ")}</div>${c.alt&&c.alt.length?`<div class="note" style="margin:2px 0">Also fits this group: ${c.alt.map(esc).join(", ")}</div>`:""}${c.need.length?`<div class="sg" style="margin-top:6px">${c.need.map(x=>`<button data-addmine="${esc(x)}"><span>${esc(x)}</span><em>${BY[x].r.map(r=>RN[r]).join(", ")}</em></button>`).join("")}</div>`:`<p class="good" style="margin:4px 0 0">Complete</p>`}</div>`).join("")+`<p class="note">Combos use champions you saved as working well together. Only available champions that fit your open roles are shown.</p>`:`<p class="note">No available combo fits yet. Save a team combo in Your notes to see combos here.</p>`;
   h+=`</details><details class="card" data-k="bans" ${op("bans")}><summary><h2>Ban ideas${cb.length?" for your picks and combos":""}</h2></summary>`;
   h+=bn.length?`<div class="sg">${bn.map(([b,o])=>`<button data-ban="${esc(b)}"><span>${esc(b)}</span><em>${esc(o.w.join(", "))}</em></button>`).join("")}</div><p class="note">Tap a champion to add it to your bans. Only champions the enemy can still play in their open roles are listed.</p>`:`<p class="note">Save weakness notes ("is weak against" or "works well into") and ban ideas will appear here.</p>`;
   h+=`</details>`;
@@ -535,6 +546,7 @@ document.addEventListener("click",e=>{
   else if(b.id==="nexp"){$("nio").value=JSON.stringify(REL)}
   else if(b.id==="nimp"){importNotes()}
   else if(b.id==="nmig"){migrate()}
+  else if(b.dataset.nf){nf=b.dataset.nf}
   else if(b.id==="esave"){doSaveChamp();return}
   else if(b.id==="ereset"){doResetChamp();return}
   else if(b.id==="hide"){hide=!hide;try{localStorage.setItem("lolHide",hide?"1":"0")}catch(e){}}
@@ -593,6 +605,7 @@ function combo(id,multi){
 }
 combo("cq");combo("na",1);combo("nb",1);combo("fz",1);combo("ec");
 $("ec").addEventListener("change",()=>{$("emsg").textContent="";editForm()});
+$("nsearch").addEventListener("input",e=>{nq=e.target.value;notes()});
 $("fz").addEventListener("mchange",()=>{saveFear();render()});
 
 
@@ -707,7 +720,7 @@ async function sbx(p,o){const r=await sbf(p,o);if(!r.ok)throw{code:"x"};return r
 function save(){if(shared||sb)return;try{localStorage.setItem("lolRel",JSON.stringify(LOC))}catch(e){}}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const canon=n=>{n=n.trim();const c=D.find(c=>c.n.toLowerCase()===n.toLowerCase());return c?c.n:n};
-const synOf=n=>REL.syn.filter(p=>p.includes(n)).map(p=>p[0]===n?p[1]:p[0]);
+const synOf=n=>[...new Set(REL.syn.filter(p=>p.includes(n)).map(p=>p[0]===n?p[1]:p[0]))];
 // weak: [a,b] a is weak against b. strong: [a,b] a works well into b. Both feed weakOf and strongOf.
 const weakOf=n=>[...new Set([...REL.weak.filter(p=>p[0]===n).map(p=>p[1]),...REL.strong.filter(p=>p[1]===n).map(p=>p[0])])];
 const strongOf=n=>[...new Set([...REL.weak.filter(p=>p[1]===n).map(p=>p[0]),...REL.strong.filter(p=>p[0]===n).map(p=>p[1])])];
@@ -835,12 +848,38 @@ function watchShared(){
     REL=R;RID=I;render();
   },()=>{shared=null;REL=LOC;RID={syn:[],weak:[],strong:[]};setMode();render()});
 }
+let nq="",nf="all";
+function cliques(){
+  const adj={};
+  REL.syn.forEach(([x,y])=>{(adj[x]=adj[x]||new Set()).add(y);(adj[y]=adj[y]||new Set()).add(x)});
+  const res=[];
+  (function bk(R,P,X){
+    if(res.length>100)return;
+    if(!P.length&&!X.length){if(R.length>=3)res.push(R.slice().sort());return}
+    for(const v of P.slice()){bk(R.concat(v),P.filter(x=>adj[v].has(x)),X.filter(x=>adj[v].has(x)));P=P.filter(x=>x!==v);X=X.concat(v)}
+  })([],Object.keys(adj),[]);
+  return res.sort((a,b)=>b.length-a.length);
+}
 function notes(){
-  const L=[];
-  REL.syn.forEach((p,i)=>L.push(["syn",i,p[0]+" works well with "+p[1]]));
-  REL.weak.forEach((p,i)=>L.push(["weak",i,p[0]+" is weak against "+p[1]]));
-  REL.strong.forEach((p,i)=>L.push(["strong",i,p[0]+" works well into "+p[1]]));
-  $("nlist").innerHTML=L.length?L.map(([k,i,t])=>`<div class="nt"><span>${esc(t)}</span>${canWrite?`<button data-del="${k}:${i}" aria-label="Delete note: ${esc(t)}">Delete</button>`:""}</div>`).join(""):`<p class="note">No notes yet. Save your first synergy, weakness or ban above.</p>`;
+  const by={},add=(n,ty,o,k,i)=>{(by[n]=by[n]||[]).push({ty,o,k,i})};
+  REL.syn.forEach((p,i)=>{add(p[0],"syn",p[1],"syn",i);add(p[1],"syn",p[0],"syn",i)});
+  REL.weak.forEach((p,i)=>{add(p[0],"weak",p[1],"weak",i);add(p[1],"strong",p[0],"weak",i)});
+  REL.strong.forEach((p,i)=>{add(p[0],"strong",p[1],"strong",i);add(p[1],"weak",p[0],"strong",i)});
+  const ns=REL.syn.length,nc=REL.weak.length+REL.strong.length,total=ns+nc;
+  $("nfil").innerHTML=[["all","All ("+total+")"],["syn","Synergies ("+ns+")"],["counter","Counters ("+nc+")"]].map(([k,l])=>`<button data-nf="${k}" aria-pressed="${nf===k}">${l}</button>`).join("");
+  if(!total){$("nlist").innerHTML=`<p class="note">No notes yet. Save your first synergy, weakness or strength above.</p>`;return}
+  const q=nq.trim().toLowerCase(),LBL={syn:"Works well with",strong:"Strong against",weak:"Weak against"},SH={syn:"synergies",strong:"strong",weak:"weak"};
+  const keep=r=>nf==="all"||(nf==="syn"?r.ty==="syn":r.ty!=="syn");
+  const names=Object.keys(by).filter(n=>(!q||n.toLowerCase().includes(q))&&by[n].some(keep)).sort((a,b)=>a.localeCompare(b));
+  let h="";
+  const cl=nf==="counter"?[]:cliques().filter(c=>!q||c.some(x=>x.toLowerCase().includes(q)));
+  if(cl.length)h+=`<details class="ng" data-k="nc:combos" ${OPEN["nc:combos"]?"open":""}><summary><b>Team combos</b> <span class="note">${cl.length}</span></summary>${cl.map(c=>`<div class="nl" style="margin:4px 0">${c.map(esc).join(" + ")}</div>`).join("")}</details>`;
+  h+=names.map(n=>{
+    const rows=by[n].filter(keep),grp=t=>rows.filter(r=>r.ty===t);
+    const sum=["syn","strong","weak"].filter(t=>grp(t).length).map(t=>grp(t).length+" "+SH[t]).join(", ");
+    return`<details class="ng" data-k="n:${esc(n)}" ${OPEN["n:"+n]?"open":""}><summary><b>${esc(n)}</b> <span class="note">${sum}</span></summary>${["syn","strong","weak"].filter(t=>grp(t).length).map(t=>`<div class="nl">${LBL[t]}</div><div>${grp(t).map(r=>{const p=REL[r.k][r.i];return`<span class="nc ${t}">${esc(r.o)}${canWrite?`<button data-del="${r.k}:${r.i}" aria-label="Delete note: ${esc(TXT(r.k,p[0],p[1]))}">\u00d7</button>`:""}</span>`}).join("")}</div>`).join("")}</details>`;
+  }).join("");
+  $("nlist").innerHTML=h||`<p class="note">No notes match your filter.</p>`;
 }
 function insights(){
   const L=[];
@@ -849,7 +888,7 @@ function insights(){
     weakOf(p).filter(x=>EN().includes(x)).forEach(x=>L.push(`<div class="bad">${esc(p)} is weak against ${esc(x)}</div>`));
     strongOf(p).filter(x=>EN().includes(x)).forEach(x=>L.push(`<div class="good">${esc(p)} counters ${esc(x)}</div>`));
   });
-  return L.length?`<div class="ins">${L.join("")}</div>`:"";
+  return L.length?`<div class="ins">${[...new Set(L)].join("")}</div>`:"";
 }
 function chips(list){
   if(!list.length)return`<p class="note" style="margin:0 0 8px">Nothing saved yet.</p>`;
@@ -889,7 +928,7 @@ function planCard(){
     weakOf(x).filter(y=>EN().includes(y)).forEach(y=>L.push(`<div class="bad">${esc(x)} is weak against ${esc(y)}</div>`));
     strongOf(x).filter(y=>EN().includes(y)).forEach(y=>L.push(`<div class="good">${esc(x)} counters ${esc(y)}</div>`));
   });
-  return`<div class="cc"><h3 style="margin:0 0 4px">Your team with prepicks</h3><p class="note" style="margin:0 0 4px">${base.map(n=>esc(n)+(mk.pre.includes(n)?" (prepick)":"")).join(", ")}</p>${dmgBar(a)}${traits(a)}<p class="note" style="margin:0">Open roles: ${a.open.length?a.open.map(r=>RN[r]).join(", "):"none"}</p>${L.length?`<div class="ins">${L.join("")}</div>`:""}</div>`;
+  return`<div class="cc"><h3 style="margin:0 0 4px">Your team with prepicks</h3><p class="note" style="margin:0 0 4px">${base.map(n=>esc(n)+(mk.pre.includes(n)?" (prepick)":"")).join(", ")}</p>${dmgBar(a)}${traits(a)}<p class="note" style="margin:0">Open roles: ${a.open.length?a.open.map(r=>RN[r]).join(", "):"none"}</p>${L.length?`<div class="ins">${[...new Set(L)].join("")}</div>`:""}</div>`;
 }
 function champBlock(n){
   const c=BY[n],wk=weakOf(n),sr=strongOf(n),sy=synOf(n),pre=mk.pre.includes(n);
