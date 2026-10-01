@@ -66,6 +66,10 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+.drs{right:0;transform:translateX(105%);border-left:1px solid var(--line);width:min(780px,98vw);z-index:35}
+.st{width:100%;border-collapse:collapse}.st td,.st th{padding:3px 6px;text-align:left;border-bottom:1px solid var(--line);font-size:13px}
+.st button{border:0;background:transparent;color:var(--mute);font-size:16px;line-height:1;cursor:pointer}
+.st .lnk,.lnk{color:var(--gold);text-decoration:underline;font-size:13px;padding:0}
 .ng{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:6px 0;background:var(--bg)}
 .ng>summary{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .ng[open]>summary{margin-bottom:4px}
@@ -125,7 +129,7 @@ summary{cursor:pointer;color:var(--mute)}
 </style>
 </head>
 <body>
-<header class="top"><h1>Draft helper</h1><div class="tb"><button id="lo" aria-expanded="false">Suggestions</button><button id="ro" aria-expanded="false">Champions</button></div></header>
+<header class="top"><h1>Draft helper</h1><div class="tb"><button id="lo" aria-expanded="false">Suggestions</button><button id="ro" aria-expanded="false">Champions</button><button id="so" aria-expanded="false">Scout</button></div></header>
 <main>
 <p class="sub">Open the Champions panel to pick, and the Suggestions panel for picks, combos and bans.</p>
 <details class="card tools" open><summary><h2>Draft board</h2></summary>
@@ -172,6 +176,28 @@ summary{cursor:pointer;color:var(--mute)}
 <p class="note" style="margin:0 0 4px">Right-click a champion (long-press on touch) to mark a ban candidate, a prepick or a fearless ban.</p>
 <p class="note" id="icost" style="margin:0 0 4px"></p>
 <div class="grid" id="grid"></div></aside>
+<aside class="dr drs" id="ds" aria-label="Team scouter"><div class="dh"><h2>Team scouter</h2><button data-close="ds">Close</button></div>
+<details class="card tools" open><summary><h2>Teams</h2></summary>
+<select id="sct" aria-label="Saved team"></select>
+<input id="scn" type="text" placeholder="Team name" aria-label="Team name">
+<button class="btn" id="scnew">New team</button> <button class="btn" id="scren">Rename</button> <button class="btn" id="scdel">Delete team</button>
+<p class="note" id="scmode"></p>
+</details>
+<details class="card tools" open><summary><h2>Add profile</h2></summary>
+<div class="row"><input id="pn" type="text" placeholder="Riot ID, e.g. Name#EUW" aria-label="Riot ID">
+<select id="pr" aria-label="Region"><option>euw</option><option>eune</option><option>na</option><option>kr</option><option>br</option><option>lan</option><option>las</option><option>oce</option><option>tr</option><option>ru</option><option>jp</option></select>
+<select id="pro" aria-label="Main role"><option value="">Role: auto</option><option value="T">Top</option><option value="J">Jungle</option><option value="M">Mid</option><option value="B">Bot</option><option value="S">Support</option></select></div>
+<button class="btn" id="padd">Add profile</button>
+</details>
+<details class="card tools" open><summary><h2>Add or update a champion</h2></summary>
+<select id="psel" aria-label="Profile"></select>
+<div class="cbw"><input id="sc" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Champion" placeholder="Search a champion" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
+<div class="row"><input id="pg" type="number" min="0" placeholder="Games" aria-label="Games"><input id="pw" type="number" min="0" max="100" step="0.1" placeholder="Win rate %" aria-label="Win rate"><input id="pk" type="number" min="0" step="0.01" placeholder="KDA" aria-label="KDA"></div>
+<button class="btn" id="pcadd">Save champion</button> <span class="note" id="scmsg" role="status"></span>
+<p class="note">Stats are typed in by hand. Copy them from op.gg using the link on each profile.</p>
+</details>
+<div id="scp"></div>
+<div id="sca"></div></aside>
 <script>
 const RN={T:"Top",J:"Jungle",M:"Mid",B:"Bot",S:"Support"},RO=["T","J","M","B","S"];
 // name|roles|damage (A=AD,P=AP,M=mixed)|tags: t=frontline e=engage c=crowd control s=sustain
@@ -511,7 +537,7 @@ function analysis(){
   }
   $("an").innerHTML=h;
 }
-function render(){document.body.dataset.me=me;$("icons").setAttribute("aria-pressed",icons);$("hide").setAttribute("aria-pressed",hide);board();controls();grid();analysis();consider();notes();histView()}
+function render(){document.body.dataset.me=me;$("icons").setAttribute("aria-pressed",icons);$("hide").setAttribute("aria-pressed",hide);board();controls();grid();analysis();consider();notes();histView();scView()}
 function add(n,k){
   k=k||(auto&&stepNow()<20?ORDER[stepNow()]:target);
   if(used().has(n)||st[k].length>=5)return false;
@@ -552,7 +578,16 @@ document.addEventListener("click",e=>{
   else if(b.id==="hide"){hide=!hide;try{localStorage.setItem("lolHide",hide?"1":"0")}catch(e){}}
   else if(b.id==="lo"){DS.lo=!DS.lo;drawers()}
   else if(b.id==="ro"){DS.ro=!DS.ro;drawers()}
-  else if(b.dataset.close){DS[b.dataset.close==="dl"?"lo":"ro"]=false;drawers()}
+  else if(b.dataset.close){DS[{dl:"lo",dr:"ro",ds:"so"}[b.dataset.close]]=false;drawers()}
+  else if(b.id==="so"){DS.so=!DS.so;drawers()}
+  else if(b.id==="scnew"){scNew();return}
+  else if(b.id==="scren"){scRename();return}
+  else if(b.id==="scdel"){scDel();return}
+  else if(b.id==="padd"){scAddProfile();return}
+  else if(b.id==="pcadd"){scAddChamp();return}
+  else if(b.dataset.ped){scEdit(b.dataset.ped);return}
+  else if(b.dataset.pcx){scRmChamp(b.dataset.pcx);return}
+  else if(b.dataset.prm){scRmProfile(b.dataset.prm);return}
   else if(b.id==="icons"){icons=!icons;try{localStorage.setItem("lolIcons",icons?"1":"0")}catch(e){}if(icons)loadIcons()}
   else return;
   render();
@@ -606,6 +641,9 @@ function combo(id,multi){
 combo("cq");combo("na",1);combo("nb",1);combo("fz",1);combo("ec");
 $("ec").addEventListener("change",()=>{$("emsg").textContent="";editForm()});
 $("nsearch").addEventListener("input",e=>{nq=e.target.value;notes()});
+combo("sc");
+$("sct").addEventListener("change",()=>{scId=$("sct").value;render()});
+$("psel").addEventListener("change",()=>{scSel=$("psel").value});
 $("fz").addEventListener("mchange",()=>{saveFear();render()});
 
 
@@ -836,6 +874,7 @@ async function sbLoad(){
   if(!r.ok)throw 0;
   const rows=await r.json();
   await loadChamps();
+  await loadScouts();
   applyRows(rows);
 }
 function watchShared(){
@@ -847,6 +886,182 @@ function watchShared(){
     });
     REL=R;RID=I;render();
   },()=>{shared=null;REL=LOC;RID={syn:[],weak:[],strong:[]};setMode();render()});
+}
+let SC=[],scId="",scSel="",scOK=false;
+try{const a=JSON.parse(localStorage.getItem("lolScouts")||"[]");if(Array.isArray(a))SC=a.filter(t=>t&&typeof t.id==="string"&&Array.isArray(t.data))}catch(e){}
+scId=SC[0]?SC[0].id:"";
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const curTeam=()=>SC.find(t=>t.id===scId);
+function scLocal(){try{localStorage.setItem("lolScouts",JSON.stringify(SC))}catch(e){}}
+function scmsg(t){$("scmsg").textContent=t}
+async function loadScouts(){
+  try{
+    const r=await sbf("scouts?select=id,name,data&order=name");
+    if(!r.ok){scOK=false;return}
+    scOK=true;
+    SC=(await r.json()).filter(x=>x&&typeof x.id==="string"&&Array.isArray(x.data)).map(x=>({id:x.id,name:String(x.name||"Team"),data:x.data}));
+    if(!SC.find(t=>t.id===scId))scId=SC[0]?SC[0].id:"";
+  }catch(e){scOK=false}
+}
+async function scSave(t){
+  if(sb&&scOK){await sbx("scouts",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({id:t.id,name:t.name,data:t.data})});return}
+  scLocal();
+}
+async function scPersist(t){try{await scSave(t)}catch(e){scmsg(errText(e))}}
+async function scNew(){
+  const t={id:uid(),name:$("scn").value.trim()||"Team "+(SC.length+1),data:[]};
+  SC.push(t);scId=t.id;await scPersist(t);render();
+}
+async function scRename(){
+  const t=curTeam();if(!t)return;
+  t.name=$("scn").value.trim()||t.name;await scPersist(t);render();
+}
+async function scDel(){
+  const t=curTeam();if(!t)return;
+  if(!await ask('Delete team "'+t.name+'" and all its profiles?',"Delete team"))return;
+  try{
+    if(sb&&scOK)await sbx("scouts?id=eq."+encodeURIComponent(t.id),{method:"DELETE"});
+    SC=SC.filter(x=>x.id!==t.id);scId=SC[0]?SC[0].id:"";scLocal();
+  }catch(e){scmsg(errText(e))}
+  render();
+}
+async function scAddProfile(){
+  const name=$("pn").value.trim();
+  if(!name){scmsg("Enter a Riot ID.");return}
+  let t=curTeam();
+  if(!t){t={id:uid(),name:"Team "+(SC.length+1),data:[]};SC.push(t);scId=t.id}
+  const pr={id:uid(),name,region:$("pr").value,role:$("pro").value,champs:[]};
+  t.data.push(pr);scSel=pr.id;$("pn").value="";
+  await scPersist(t);scmsg("Profile added.");render();
+}
+async function scAddChamp(){
+  const t=curTeam(),p=t&&t.data.find(x=>x.id===scSel);
+  const n=canon($("sc").value),g=Math.max(0,parseInt($("pg").value)||0),wr=Math.min(100,Math.max(0,parseFloat($("pw").value)||0)),kda=Math.max(0,parseFloat($("pk").value)||0);
+  if(!p){scmsg("Add a profile first and choose it above.");return}
+  if(!BY[n]){scmsg("Choose a champion from the list.");return}
+  const c=p.champs.find(x=>x.n===n);
+  if(c){c.g=g;c.wr=wr;c.kda=kda}else p.champs.push({n,g,wr,kda});
+  await scPersist(t);scmsg("Saved.");$("sc").value="";render();
+}
+function scEdit(v){
+  const[id,n]=v.split("|"),t=curTeam(),p=t&&t.data.find(x=>x.id===id),c=p&&p.champs.find(x=>x.n===n);
+  if(!c)return;
+  scSel=id;$("psel").value=id;$("sc").value=n;$("pg").value=c.g;$("pw").value=c.wr;$("pk").value=c.kda;
+  scmsg("Change the numbers and click Save champion.");
+}
+async function scRmChamp(v){
+  const[id,n]=v.split("|"),t=curTeam(),p=t&&t.data.find(x=>x.id===id);
+  if(!p)return;
+  p.champs=p.champs.filter(x=>x.n!==n);await scPersist(t);render();
+}
+async function scRmProfile(id){
+  const t=curTeam(),p=t&&t.data.find(x=>x.id===id);
+  if(!p||!await ask('Remove profile "'+p.name+'"?',"Remove"))return;
+  t.data=t.data.filter(x=>x.id!==id);await scPersist(t);render();
+}
+function derivedRole(p){
+  const w={};
+  p.champs.forEach(c=>{const b=BY[c.n];if(b)b.r.forEach(r=>{w[r]=(w[r]||0)+Math.max(1,c.g)/b.r.length})});
+  return Object.keys(w).sort((a,b)=>w[b]-w[a])[0]||"";
+}
+function profCard(p){
+  const rows=p.champs.slice().sort((a,b)=>b.g-a.g),w=c=>Math.max(1,c.g),tw=rows.reduce((a,c)=>a+w(c),0)||1;
+  const tg=rows.reduce((a,c)=>a+c.g,0),wr=rows.reduce((a,c)=>a+w(c)*c.wr,0)/tw,kda=rows.reduce((a,c)=>a+w(c)*c.kda,0)/tw;
+  const role=p.role||derivedRole(p),link="https://www.op.gg/summoners/"+encodeURIComponent(p.region||"euw")+"/"+encodeURIComponent(p.name.replace("#","-"));
+  return`<details class="ng" data-k="sp:${esc(p.id)}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><b>${esc(p.name)}</b> ${role?`<span class="tag">${esc(RN[role]||role)}</span>`:""} <span class="note">${tg} games, ${wr.toFixed(1)}% WR, ${kda.toFixed(2)} KDA</span></summary>${rows.length?`<div style="overflow-x:auto"><table class="st"><tr><th>Champion</th><th>Games</th><th>WR</th><th>KDA</th><th></th></tr>${rows.map(c=>`<tr><td><button class="lnk" data-ped="${esc(p.id)}|${esc(c.n)}">${esc(c.n)}</button></td><td>${c.g}</td><td>${c.wr}%</td><td>${c.kda}</td><td><button data-pcx="${esc(p.id)}|${esc(c.n)}" aria-label="Remove ${esc(c.n)}">\u00d7</button></td></tr>`).join("")}</table></div>`:`<p class="note">No champions yet. Add the champions this player plays.</p>`}<p style="margin:6px 0 0"><a href="${link}" target="_blank" rel="noopener">Open on op.gg</a> <button class="btn" data-prm="${esc(p.id)}">Remove profile</button></p></details>`;
+}
+const synAdj=()=>{const a={};REL.syn.forEach(([x,y])=>{(a[x]=a[x]||new Set()).add(y);(a[y]=a[y]||new Set()).add(x)});return a};
+function maxCl(adj,nodes){
+  const res=[];
+  (function bk(R,P,X){
+    if(res.length>200)return;
+    if(!P.length&&!X.length){if(R.length>=2)res.push(R);return}
+    for(const v of P.slice()){bk(R.concat(v),P.filter(x=>adj[v].has(x)),X.filter(x=>adj[v].has(x)));P=P.filter(x=>x!==v);X=X.concat(v)}
+  })([],nodes.filter(n=>adj[n]),[]);
+  return res;
+}
+function subsets(C,min,max){
+  const n=Math.min(C.length,8),out=[];
+  for(let m=1;m<(1<<n);m++){const S=C.slice(0,n).filter((_,i)=>m>>i&1);if(S.length>=min&&S.length<=max)out.push(S)}
+  return out;
+}
+function matchP(S,pool){
+  const res=[],u=new Set();
+  const go=i=>{
+    if(i===S.length)return true;
+    for(const o of pool[S[i]].slice().sort((a,b)=>b.g-a.g)){
+      if(u.has(o.id))continue;
+      u.add(o.id);res[i]=o;if(go(i+1))return true;u.delete(o.id);
+    }
+    return false;
+  };
+  return go(0)?res:null;
+}
+function uniqBest(list,key){
+  const keep=list.filter(g=>!list.some(o=>o!==g&&o.C.length>g.C.length&&g.C.every(x=>o.C.includes(x))));
+  const seen=new Set(),out=[];
+  keep.forEach(g=>{const k=[...g.C].sort().join("|");if(!seen.has(k)){seen.add(k);out.push(g)}});
+  return out;
+}
+function threats(P){
+  const pool={};
+  P.forEach(p=>p.champs.forEach(c=>{if(BY[c.n])(pool[c.n]=pool[c.n]||[]).push({id:p.id,pn:p.name,g:c.g,wr:c.wr})}));
+  const out=[];
+  maxCl(synAdj(),Object.keys(pool)).forEach(full=>{
+    let best=null;
+    subsets(full,2,5).forEach(S=>{
+      const mt=matchP(S,pool);if(!mt)return;
+      if(!assign(S.map(x=>BY[x].r)).every(x=>x))return;
+      const sc=S.length*1000+mt.reduce((a,m)=>a+Math.max(1,m.g),0);
+      if(!best||sc>best.s)best={C:S,mt,s:sc};
+    });
+    if(best)out.push(best);
+  });
+  return uniqBest(out).sort((a,b)=>b.s-a.s).slice(0,5);
+}
+function counterScore(S,T){
+  let s=0;const hit=new Set();
+  S.forEach(x=>T.forEach(t=>{if(strongOf(x).includes(t)){s+=2;hit.add(t)}if(weakOf(x).includes(t))s-=3}));
+  return[s,[...hit]];
+}
+function counterCombos(T){
+  const u=used(),adj=synAdj(),out=[];
+  maxCl(adj,Object.keys(adj).filter(n=>BY[n]&&!u.has(n))).forEach(full=>{
+    let best=null;
+    subsets(full,2,5).forEach(S=>{
+      if(!assign(S.map(x=>BY[x].r)).every(x=>x))return;
+      const[s,hit]=counterScore(S,T);if(s<=0)return;
+      const sc=s*10+S.length;
+      if(!best||sc>best.sc)best={C:S,hit,sc};
+    });
+    if(best)out.push(best);
+  });
+  return uniqBest(out).sort((a,b)=>b.sc-a.sc).slice(0,2);
+}
+function singleCounters(T){
+  const u=used();
+  return D.filter(c=>!u.has(c.n)).map(c=>({n:c.n,r:counterScore([c.n],T)})).filter(x=>x.r[0]>0).sort((a,b)=>b.r[0]-a.r[0]).slice(0,4);
+}
+function scAnalysis(P){
+  const th=threats(P);
+  let h=`<div class="card"><h2>Combos to watch out for</h2>`;
+  if(!th.length)return h+`<p class="note">No combos found. Add champions to the profiles and save team combos in Your notes. A combo appears here when different players can play all of its champions.</p></div>`;
+  h+=th.map(t=>{
+    const cc=counterCombos(t.C),sg=singleCounters(t.C);
+    return`<div class="cc"><div><b>${t.C.map((c,i)=>esc(c)+` <span class="note">(${esc(t.mt[i].pn)}, ${t.mt[i].g} games${t.mt[i].wr?", "+t.mt[i].wr+"% WR":""})</span>`).join(" + ")}</b></div><div class="nl">Combos that are good against this</div>${cc.length?cc.map(c=>`<div>${c.C.map(esc).join(" + ")} <span class="note">counters ${c.hit.map(esc).join(", ")}</span></div>`).join(""):`<p class="note" style="margin:0">None found. Save "works well into" or "is weak against" notes for these champions.</p>`}${sg.length?`<div class="nl">Single counters</div><div>${sg.map(x=>`<span class="nc strong">${esc(x.n)}</span>`).join("")}</div>`:""}</div>`;
+  }).join("");
+  return h+`</div>`;
+}
+function scView(){
+  if(!DS.so)return;
+  const t=curTeam(),P=t?t.data:[];
+  $("sct").innerHTML=SC.length?SC.map(x=>`<option value="${esc(x.id)}"${x.id===scId?" selected":""}>${esc(x.name)}</option>`).join(""):`<option value="">No team yet</option>`;
+  if($("scn").dataset.t!==scId){$("scn").value=t?t.name:"";$("scn").dataset.t=scId}
+  $("scmode").textContent=sb&&scOK?"Teams are saved in the shared database.":"Teams are saved in this browser only. Create the scouts table in Supabase to share them.";
+  if(!P.find(p=>p.id===scSel))scSel=P[0]?P[0].id:"";
+  $("psel").innerHTML=P.length?P.map(p=>`<option value="${esc(p.id)}"${p.id===scSel?" selected":""}>${esc(p.name)}</option>`).join(""):`<option value="">No profile yet</option>`;
+  $("scp").innerHTML=P.length?P.map(profCard).join(""):`<p class="note">Add a profile to start scouting.</p>`;
+  $("sca").innerHTML=P.length?scAnalysis(P):"";
 }
 let nq="",nf="all";
 function cliques(){
@@ -950,10 +1165,10 @@ function consider(){
   $("cres").innerHTML=list.length?planCard()+list.map(champBlock).join(""):`<p class="note">Search a champion above to add it here. Prepicked champions appear here automatically.</p>`;
 }
 Object.values(DRAW).forEach(f=>f());
-let DS={lo:innerWidth>=1300,ro:innerWidth>=1300},icons=false,hide=false,VER="",IDS={};
+let DS={lo:innerWidth>=1300,ro:innerWidth>=1300,so:false},icons=false,hide=false,VER="",IDS={};
 try{Object.assign(DS,JSON.parse(localStorage.getItem("lolDr")||"{}"));icons=localStorage.getItem("lolIcons")==="1";hide=localStorage.getItem("lolHide")==="1"}catch(e){}
 function drawers(){
-  $("dl").classList.toggle("open",!!DS.lo);$("dr").classList.toggle("open",!!DS.ro);
+  $("dl").classList.toggle("open",!!DS.lo);$("dr").classList.toggle("open",!!DS.ro);$("ds").classList.toggle("open",!!DS.so);$("so").setAttribute("aria-expanded",!!DS.so);
   $("lo").setAttribute("aria-expanded",!!DS.lo);$("ro").setAttribute("aria-expanded",!!DS.ro);
   document.body.classList.toggle("lo",!!DS.lo);document.body.classList.toggle("ro",!!DS.ro);
   try{localStorage.setItem("lolDr",JSON.stringify(DS))}catch(e){}
