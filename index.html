@@ -320,6 +320,18 @@ details{margin-top:10px}
 .cbl li.on,.cbl li:hover{background:var(--chip)}
 .cbl li.none{color:var(--mute);cursor:default}
 summary{cursor:pointer;color:var(--mute)}
+/* Your team card */
+.tcard>summary{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tcard .turn{margin:0 0 8px;color:var(--mute);font-size:14px}
+.tcard .turn.now{display:inline-block;padding:4px 12px;border:1px solid var(--gold);border-radius:999px;background:var(--chip);color:var(--gold);font-weight:600}
+.tslots{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:6px;margin:0 0 10px}
+.tslots .lu{min-width:0}
+.tslots .lu b{display:flex;align-items:center;gap:6px;min-height:24px}
+.tslots .lu.none{border-style:dashed}
+.tslots .lu.none b{color:var(--mute);font-weight:500}
+.tslots .ico{width:24px;height:24px;margin:0;flex:none;display:inline-block}
+.tcard .warn{display:flex;gap:4px;align-items:baseline}
+.tcard .ins .ic{flex:none}
 /* phones and small tablets */
 button,a,summary,.ch,.slot,.ban{touch-action:manipulation}
 .dr{overscroll-behavior:contain;padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}
@@ -804,6 +816,25 @@ function dmgBar(a){
   const t=a.ad+a.ap||1,pa=Math.round(a.ad/t*100);
   return`<div class="dm" role="img" aria-label="${pa}% AD, ${100-pa}% AP"><i class="a" style="width:${pa}%"></i><i class="p" style="width:${100-pa}%"></i></div><div class="lg"><span>AD ${pa}%</span><span>AP ${100-pa}%</span></div>`;
 }
+// your five roles with the champion assigned to each; picks without a free role are listed as flex
+function teamSlots(mine,a){
+  const flex=mine.filter((n,i)=>!a.roles[i]);
+  return`<div class="lineup tslots">${RO.map(r=>{const i=a.roles.indexOf(r),n=i>=0?mine[i]:"";return`<span class="lu${n?"":" none"}"><small>${ri(r)}${rt(r)}</small><b>${n?icon(n)+esc(n):"Open"}</b></span>`}).join("")}</div>${flex.length?`<p class="note" style="margin:0 0 4px">No free role for: ${flex.map(esc).join(", ")}</p>`:""}`;
+}
+// plain warnings about what the team still misses
+function teamWarn(mine,a){
+  const n=mine.length,W=[];
+  if(!n)return"";
+  const t=a.ad+a.ap,sh=t?a.ad/t:.5,late=n>=3;
+  if(n>=2&&sh>=.8)W.push("Almost all AD damage. Add an AP champion so the enemy cannot just build armor.");
+  if(n>=2&&sh<=.2)W.push("Almost all AP damage. Add an AD champion so the enemy cannot just build magic resist.");
+  if(!a.tr.has("t"))W.push(late?"No frontline. Nobody can soak damage for your carries.":"No frontline yet.");
+  if(!a.tr.has("e")&&late)W.push("No engage. You will have a hard time starting fights.");
+  if(!a.tr.has("c")&&late)W.push("Little crowd control. Picks and peel will be hard.");
+  if(a.roles.some(r=>!r))W.push("Two picks want the same role. Check who plays where.");
+  if(!W.length)return n>=3?`<div class="ins"><div class="good">${ic("star")}Balanced so far: mixed damage, frontline and engage.</div></div>`:"";
+  return`<div class="ins">${W.map(w=>`<div class="bad warn">${ic("ban")}${w}</div>`).join("")}</div>`;
+}
 function traits(a){
   return`<div class="tr">${[["t","Frontline"],["e","Engage"],["c","Crowd control"],["s","Sustain"]].map(([k,l])=>`<span class="${a.tr.has(k)?"y":""}">${l}</span>`).join("")}</div>`;
 }
@@ -970,7 +1001,8 @@ function analysis(){
   const mine=MY(),foe=EN(),nm=me==="b"?"blue":"red",nf=me==="b"?"red":"blue",k=me==="b"?"bp":"rp";
   const i=stepNow(),cur=i<20?ORDER[i]:"",j=nextMine(),cb=combos(),sg=pickIdeas(cb),bn=banIdeas(cb),a=analyse(mine,roleMap(mine));
   const turn=cur===k?"It is your turn to pick.":cur===(me==="b"?"bb":"rb")?"It is your turn to ban.":j>=0?`Your next pick is step ${j+1}, after ${j-i} more actions.`:"";
-  let h=`<details class="card" data-k="team" ${op("team")}><summary><h2>Your team (${nm})</h2></summary><p class="note" style="margin:0 0 4px">${turn}</p>${dmgBar(a)}${traits(a)}${insights()}<div class="note" style="margin:0">${mine.length<5?(a.open.length?"Open roles: "+a.open.map(r=>RN[r]).join(", "):"Roles are covered by flex picks."):"Draft complete."}</div>`;
+  const now=cur===k||cur===(me==="b"?"bb":"rb");
+  let h=`<details class="card tcard" data-k="team" ${op("team")}><summary>${ic("users")}<h2>Your team (${nm})</h2> <span class="tag">${mine.length}/5 picked</span></summary>${turn?`<p class="turn${now?" now":""}">${turn}</p>`:""}${teamSlots(mine,a)}${dmgBar(a)}${traits(a)}${teamWarn(mine,a)}${insights()}${mine.length===5?`<div class="note" style="margin:0">Draft complete.</div>`:""}`;
   if(sg.length)h+=`<h3>Best picks now</h3><div class="sg">${sg.map(x=>`<button data-addmine="${esc(x.n)}"><span>${esc(x.n)}</span><em>${esc(x.w.join(", "))}</em></button>`).join("")}</div><p class="note">Ranked by your open roles, damage mix, team tools, your notes and the draft order (later enemy picks can counter early picks).</p>`;
   h+=`</details>`+playersCard(mine)+`<details class="card" data-k="combos" ${op("combos")}><summary><h2>Team combos</h2></summary>`;
   h+=cb.length?cb.map(comboCard).join("")+`<p class="note">Combos use champions you saved as working well together. Only available champions that fit your open roles are shown. Tap a dashed champion to pick it, or a ban to add it to your bans. Right-click a champion (long-press on touch) to prepick it or mark it as a ban candidate.</p>`:`<p class="note">No available combo fits yet. Save a team combo in Your notes to see combos here.</p>`;
