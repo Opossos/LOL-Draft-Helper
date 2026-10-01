@@ -550,6 +550,7 @@ function combos(){
   out.forEach(g=>{const k=[...g.C].sort().join("|");if(!keys.has(k)){keys.add(k);uniq.push(g)}});
   return uniq.sort((x,y)=>y.s-x.s).slice(0,4);
 }
+const pl=x=>{const r=x.role||derivedRole(x);return x.name+(r?" ("+(RN[r]||r)+")":"")};
 function matchPicks(mine,roster){
   const u=new Set(),map=new Map(),role=x=>x.role||derivedRole(x),has=(x,n)=>(x.pool||[]).includes(n);
   mine.forEach(n=>{
@@ -602,14 +603,14 @@ function pickIdeas(cb){
       const rr=c.r.filter(r=>pool.includes(r));let best=null,has=false,elig=0;const blocked=[];
       free.forEach(x=>{
         if(!rr.includes(x.role||derivedRole(x)))return;
-        if((x.cant||[]).includes(c.n)){blocked.push(x.name);return}
+        if((x.cant||[]).includes(c.n)){blocked.push(pl(x));return}
         elig++;
         if(!(x.pool&&x.pool.length))return;
         has=true;
         const i=x.pool.indexOf(c.n);
         if(i>=0&&(!best||i<best.i))best={x,i};
       });
-      if(best){s+=Math.max(2,7-.6*best.i);w[0]="fills "+RN[best.x.role||derivedRole(best.x)].toLowerCase();w.push(best.x.name+" plays it (#"+(best.i+1)+" in the tier list)")}
+      if(best){s+=Math.max(2,7-.6*best.i);w[0]="fills "+RN[best.x.role||derivedRole(best.x)].toLowerCase();w.push(pl(best.x)+" plays it (#"+(best.i+1)+" in the tier list)")}
       else if(elig&&has){s-=2;w.push("not in your players' tier lists")}
       else if(!elig&&blocked.length){s-=9;w.push(blocked.join(", ")+" can't play it")}
     }
@@ -1160,7 +1161,7 @@ function tierView(){
   if(!my)return;
   const t=curTeam(),P=t?t.data:[];
   if(!P.find(x=>x.id===tSel))tSel=P[0]?P[0].id:"";
-  $("tsel").innerHTML=P.length?P.map(x=>`<option value="${esc(x.id)}"${x.id===tSel?" selected":""}>${esc(x.name)}</option>`).join(""):`<option value="">No player yet</option>`;
+  $("tsel").innerHTML=P.length?P.map(x=>`<option value="${esc(x.id)}"${x.id===tSel?" selected":""}>${esc(pl(x))}</option>`).join(""):`<option value="">No player yet</option>`;
   $("tll").innerHTML=P.length?P.map(x=>{
     const pool=x.pool||[],role=x.role||derivedRole(x);
     return`<div class="tp"><div><b>${esc(x.name)}</b> ${role?`<span class="tag">${esc(RN[role]||role)}</span>`:""}</div>${pool.length?`<ol class="tlist">${pool.map((n,i)=>`<li data-pid="${esc(x.id)}" data-tn="${esc(n)}"><span class="dg" data-drag tabindex="0" role="button" aria-label="Drag to reorder ${esc(n)}">\u2630</span><span class="tn">${i+1}</span>${icons?icon(n):""}<span class="tname">${esc(n)}</span><button data-tcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from the tier list">\u00d7</button></li>`).join("")}</ol>`:`<p class="note">No champions yet.</p>`}${(x.cant||[]).length?`<div class="nl">Can't play</div><div>${x.cant.map(n=>`<span class="nc weak">${esc(n)}<button data-ccx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from can't play">\u00d7</button></span>`).join("")}</div>`:""}</div>`;
@@ -1313,7 +1314,7 @@ function uniqBest(list,key){
 }
 function threats(P){
   const pool={};
-  P.forEach(p=>pcs(p).forEach(c=>{if(BY[c.n])(pool[c.n]=pool[c.n]||[]).push({id:p.id,pn:p.name,g:c.g,wr:c.wr})}));
+  P.forEach(p=>pcs(p).forEach(c=>{if(BY[c.n])(pool[c.n]=pool[c.n]||[]).push({id:p.id,pn:p.name,pr:p.role||derivedRole(p),g:c.g,wr:c.wr})}));
   const out=[];
   maxCl(synAdj(),Object.keys(pool)).forEach(full=>{
     let best=null;
@@ -1356,7 +1357,7 @@ function scAnalysis(P,mine){
   if(!th.length)return h+`<p class="note">No combos found. Add champions to the ${mine?"players":"profiles"} and save team combos in Your notes. A combo appears here when different players can play all of its champions.</p></div>`;
   h+=th.map((t,idx)=>{
     const cc=mine?[]:counterCombos(t.C),sg=mine?[]:singleCounters(t.C);
-    const tiles=t.C.map((c,i)=>{const m=t.mt[i];return`<span class="mem"><b>${esc(c)}</b><small>${esc(m.pn)}</small><span class="st">${m.g?m.g+" games":""}${m.wr?(m.g?" \u00b7 ":"")+m.wr+"% WR":""}</span></span>`}).join('<span class="cmb-plus">+</span>');
+    const tiles=t.C.map((c,i)=>{const m=t.mt[i];return`<span class="mem"><b>${esc(c)}</b><small>${esc(m.pn)}${m.pr?" \u00b7 "+esc(RN[m.pr]||m.pr):""}</small><span class="st">${m.g?m.g+" games":""}${m.wr?(m.g?" \u00b7 ":"")+m.wr+"% WR":""}</span></span>`}).join('<span class="cmb-plus">+</span>');
     const good=mine?"":`<div class="cmb-b"><div class="nl good" style="margin:0 0 4px">Good against this</div>${cc.length?cc.map(c=>`<div class="cmb-m" style="margin:0 0 6px">${c.C.map(x=>`<span class="mem sm strong"><b>${esc(x)}</b></span>`).join('<span class="cmb-plus">+</span>')}<span class="note" style="align-self:center">counters ${c.hit.map(esc).join(", ")}</span></div>`).join(""):`<p class="note" style="margin:0 0 4px">No combo found. Save "strong against" or "weak against" notes for these champions.</p>`}${sg.length?`<div class="nl" style="margin:6px 0 3px">Single counters</div><div>${sg.map(x=>`<span class="nc strong">${esc(x.n)}</span>`).join("")}</div>`:""}</div>`;
     return`<div class="cmb"><div class="cmb-h"><b>${mine?"Combo":"Threat"} ${idx+1}</b> <span class="tag">${t.C.length} champions</span></div><div class="cmb-m">${tiles}</div>${good}</div>`;
   }).join("");
@@ -1380,7 +1381,7 @@ function scView(){
   $("tf").hidden=!tform;$("tok").textContent=tform==="rename"?"Save":"Create";
   $("scmode").textContent=sb&&scOK?"Teams are saved in the shared database.":"Teams are saved in this browser only. Create the scouts table in Supabase to share them.";
   if(!P.find(p=>p.id===scSel))scSel=P[0]?P[0].id:"";
-  $("psel").innerHTML=P.length?P.map(p=>`<option value="${esc(p.id)}"${p.id===scSel?" selected":""}>${esc(p.name)}</option>`).join(""):`<option value="">${my?"No player yet":"No profile yet"}</option>`;
+  $("psel").innerHTML=P.length?P.map(p=>`<option value="${esc(p.id)}"${p.id===scSel?" selected":""}>${esc(pl(p))}</option>`).join(""):`<option value="">${my?"No player yet":"No profile yet"}</option>`;
   $("scp").innerHTML=P.length?P.map(profCard).join(""):`<p class="note">${my?"Add your players to see their pools and get pick suggestions that fit them.":"Add a profile to start scouting."}</p>`;
   $("sca").innerHTML=P.length?scAnalysis(P,my):"";
   tierView();
@@ -1459,7 +1460,7 @@ function parsePaste(txt){
 function ppView(){
   const t=curTeam(),p=t&&t.data.find(x=>x.id===scSel);
   if(!$("pp").value.trim()&&!PP.length){$("ppv").innerHTML="";return}
-  $("ppv").innerHTML=PP.length?`<p class="note" style="margin:6px 0 4px">Found ${PP.length} champions${p?" for "+esc(p.name):""}. Remove any that look wrong, then import.${PPROLE?" Main role in these games: "+RN[PPROLE]+".":""}</p>${PP.dups>0?`<p class="bad" style="margin:0 0 4px">Some champions appear more than once, so you probably copied more than the table. Select only the table for correct numbers.</p>`:""}<div style="overflow-x:auto"><table class="st"><tr><th>Champion</th><th>Games</th><th>WR</th><th>KDA</th><th></th></tr>${PP.map((r,i)=>`<tr><td>${esc(r.n)}</td><td>${r.g}</td><td>${r.wr}%</td><td>${r.kda}</td><td><button data-ppx="${i}" aria-label="Remove ${esc(r.n)}">\u00d7</button></td></tr>`).join("")}</table></div><button class="btn" id="pimp" style="margin-top:6px">Import ${PP.length} champions</button>`:`<p class="note">No champions found. Make sure you copied from the Champions tab, or add them by hand above.</p>`;
+  $("ppv").innerHTML=PP.length?`<p class="note" style="margin:6px 0 4px">Found ${PP.length} champions${p?" for "+esc(pl(p)):""}. Remove any that look wrong, then import.${PPROLE?" Main role in these games: "+RN[PPROLE]+".":""}</p>${PP.dups>0?`<p class="bad" style="margin:0 0 4px">Some champions appear more than once, so you probably copied more than the table. Select only the table for correct numbers.</p>`:""}<div style="overflow-x:auto"><table class="st"><tr><th>Champion</th><th>Games</th><th>WR</th><th>KDA</th><th></th></tr>${PP.map((r,i)=>`<tr><td>${esc(r.n)}</td><td>${r.g}</td><td>${r.wr}%</td><td>${r.kda}</td><td><button data-ppx="${i}" aria-label="Remove ${esc(r.n)}">\u00d7</button></td></tr>`).join("")}</table></div><button class="btn" id="pimp" style="margin-top:6px">Import ${PP.length} champions</button>`:`<p class="note">No champions found. Make sure you copied from the Champions tab, or add them by hand above.</p>`;
 }
 async function scImport(){
   const t=curTeam(),p=t&&t.data.find(x=>x.id===scSel);
