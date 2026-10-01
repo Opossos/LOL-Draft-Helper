@@ -194,6 +194,7 @@ summary{cursor:pointer;color:var(--mute)}
 <div class="cbw"><input id="sc" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Champion" placeholder="Search a champion" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
 <div class="row"><input id="pg" type="number" min="0" placeholder="Games" aria-label="Games"><input id="pw" type="number" min="0" max="100" step="0.1" placeholder="Win rate %" aria-label="Win rate"><input id="pk" type="number" min="0" step="0.01" placeholder="KDA" aria-label="KDA"></div>
 <button class="btn" id="pcadd">Save champion</button> <span class="note" id="scmsg" role="status"></span>
+<div style="margin-top:8px"><button class="btn" id="priot">Import from Riot</button> <select id="prc" aria-label="Games to read" style="width:auto;display:inline-block"><option value="20">last 20 ranked games</option><option value="40">last 40 ranked games</option></select></div>
 <p class="note">You can also type the stats by hand. The op.gg link is on each profile.</p>
 </details>
 <details class="card tools" open><summary><h2>Paste a champion table</h2></summary>
@@ -591,6 +592,7 @@ document.addEventListener("click",e=>{
   else if(b.id==="padd"){scAddProfile();return}
   else if(b.id==="pcadd"){scAddChamp();return}
   else if(b.id==="pimp"){scImport();return}
+  else if(b.id==="priot"){riotImport();return}
   else if(b.dataset.ppx){PP.splice(+b.dataset.ppx,1);ppView();return}
   else if(b.dataset.ped){scEdit(b.dataset.ped);return}
   else if(b.dataset.pcx){scRmChamp(b.dataset.pcx);return}
@@ -649,7 +651,7 @@ combo("cq");combo("na",1);combo("nb",1);combo("fz",1);combo("ec");
 $("ec").addEventListener("change",()=>{$("emsg").textContent="";editForm()});
 $("nsearch").addEventListener("input",e=>{nq=e.target.value;notes()});
 combo("sc");
-$("pp").addEventListener("input",()=>{PP=parsePaste($("pp").value);ppView()});
+$("pp").addEventListener("input",()=>{PP=parsePaste($("pp").value);PPROLE="";ppView()});
 $("sct").addEventListener("change",()=>{scId=$("sct").value;render()});
 $("psel").addEventListener("change",()=>{scSel=$("psel").value});
 $("fz").addEventListener("mchange",()=>{saveFear();render()});
@@ -1071,7 +1073,30 @@ function scView(){
   $("scp").innerHTML=P.length?P.map(profCard).join(""):`<p class="note">Add a profile to start scouting.</p>`;
   $("sca").innerHTML=P.length?scAnalysis(P):"";
 }
-let PP=[];
+let PP=[],PPROLE="";
+function idToName(id){
+  const m={};
+  D.forEach(c=>{[IDS[c.n],IDFIX[c.n],c.n.replace(/[^A-Za-z0-9]/g,"")].forEach(k=>{if(k)m[k.toLowerCase()]=c.n})});
+  return m[String(id).toLowerCase()]||null;
+}
+async function riotImport(){
+  const t=curTeam(),p=t&&t.data.find(x=>x.id===scSel);
+  if(!p){scmsg("Add a profile first and choose it above.");return}
+  if(!SB.url){scmsg("The Riot import needs the Supabase connection.");return}
+  if(!p.name.includes("#")){scmsg("The profile needs a Riot ID like Name#EUW.");return}
+  scmsg("Reading Riot data...");
+  try{
+    const r=await fetch(SB.url+"/functions/v1/riot-stats",{method:"POST",headers:{apikey:SB.key,"Content-Type":"application/json",...(SB.key.startsWith("sb_")?{}:{Authorization:"Bearer "+SB.key})},body:JSON.stringify({riotId:p.name,region:p.region||"euw",count:+$("prc").value||20})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok){
+      scmsg(r.status===401||r.status===403?"The function or Riot rejected the request. Check that Verify JWT is off for the function and that the Riot key has not expired (development keys last 24 hours).":r.status===429?"Riot rate limit reached. Wait two minutes and try again.":(d.error||"Import failed ("+r.status+")"));
+      return;
+    }
+    PP=(d.champs||[]).map(c=>({n:idToName(c.n),g:c.g,wr:c.wr,kda:c.kda})).filter(c=>c.n);
+    PP.dups=0;PPROLE=d.role||"";$("pp").value="";ppView();
+    scmsg("Read "+(d.games||0)+" ranked games. Check the preview below and import.");
+  }catch(e){scmsg("Could not reach the Riot function. Check that it is deployed under the name riot-stats.")}
+}
 function parsePaste(txt){
   const t=txt.replace(/[\u2018\u2019]/g,"'").replace(/\u00a0/g," ");
   const names=D.map(c=>c.n).sort((a,b)=>b.length-a.length).map(n=>n.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"));
@@ -1104,14 +1129,16 @@ function parsePaste(txt){
 }
 function ppView(){
   const t=curTeam(),p=t&&t.data.find(x=>x.id===scSel);
-  if(!$("pp").value.trim()){$("ppv").innerHTML="";return}
-  $("ppv").innerHTML=PP.length?`<p class="note" style="margin:6px 0 4px">Found ${PP.length} champions${p?" for "+esc(p.name):""}. Remove any that look wrong, then import.</p>${PP.dups>0?`<p class="bad" style="margin:0 0 4px">Some champions appear more than once, so you probably copied more than the table. Select only the table for correct numbers.</p>`:""}<div style="overflow-x:auto"><table class="st"><tr><th>Champion</th><th>Games</th><th>WR</th><th>KDA</th><th></th></tr>${PP.map((r,i)=>`<tr><td>${esc(r.n)}</td><td>${r.g}</td><td>${r.wr}%</td><td>${r.kda}</td><td><button data-ppx="${i}" aria-label="Remove ${esc(r.n)}">\u00d7</button></td></tr>`).join("")}</table></div><button class="btn" id="pimp" style="margin-top:6px">Import ${PP.length} champions</button>`:`<p class="note">No champions found. Make sure you copied from the Champions tab, or add them by hand above.</p>`;
+  if(!$("pp").value.trim()&&!PP.length){$("ppv").innerHTML="";return}
+  $("ppv").innerHTML=PP.length?`<p class="note" style="margin:6px 0 4px">Found ${PP.length} champions${p?" for "+esc(p.name):""}. Remove any that look wrong, then import.${PPROLE?" Main role in these games: "+RN[PPROLE]+".":""}</p>${PP.dups>0?`<p class="bad" style="margin:0 0 4px">Some champions appear more than once, so you probably copied more than the table. Select only the table for correct numbers.</p>`:""}<div style="overflow-x:auto"><table class="st"><tr><th>Champion</th><th>Games</th><th>WR</th><th>KDA</th><th></th></tr>${PP.map((r,i)=>`<tr><td>${esc(r.n)}</td><td>${r.g}</td><td>${r.wr}%</td><td>${r.kda}</td><td><button data-ppx="${i}" aria-label="Remove ${esc(r.n)}">\u00d7</button></td></tr>`).join("")}</table></div><button class="btn" id="pimp" style="margin-top:6px">Import ${PP.length} champions</button>`:`<p class="note">No champions found. Make sure you copied from the Champions tab, or add them by hand above.</p>`;
 }
 async function scImport(){
   const t=curTeam(),p=t&&t.data.find(x=>x.id===scSel);
   if(!p){scmsg("Add a profile first and choose it above.");return}
   if(!PP.length)return;
   PP.forEach(r=>{const c=p.champs.find(x=>x.n===r.n);if(c){c.g=r.g;c.wr=r.wr;c.kda=r.kda}else p.champs.push({n:r.n,g:r.g,wr:r.wr,kda:r.kda})});
+  if(PPROLE&&!p.role)p.role=PPROLE;
+  PPROLE="";
   const n=PP.length;PP=[];$("pp").value="";ppView();
   await scPersist(t);scmsg("Imported "+n+" champions.");render();
 }
