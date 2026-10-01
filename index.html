@@ -320,6 +320,7 @@ summary{cursor:pointer;color:var(--mute)}
 <div id="ppv"></div>
 <p class="note" id="ordhint" hidden>These stats are separate from the tier list.</p>
 </details>
+<div id="sclu"></div>
 <div id="scp"></div>
 <div id="sca"></div></aside>
 <script>
@@ -1117,8 +1118,7 @@ function ensureMy(){
     p.champs=p.champs||[];
     if(!Array.isArray(p.pool)){p.pool=p.champs.map(c=>c.n);p.champs=p.champs.filter(c=>c.g||c.wr||c.kda)}
   });
-  const mp=SC.find(t=>t.id===MYID).data;
-  if(mp.length&&mp.every(p=>p.active===undefined)){const seen=new Set();mp.forEach(p=>{const r=p.role||derivedRole(p);p.active=!seen.has(r);seen.add(r)})}
+  SC.forEach(t=>{const mp=t.data;if(mp.length&&mp.every(p=>p.active===undefined)){const seen=new Set();mp.forEach(p=>{p.champs=p.champs||[];const r=p.role||derivedRole(p);p.active=!r||!seen.has(r);if(r)seen.add(r)})}});
 }
 function fixSel(){
   if(scMode==="my"){scId=MYID;return}
@@ -1169,9 +1169,13 @@ async function scAddProfile(){
   if(!t){t={id:uid(),name:"Team "+(SC.length+1),data:[]};SC.push(t);scId=t.id}
   const pr={id:uid(),name,region:$("pr").value,role:$("pro").value,champs:[]};
   if(my&&$("prid").value.trim())pr.riot=$("prid").value.trim();
-  if(my)pr.active=!t.data.some(x=>x.active&&(x.role||derivedRole(x))===pr.role);
+  pr.active=!pr.role||!t.data.some(x=>x.active&&(x.role||derivedRole(x))===pr.role);
   t.data.push(pr);scSel=pr.id;$("pn").value="";$("prid").value="";
   await scPersist(t);scmsg(my?"Player added.":"Profile added.");render();
+}
+function lineupHtml(P){
+  const act=actOf(P);
+  return P.length?`<div class="nl" style="margin:6px 0 2px">Active lineup</div><div class="lineup">${RO.map(r=>{const a=act.filter(x=>(x.role||derivedRole(x))===r);return`<span class="lu${a.length?"":" none"}"><small>${RN[r]}</small><b>${a.length?esc(a.map(x=>x.name).join(", ")):"\u2013"}</b></span>`}).join("")}</div>`:"";
 }
 async function playerActive(id){
   const t=curTeam(),p=t&&t.data.find(x=>x.id===id);
@@ -1179,7 +1183,7 @@ async function playerActive(id){
   if(p.active)p.active=false;
   else{
     const r=p.role||derivedRole(p);
-    t.data.forEach(x=>{if(x.id!==id&&x.active&&(x.role||derivedRole(x))===r)x.active=false});
+    if(r)t.data.forEach(x=>{if(x.id!==id&&x.active&&(x.role||derivedRole(x))===r)x.active=false});
     p.active=true;
   }
   await scPersist(t);render();
@@ -1319,7 +1323,7 @@ function derivedRole(p){
   return Object.keys(w).sort((a,b)=>w[b]-w[a])[0]||"";
 }
 function profCard(p){
-  const my=scId===MYID,key=esc(p.id),isAct=my&&actOf(myPlayers()).includes(p);
+  const my=scId===MYID,key=esc(p.id),tm=curTeam(),isAct=tm?actOf(tm.data).includes(p):false;
   const rows=p.champs.slice().sort((a,b)=>b.g-a.g),w=c=>Math.max(1,c.g),tw=rows.reduce((a,c)=>a+w(c),0)||1;
   const tg=rows.reduce((a,c)=>a+c.g,0),wr=rows.reduce((a,c)=>a+w(c)*c.wr,0)/tw,kda=rows.reduce((a,c)=>a+w(c)*c.kda,0)/tw;
   const role=p.role||derivedRole(p),rid=p.riot||p.name,link=rid.includes("#")?"https://www.op.gg/summoners/"+encodeURIComponent(p.region||"euw")+"/"+encodeURIComponent(rid.replace("#","-")):"";
@@ -1327,7 +1331,7 @@ function profCard(p){
   const pills=tg?`<span class="pill">${tg} games</span><span class="pill w ${wc(wr)}">${wr.toFixed(1)}% WR</span><span class="pill">${kda.toFixed(2)} KDA</span>`:"";
   const tiles=rows.map(c=>`<div class="pt"><button class="lnk" data-ped="${key}|${esc(c.n)}">${icons?icon(c.n):""}${esc(c.n)}</button><div class="pts"><span class="w ${wc(c.wr)}">${c.wr}%</span><span>${c.g} games</span><span>${c.kda} KDA</span></div><button class="x" data-pcx="${key}|${esc(c.n)}" aria-label="Remove ${esc(c.n)}">\u00d7</button></div>`).join("");
   const body=(my?`<div class="nl">Imported stats</div>`:"")+(rows.length?`<div class="pgrid">${tiles}</div>`:`<p class="note">${my?"No imported stats yet. Use the paste or Riot import above.":"No champions yet. Add the champions this player plays."}</p>`);
-  return`<details class="ng pc" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><span class="pn"><b>${esc(p.name)}</b> ${role?`<span class="tag">${esc(RN[role]||role)}</span>`:""}${my?` <span class="tag">${isAct?"Active":"Bench"}</span>`:""}</span><span class="pills">${pills}</span></summary>${body}<p style="margin:8px 0 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap">${link?`<a href="${link}" target="_blank" rel="noopener">Open on op.gg</a>`:""}<button class="btn" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></p></details>`;
+  return`<details class="ng pc" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><span class="pn"><b>${esc(p.name)}</b> ${role?`<span class="tag">${esc(RN[role]||role)}</span>`:""} <span class="tag">${isAct?"Active":"Bench"}</span></span><span class="pills">${pills}</span></summary>${body}<p style="margin:8px 0 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="actb${isAct?" on":""}" data-pact="${key}" aria-pressed="${isAct}">${isAct?"\u2605 Active":"Bench"}</button>${link?`<a href="${link}" target="_blank" rel="noopener">Open on op.gg</a>`:""}<button class="btn" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></p></details>`;
 }
 const synAdj=()=>{const a={};REL.syn.forEach(([x,y])=>{(a[x]=a[x]||new Set()).add(y);(a[y]=a[y]||new Set()).add(x)});return a};
 function maxCl(adj,nodes){
@@ -1401,10 +1405,11 @@ function singleCounters(T){
   const u=used();
   return D.filter(c=>!u.has(c.n)).map(c=>({n:c.n,r:counterScore([c.n],T)})).filter(x=>x.r[0]>0).sort((a,b)=>b.r[0]-a.r[0]).slice(0,4);
 }
-function scAnalysis(P,mine){
+function scAnalysis(P,mine,benchN){
   const th=threats(P);
   let h=`<div class="card"><h2>${mine?"Combos your players can play":"Combos to watch out for"}</h2>`;
   if(!th.length)return h+`<p class="note">No combos found. Add champions to the ${mine?"players":"profiles"} and save team combos in Your notes. A combo appears here when different players can play all of its champions.</p></div>`;
+  if(benchN>0)h+=`<p class="note" style="margin:0 0 6px">Based on the active lineup. ${benchN} bench player${benchN>1?"s are":" is"} not included.</p>`;
   h+=th.map((t,idx)=>{
     const cc=mine?[]:counterCombos(t.C),sg=mine?[]:singleCounters(t.C);
     const tiles=t.C.map((c,i)=>{const m=t.mt[i];return`<span class="mem"><b>${esc(c)}</b><small>${esc(m.pn)}${m.pr?" \u00b7 "+esc(RN[m.pr]||m.pr):""}</small><span class="st">${m.g?m.g+" games":""}${m.wr?(m.g?" \u00b7 ":"")+m.wr+"% WR":""}</span></span>`}).join('<span class="cmb-plus">+</span>');
@@ -1433,7 +1438,8 @@ function scView(){
   if(!P.find(p=>p.id===scSel))scSel=P[0]?P[0].id:"";
   $("psel").innerHTML=P.length?P.map(p=>`<option value="${esc(p.id)}"${p.id===scSel?" selected":""}>${esc(pl(p))}</option>`).join(""):`<option value="">${my?"No player yet":"No profile yet"}</option>`;
   $("scp").innerHTML=P.length?P.map(profCard).join(""):`<p class="note">${my?"Add your players to see their pools and get pick suggestions that fit them.":"Add a profile to start scouting."}</p>`;
-  $("sca").innerHTML=P.length?scAnalysis(my?actOf(P):P,my):"";
+  $("sca").innerHTML=P.length?scAnalysis(actOf(P),my,P.length-actOf(P).length):"";
+  $("sclu").innerHTML=!my?lineupHtml(P):"";
   tierView();
 }
 let PP=[],PPROLE="";
