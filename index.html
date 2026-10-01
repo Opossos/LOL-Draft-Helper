@@ -70,6 +70,13 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+.actb{border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--mute);padding:1px 10px;font:inherit;font-size:12px;cursor:pointer}
+.actb.on{border-color:var(--ok);color:var(--ok);font-weight:600}
+.lineup{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.lu{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px;padding:4px 10px;min-width:74px;background:var(--bg)}
+.lu small{color:var(--mute);font-size:11px}
+.lu.none{opacity:.55}
+.tp.bench .tlist{opacity:.7}
 .slot{display:flex;flex-direction:column;align-items:stretch;gap:4px}
 .alts{font-size:12px;color:var(--mute);text-align:center;line-height:1.7}
 .alts button{border:1px dashed var(--line);border-radius:999px;background:transparent;color:inherit;font:inherit;padding:0 8px;margin:0 2px;cursor:pointer}
@@ -289,6 +296,7 @@ summary{cursor:pointer;color:var(--mute)}
 <select id="tsel" aria-label="Player"></select>
 <div class="cbw"><input id="tc" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Champion" placeholder="Search a champion to add" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
 <button class="btn" id="tadd">Add to tier list</button> <button class="btn" id="cadd">Add to can't play</button> <button class="btn" id="ticons" aria-pressed="false">Icons</button> <span class="note" id="tmsg" role="status"></span>
+<div id="tlu"></div>
 <div id="tll"></div>
 <p class="note">Drag the ☰ handle to put champions in order, best first. With the keyboard, focus the handle and press the up or down arrow key. The can't play list is for champions a player does not play at all. A suggestion drops out when every player who could fill its role can't play it.</p>
 </details>
@@ -555,7 +563,9 @@ function combos(){
   out.forEach(g=>{const k=[...g.C].sort().join("|");if(!keys.has(k)){keys.add(k);uniq.push(g)}});
   return uniq.sort((x,y)=>y.s-x.s).slice(0,4);
 }
-const sortP=a=>a.slice().sort((x,y)=>{const o=z=>{const i=RO.indexOf(z.role||derivedRole(z));return i<0?9:i};return o(x)-o(y)||x.name.localeCompare(y.name)});
+const sortP=a=>a.slice().sort((x,y)=>{const o=z=>{const i=RO.indexOf(z.role||derivedRole(z));return i<0?9:i};return o(x)-o(y)||(y.active?1:0)-(x.active?1:0)||x.name.localeCompare(y.name)});
+const actOf=list=>{const a=list.filter(x=>x.active);return a.length?a:list};
+const activePlayers=()=>actOf(myPlayers());
 const pl=x=>{const r=x.role||derivedRole(x);return x.name+(r?" ("+(RN[r]||r)+")":"")};
 function matchPicks(mine,roster){
   const u=new Set(),map=new Map(),role=x=>x.role||derivedRole(x),has=(x,n)=>(x.pool||[]).includes(n);
@@ -570,17 +580,18 @@ function matchPicks(mine,roster){
 function matchPlayers(mine,roster){return matchPicks(mine,roster).used}
 function roleMap(mine){
   const m=new Map();
-  matchPicks(mine,myPlayers()).map.forEach((x,n)=>{const r=x.role||derivedRole(x);if(BY[n]&&BY[n].r.includes(r))m.set(n,r)});
+  matchPicks(mine,activePlayers()).map.forEach((x,n)=>{const r=x.role||derivedRole(x);if(BY[n]&&BY[n].r.includes(r))m.set(n,r)});
   return m;
 }
 function playersCard(mine){
-  const roster=sortP(myPlayers());
+  const roster=sortP(activePlayers());
   if(!roster.length)return"";
   const ub=used(),taken=matchPlayers(mine,roster);
+  const bench=myPlayers().filter(x=>!roster.includes(x));
   return`<details class="card" data-k="players" ${op("players")}><summary><h2>Your players</h2></summary>${roster.map(x=>{
     const role=x.role||derivedRole(x),src=x.pool||[],av=src.filter(n=>!ub.has(n)).slice(0,6).map(n=>({n}));
     return`<div class="cc"><div><b>${esc(x.name)}</b> <span class="tag">${esc(RN[role]||"?")}</span>${taken.has(x.id)?' <span class="note">(picked)</span>':""}</div>${av.length?`<div style="margin-top:4px">${av.map(c=>`<button class="chip" data-addmine="${esc(c.n)}">${esc(c.n)}</button>`).join(" ")}</div>`:`<p class="note" style="margin:2px 0 0">${src.length?"All champions in the tier list are taken.":"No champions in the tier list yet."}</p>`}</div>`;
-  }).join("")}<p class="note">The first free champions in each player's list. Tap one to pick it.</p></details>`;
+  }).join("")}<p class="note">The first free champions in each active player's list. Tap one to pick it.${bench.length?" Bench: "+bench.map(x=>esc(pl(x))).join(", ")+".":""}</p></details>`;
 }
 function pickIdeas(cb){
   const k=me==="b"?"bp":"rp",ek=me==="b"?"rp":"bp",mine=MY(),foe=EN(),u=used();
@@ -589,7 +600,7 @@ function pickIdeas(cb){
   const later=j<0?0:Math.min(ORDER.slice(j+1).filter(x=>x===ek).length,5-foe.length);
   const inC=new Set();cb.forEach(c=>c.need.forEach(x=>inC.add(x)));
   const pre=mk.pre.filter(x=>!mine.includes(x)),out=[];
-  const roster=myPlayers(),taken=matchPlayers(mine,roster),free=roster.filter(x=>!taken.has(x.id)&&((x.pool&&x.pool.length)||(x.cant&&x.cant.length)));
+  const roster=activePlayers(),taken=matchPlayers(mine,roster),free=roster.filter(x=>!taken.has(x.id)&&((x.pool&&x.pool.length)||(x.cant&&x.cant.length)));
   D.forEach(c=>{
     if(u.has(c.n))return;
     const fit=c.r.filter(r=>pool.includes(r));if(!fit.length)return;
@@ -782,6 +793,7 @@ document.addEventListener("click",e=>{
   else if(b.id==="pimp"){scImport();return}
   else if(b.id==="tadd"){tierAdd();return}
   else if(b.id==="cadd"){cantAdd();return}
+  else if(b.dataset.pact){playerActive(b.dataset.pact);return}
   else if(b.dataset.nty){ntype=b.dataset.nty;if(ntype==="combo"){MS.nb=[];DRAW.nb()}}
   else if(b.dataset.dcb){delCombo(b.dataset.dcb);return}
   else if(b.dataset.ccx){cantRm(b.dataset.ccx);return}
@@ -1105,6 +1117,8 @@ function ensureMy(){
     p.champs=p.champs||[];
     if(!Array.isArray(p.pool)){p.pool=p.champs.map(c=>c.n);p.champs=p.champs.filter(c=>c.g||c.wr||c.kda)}
   });
+  const mp=SC.find(t=>t.id===MYID).data;
+  if(mp.length&&mp.every(p=>p.active===undefined)){const seen=new Set();mp.forEach(p=>{const r=p.role||derivedRole(p);p.active=!seen.has(r);seen.add(r)})}
 }
 function fixSel(){
   if(scMode==="my"){scId=MYID;return}
@@ -1155,8 +1169,20 @@ async function scAddProfile(){
   if(!t){t={id:uid(),name:"Team "+(SC.length+1),data:[]};SC.push(t);scId=t.id}
   const pr={id:uid(),name,region:$("pr").value,role:$("pro").value,champs:[]};
   if(my&&$("prid").value.trim())pr.riot=$("prid").value.trim();
+  if(my)pr.active=!t.data.some(x=>x.active&&(x.role||derivedRole(x))===pr.role);
   t.data.push(pr);scSel=pr.id;$("pn").value="";$("prid").value="";
   await scPersist(t);scmsg(my?"Player added.":"Profile added.");render();
+}
+async function playerActive(id){
+  const t=curTeam(),p=t&&t.data.find(x=>x.id===id);
+  if(!p)return;
+  if(p.active)p.active=false;
+  else{
+    const r=p.role||derivedRole(p);
+    t.data.forEach(x=>{if(x.id!==id&&x.active&&(x.role||derivedRole(x))===r)x.active=false});
+    p.active=true;
+  }
+  await scPersist(t);render();
 }
 async function scMove(v){
   const[id,n,d]=v.split("|"),t=curTeam(),p=t&&t.data.find(x=>x.id===id);
@@ -1183,9 +1209,12 @@ function tierView(){
   const t=curTeam(),P=t?sortP(t.data):[];
   if(!P.find(x=>x.id===tSel))tSel=P[0]?P[0].id:"";
   $("tsel").innerHTML=P.length?P.map(x=>`<option value="${esc(x.id)}"${x.id===tSel?" selected":""}>${esc(pl(x))}</option>`).join(""):`<option value="">No player yet</option>`;
+  const act=actOf(P);
+  $("tlu").innerHTML=P.length?`<div class="nl" style="margin:6px 0 2px">Active lineup</div><div class="lineup">${RO.map(r=>{const a=act.filter(x=>(x.role||derivedRole(x))===r);return`<span class="lu${a.length?"":" none"}"><small>${RN[r]}</small><b>${a.length?esc(a.map(x=>x.name).join(", ")):"\u2013"}</b></span>`}).join("")}</div>`:"";
   $("tll").innerHTML=P.length?P.map(x=>{
     const pool=x.pool||[],role=x.role||derivedRole(x);
-    return`<div class="tp"><div><b>${esc(x.name)}</b> ${role?`<span class="tag">${esc(RN[role]||role)}</span>`:""}</div>${pool.length?`<ol class="tlist">${pool.map((n,i)=>`<li data-pid="${esc(x.id)}" data-tn="${esc(n)}"><span class="dg" data-drag tabindex="0" role="button" aria-label="Drag to reorder ${esc(n)}">\u2630</span><span class="tn">${i+1}</span>${icons?icon(n):""}<span class="tname">${esc(n)}</span><button data-tcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from the tier list">\u00d7</button></li>`).join("")}</ol>`:`<p class="note">No champions yet.</p>`}${(x.cant||[]).length?`<div class="nl">Can't play</div><div>${x.cant.map(n=>`<span class="nc weak">${esc(n)}<button data-ccx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from can't play">\u00d7</button></span>`).join("")}</div>`:""}</div>`;
+    const on=actOf(P).includes(x);
+    return`<div class="tp${on?"":" bench"}"><div><b>${esc(x.name)}</b> ${role?`<span class="tag">${esc(RN[role]||role)}</span>`:""} <button class="actb${on?" on":""}" data-pact="${esc(x.id)}" aria-pressed="${on}" title="${on?"Playing. Click to move to the bench":"On the bench. Click to make this player active"}">${on?"\u2605 Active":"Bench"}</button></div>${pool.length?`<ol class="tlist">${pool.map((n,i)=>`<li data-pid="${esc(x.id)}" data-tn="${esc(n)}"><span class="dg" data-drag tabindex="0" role="button" aria-label="Drag to reorder ${esc(n)}">\u2630</span><span class="tn">${i+1}</span>${icons?icon(n):""}<span class="tname">${esc(n)}</span><button data-tcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from the tier list">\u00d7</button></li>`).join("")}</ol>`:`<p class="note">No champions yet.</p>`}${(x.cant||[]).length?`<div class="nl">Can't play</div><div>${x.cant.map(n=>`<span class="nc weak">${esc(n)}<button data-ccx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from can't play">\u00d7</button></span>`).join("")}</div>`:""}</div>`;
   }).join(""):`<p class="note">Add a player first.</p>`;
 }
 async function tierAdd(){
@@ -1290,7 +1319,7 @@ function derivedRole(p){
   return Object.keys(w).sort((a,b)=>w[b]-w[a])[0]||"";
 }
 function profCard(p){
-  const my=scId===MYID,key=esc(p.id);
+  const my=scId===MYID,key=esc(p.id),isAct=my&&actOf(myPlayers()).includes(p);
   const rows=p.champs.slice().sort((a,b)=>b.g-a.g),w=c=>Math.max(1,c.g),tw=rows.reduce((a,c)=>a+w(c),0)||1;
   const tg=rows.reduce((a,c)=>a+c.g,0),wr=rows.reduce((a,c)=>a+w(c)*c.wr,0)/tw,kda=rows.reduce((a,c)=>a+w(c)*c.kda,0)/tw;
   const role=p.role||derivedRole(p),rid=p.riot||p.name,link=rid.includes("#")?"https://www.op.gg/summoners/"+encodeURIComponent(p.region||"euw")+"/"+encodeURIComponent(rid.replace("#","-")):"";
@@ -1298,7 +1327,7 @@ function profCard(p){
   const pills=tg?`<span class="pill">${tg} games</span><span class="pill w ${wc(wr)}">${wr.toFixed(1)}% WR</span><span class="pill">${kda.toFixed(2)} KDA</span>`:"";
   const tiles=rows.map(c=>`<div class="pt"><button class="lnk" data-ped="${key}|${esc(c.n)}">${icons?icon(c.n):""}${esc(c.n)}</button><div class="pts"><span class="w ${wc(c.wr)}">${c.wr}%</span><span>${c.g} games</span><span>${c.kda} KDA</span></div><button class="x" data-pcx="${key}|${esc(c.n)}" aria-label="Remove ${esc(c.n)}">\u00d7</button></div>`).join("");
   const body=(my?`<div class="nl">Imported stats</div>`:"")+(rows.length?`<div class="pgrid">${tiles}</div>`:`<p class="note">${my?"No imported stats yet. Use the paste or Riot import above.":"No champions yet. Add the champions this player plays."}</p>`);
-  return`<details class="ng pc" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><span class="pn"><b>${esc(p.name)}</b> ${role?`<span class="tag">${esc(RN[role]||role)}</span>`:""}</span><span class="pills">${pills}</span></summary>${body}<p style="margin:8px 0 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap">${link?`<a href="${link}" target="_blank" rel="noopener">Open on op.gg</a>`:""}<button class="btn" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></p></details>`;
+  return`<details class="ng pc" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><span class="pn"><b>${esc(p.name)}</b> ${role?`<span class="tag">${esc(RN[role]||role)}</span>`:""}${my?` <span class="tag">${isAct?"Active":"Bench"}</span>`:""}</span><span class="pills">${pills}</span></summary>${body}<p style="margin:8px 0 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap">${link?`<a href="${link}" target="_blank" rel="noopener">Open on op.gg</a>`:""}<button class="btn" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></p></details>`;
 }
 const synAdj=()=>{const a={};REL.syn.forEach(([x,y])=>{(a[x]=a[x]||new Set()).add(y);(a[y]=a[y]||new Set()).add(x)});return a};
 function maxCl(adj,nodes){
@@ -1404,7 +1433,7 @@ function scView(){
   if(!P.find(p=>p.id===scSel))scSel=P[0]?P[0].id:"";
   $("psel").innerHTML=P.length?P.map(p=>`<option value="${esc(p.id)}"${p.id===scSel?" selected":""}>${esc(pl(p))}</option>`).join(""):`<option value="">${my?"No player yet":"No profile yet"}</option>`;
   $("scp").innerHTML=P.length?P.map(profCard).join(""):`<p class="note">${my?"Add your players to see their pools and get pick suggestions that fit them.":"Add a profile to start scouting."}</p>`;
-  $("sca").innerHTML=P.length?scAnalysis(P,my):"";
+  $("sca").innerHTML=P.length?scAnalysis(my?actOf(P):P,my):"";
   tierView();
 }
 let PP=[],PPROLE="";
