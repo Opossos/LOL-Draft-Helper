@@ -70,6 +70,31 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+.tbar{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.tchip{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;background:var(--panel);overflow:hidden}
+.tchip button{border:0;background:transparent;color:inherit;font:inherit;padding:6px 12px;cursor:pointer}
+.tchip.on{border-color:var(--gold);background:var(--chip)}
+.tchip.on .tn{font-weight:600}
+.tchip .ti{padding:6px 8px;color:var(--mute)}
+.tchip .ti:hover{color:var(--ink)}
+button.tchip.add{border-style:dashed;padding:6px 12px;color:var(--gold);cursor:pointer;background:transparent;font:inherit}
+.bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px}
+.tools .bar select,.tools .bar input{width:auto;margin:0;flex:1 1 130px;min-width:0}
+.tools .bar .btn{flex:0 0 auto}
+.mem .st{color:var(--mute)}
+.pc>summary{align-items:center}
+.pc .pn{margin-right:auto}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{padding:2px 9px;border:1px solid var(--line);border-radius:999px;background:var(--chip);font-size:12px;color:var(--mute)}
+.pill.w{font-weight:600}
+.w.hi{color:var(--ok)}.w.lo{color:var(--red)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-top:4px}
+.pt{position:relative;border:1px solid var(--line);border-radius:8px;padding:6px 26px 6px 8px;background:var(--panel)}
+.pt .lnk{font-weight:600;color:var(--ink);text-decoration:none;text-align:left;border:0;background:transparent;cursor:pointer;font:inherit;font-weight:600;padding:0}
+.pt .lnk .ico{display:inline-block;width:22px;height:22px;margin:0 6px -6px 0}
+.pt .pts{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:12px;color:var(--mute);margin-top:2px}
+.pt .x{position:absolute;top:2px;right:4px;border:0;background:transparent;color:var(--mute);font-size:16px;line-height:1;cursor:pointer}
+.pt .x:hover{color:var(--red)}
 .tcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:6px}
 .tc{padding:10px;border:2px solid var(--line);border-radius:10px;background:var(--panel);text-align:left;cursor:pointer;font:inherit;color:inherit}
 .tc[aria-pressed=true]{border-color:var(--gold);background:var(--chip)}
@@ -139,14 +164,14 @@ html.locked body>*:not(#gate){display:none!important}
 dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:16px;max-width:min(92vw,380px)}
 dialog::backdrop{background:rgba(0,0,0,.5)}
 #cfm-t{white-space:pre-line;margin:0 0 12px}
-.top{position:sticky;top:0;z-index:15;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 12px;background:var(--bg);border-bottom:1px solid var(--line)}
+.top{position:sticky;top:0;z-index:40;flex-wrap:wrap;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 12px;background:var(--bg);border-bottom:1px solid var(--line)}
 .top h1{margin:0}
 .tb{display:flex;gap:6px}
 .tb button{padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel)}
 .tb button[aria-expanded=true]{background:var(--gold);color:var(--bg);border-color:var(--gold)}
-.dr{position:fixed;top:0;bottom:0;width:min(560px,94vw);z-index:30;background:var(--bg);padding:calc(env(safe-area-inset-top,0px) + 8px) 10px calc(env(safe-area-inset-bottom,0px) + 10px);overflow-y:auto;box-shadow:0 0 24px rgba(0,0,0,.35);transform:translateX(-105%);transition:transform .2s,visibility .2s;visibility:hidden}
+.dr{position:fixed;top:var(--hh,56px);bottom:0;width:min(560px,94vw);z-index:30;background:var(--bg);padding:8px 10px calc(env(safe-area-inset-bottom,0px) + 10px);overflow-y:auto;box-shadow:0 0 24px rgba(0,0,0,.35);transform:translateX(-105%);transition:transform .2s,visibility .2s;visibility:hidden}
 .dl{left:0;border-right:1px solid var(--line)}
-.drr{left:0;right:0;top:auto;bottom:0;width:auto;height:min(55vh,560px);transform:translateY(105%);border-left:0;border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(0,0,0,.35)}
+.drr{left:0;right:0;top:auto;bottom:0;width:auto;height:min(55vh,560px,calc(100vh - var(--hh,56px) - 12px));transform:translateY(105%);border-left:0;border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(0,0,0,.35)}
 .drr #q{max-width:380px}
 .dr.open{transform:none;visibility:visible}
 .dh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.dh h2{margin:0}
@@ -194,7 +219,7 @@ summary{cursor:pointer;color:var(--mute)}
 <button type="submit">Open</button><p id="gm" role="status"></p></form>
 
 </div>
-<header class="top"><h1>Draft helper</h1><div class="tb"><button id="lo" aria-expanded="false">Suggestions</button><button id="ro" aria-expanded="false">Champions</button><button id="mt" aria-expanded="false">My team</button><button id="so" aria-expanded="false">Scout</button></div></header>
+<header class="top" id="hh"><h1>Draft helper</h1><div class="tb"><button id="lo" aria-expanded="false">Suggestions</button><button id="ro" aria-expanded="false">Champions</button><button id="so" aria-expanded="false">Teams</button></div></header>
 <main>
 <p class="sub">Open the Champions panel to pick, and the Suggestions panel for picks, combos and bans.</p>
 <details class="card tools" open><summary><h2>Draft board</h2></summary>
@@ -241,15 +266,15 @@ summary{cursor:pointer;color:var(--mute)}
 <p class="note" style="margin:0 0 4px">Right-click a champion (long-press on touch) to mark a ban candidate, a prepick or a fearless ban.</p>
 <p class="note" id="icost" style="margin:0 0 4px"></p>
 <div class="grid" id="grid"></div></aside>
-<aside class="dr drs" id="ds" aria-label="Team scouter"><div class="dh"><h2 id="dst">Team scouter</h2><button data-close="ds">Close</button></div>
-<details class="card tools" open id="sctc"><summary><h2>Teams</h2></summary>
-<select id="sct" aria-label="Saved team"></select>
-<input id="scn" type="text" placeholder="Team name" aria-label="Team name">
-<button class="btn" id="scnew">New team</button> <button class="btn" id="scren">Rename</button> <button class="btn" id="scdel">Delete team</button>
-<p class="note" id="scmode"></p>
+<aside class="dr drs" id="ds" aria-label="Teams"><div class="dh"><h2 id="dst">Teams</h2><button data-close="ds">Close</button></div>
+<div class="rf" id="stabs" role="group" aria-label="Team view"></div>
+<details class="card tools" open id="sctc"><summary><h2 id="tth">Team</h2></summary>
+<div class="tbar" id="tbar" role="group" aria-label="Scouted teams"></div>
+<form class="bar" id="tf" hidden><input id="scn" type="text" placeholder="Team name" aria-label="Team name"><button class="btn" id="tok" type="submit">Create</button><button class="btn" id="tcancel" type="button">Cancel</button></form>
+<p class="note" id="scmode" style="margin:0"></p>
 </details>
-<details class="card tools" open><summary><h2 id="apt">Add profile</h2></summary>
-<div class="row"><input id="pn" type="text" placeholder="Riot ID, e.g. Name#EUW" aria-label="Riot ID">
+<details class="card tools" id="apc"><summary><h2 id="apt">Add profile</h2></summary>
+<div class="bar"><input id="pn" type="text" placeholder="Riot ID, e.g. Name#EUW" aria-label="Riot ID">
 <select id="pr" aria-label="Region"><option>euw</option><option>eune</option><option>na</option><option>kr</option><option>br</option><option>lan</option><option>las</option><option>oce</option><option>tr</option><option>ru</option><option>jp</option></select>
 <select id="pro" aria-label="Main role"><option value="">Role: auto</option><option value="T">Top</option><option value="J">Jungle</option><option value="M">Mid</option><option value="B">Bot</option><option value="S">Support</option></select></div>
 <input id="prid" type="text" placeholder="Riot ID (optional), e.g. Name#EUW" aria-label="Riot ID" hidden>
@@ -262,19 +287,25 @@ summary{cursor:pointer;color:var(--mute)}
 <div id="tll"></div>
 <p class="note">Drag the ☰ handle to put champions in order, best first. With the keyboard, focus the handle and press the up or down arrow key. The can't play list is for champions a player does not play at all. A suggestion drops out when every player who could fill its role can't play it.</p>
 </details>
-<details class="card tools" open><summary><h2 id="acT">Add or update a champion</h2></summary>
+<details class="card tools" open id="cdc"><summary><h2 id="acT">Champion data</h2></summary>
 <select id="psel" aria-label="Profile"></select>
+<div class="rf" id="itabs" role="group" aria-label="How to add data"></div>
+<div id="ip-manual">
 <div class="cbw"><input id="sc" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Champion" placeholder="Search a champion" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
 <div class="row"><input id="pg" type="number" min="0" placeholder="Games" aria-label="Games"><input id="pw" type="number" min="0" max="100" step="0.1" placeholder="Win rate %" aria-label="Win rate"><input id="pk" type="number" min="0" step="0.01" placeholder="KDA" aria-label="KDA"></div>
-<button class="btn" id="pcadd">Save champion</button> <span class="note" id="scmsg" role="status"></span>
-<div style="margin-top:8px"><button class="btn" id="priot">Import from Riot</button> <select id="prc" aria-label="Games to read" style="width:auto;display:inline-block"><option value="20">last 20 ranked games</option><option value="100">last 100 ranked games</option><option value="300">last 300 ranked games</option><option value="all">all ranked games (slow)</option></select> <button class="btn" id="pstop" hidden>Stop</button></div>
-<p class="note">You can also type the stats by hand. The op.gg link is on each profile.</p>
-<p class="note" id="ordhint" hidden>These stats are separate from the tier list. Fill them with the imports below or by hand.</p>
-</details>
-<details class="card tools" open><summary><h2>Paste a champion table</h2></summary>
-<p class="note" style="margin:0 0 6px">On op.gg open the player's profile and click the Champions tab. Select only the champion table by dragging from the first champion name down to the last row, copy it (Ctrl+C) and paste below. Do not use Select all, because the page also lists recent matches with different numbers. The app picks out champions, games, win rate and KDA and adds them to the profile chosen above.</p>
+<button class="btn" id="pcadd">Save champion</button>
+</div>
+<div id="ip-paste" hidden>
+<p class="note" style="margin:0 0 6px">On op.gg open the player's profile and click the Champions tab. Drag across only the champion table, copy it (Ctrl+C) and paste below. Do not use Select all, because the page also lists recent matches.</p>
 <textarea id="pp" aria-label="Pasted champion table" placeholder="Paste here" style="min-height:90px"></textarea>
+</div>
+<div id="ip-riot" hidden>
+<p class="note" style="margin:0 0 6px">Reads the player's ranked games through the Riot API.</p>
+<div class="bar"><button class="btn" id="priot">Import from Riot</button> <select id="prc" aria-label="Games to read"><option value="20">last 20 ranked games</option><option value="100">last 100 ranked games</option><option value="300">last 300 ranked games</option><option value="all">all ranked games (slow)</option></select> <button class="btn" id="pstop" hidden>Stop</button></div>
+</div>
+<p class="note" id="scmsg" role="status" style="margin:8px 0 0"></p>
 <div id="ppv"></div>
+<p class="note" id="ordhint" hidden>These stats are separate from the tier list.</p>
 </details>
 <div id="scp"></div>
 <div id="sca"></div></aside>
@@ -716,11 +747,14 @@ document.addEventListener("click",e=>{
   else if(b.id==="lo"){DS.lo=!DS.lo;drawers()}
   else if(b.id==="ro"){DS.ro=!DS.ro;drawers()}
   else if(b.dataset.close){DS[{dl:"lo",dr:"ro",ds:"so"}[b.dataset.close]]=false;drawers()}
-  else if(b.id==="so"){if(DS.so&&scMode==="scout")DS.so=false;else{DS.so=true;scMode="scout";fixSel()}drawers()}
-  else if(b.id==="mt"){if(DS.so&&scMode==="my")DS.so=false;else{DS.so=true;scMode="my";fixSel()}drawers()}
-  else if(b.id==="scnew"){scNew();return}
-  else if(b.id==="scren"){scRename();return}
-  else if(b.id==="scdel"){scDel();return}
+  else if(b.id==="so"){DS.so=!DS.so;drawers()}
+  else if(b.dataset.stab){scMode=b.dataset.stab;fixSel()}
+  else if(b.dataset.itab){itab=b.dataset.itab}
+  else if(b.dataset.tsel){scId=b.dataset.tsel;tform=""}
+  else if(b.dataset.tnew){tform="new";$("scn").value="";setTimeout(()=>$("scn").focus(),0)}
+  else if(b.dataset.tren){const t=curTeam();tform="rename";$("scn").value=t?t.name:"";setTimeout(()=>$("scn").focus(),0)}
+  else if(b.dataset.tdel){scDel();return}
+  else if(b.id==="tcancel"){tform=""}
   else if(b.id==="padd"){scAddProfile();return}
   else if(b.id==="pcadd"){scAddChamp();return}
   else if(b.id==="pimp"){scImport();return}
@@ -795,7 +829,7 @@ $("nsearch").addEventListener("input",e=>{nq=e.target.value;notes()});
 combo("sc");combo("tc");
 $("tsel").addEventListener("change",()=>{tSel=$("tsel").value});
 $("pp").addEventListener("input",()=>{PP=parsePaste($("pp").value);PPROLE="";ppView()});
-$("sct").addEventListener("change",()=>{scId=$("sct").value;render()});
+$("tf").addEventListener("submit",e=>{e.preventDefault();const m=tform;tform="";if(m==="rename")scRename();else scNew()});
 $("psel").addEventListener("change",()=>{scSel=$("psel").value});
 $("fz").addEventListener("mchange",()=>{saveFear();render()});
 
@@ -806,9 +840,9 @@ function closeMenu(){cm.hidden=true}
 function openMenu(n,x,y){
   const isB=mk.ban.includes(n),isP=mk.pre.includes(n);
   cm.dataset.n=n;
-  const it=isP?[["lock","Lock in as pick"],["pre","Remove prepick"],["ban","Move to ban candidates"]]:isB?[["banow","Ban now"],["ban","Remove ban mark"],["pre","Move to prepicks"]]:[["ban","Consider banning"],["pre","Prepick"]];
-  it.push(["look","Add to Consider"],["fear","Fearless ban"]);
-  cm.innerHTML=it.map(([m,l])=>`<button role="menuitem" data-m="${m}">${l}</button>`).join("");
+  const on=[isB,cons.includes(n)||isP,isP,MS.fz.includes(n)];
+  const it=[["ban","Consider banning"],["look","Consider picking"],["pre","Prepick"],["fear","Fearless ban"]];
+  cm.innerHTML=it.map(([m,l],i)=>`<button role="menuitem" data-m="${m}">${on[i]?"\u2713 ":""}${l}</button>`).join("");
   cm.hidden=false;
   const r=cm.getBoundingClientRect();
   cm.style.left=Math.max(4,Math.min(x,innerWidth-r.width-8))+"px";
@@ -827,10 +861,10 @@ function menuAction(m){
     mk[o]=mk[o].filter(x=>x!==n);
     const i=mk[m].indexOf(n);
     if(i>=0)mk[m].splice(i,1);else mk[m].push(n);
-  }else if(m==="fear"){if(!MS.fz.includes(n)){MS.fz.push(n);DRAW.fz();saveFear()}}
+  }else if(m==="fear"){const i=MS.fz.indexOf(n);if(i>=0)MS.fz.splice(i,1);else MS.fz.push(n);DRAW.fz();saveFear()}
   else if(m==="lock"){add(n,me==="b"?"bp":"rp")}
   else if(m==="banow"){add(n,me==="b"?"bb":"rb")}
-  else if(m==="look"){if(!cons.includes(n)&&!mk.pre.includes(n))cons.push(n);$("cq").scrollIntoView({behavior:"smooth",block:"center"})}
+  else if(m==="look"){const i=cons.indexOf(n);if(i>=0)cons.splice(i,1);else if(!mk.pre.includes(n)){cons.push(n);$("cq").scrollIntoView({behavior:"smooth",block:"center"})}}
   closeMenu();
 }
 document.addEventListener("contextmenu",e=>{const n=markTarget(e);if(!n)return;e.preventDefault();openMenu(n,e.clientX,e.clientY)});
@@ -1040,7 +1074,7 @@ function watchShared(){
     REL=R;RID=I;render();
   },()=>{shared=null;REL=LOC;RID={syn:[],weak:[],strong:[]};setMode();render()});
 }
-let SC=[],scId="",scSel="",scOK=false,scMode="scout";
+let SC=[],scId="",scSel="",scOK=false,scMode="my";
 try{const a=JSON.parse(localStorage.getItem("lolScouts")||"[]");if(Array.isArray(a))SC=a.filter(t=>t&&typeof t.id==="string"&&Array.isArray(t.data))}catch(e){}
 const MYID="my-team";
 function ensureMy(){
@@ -1119,7 +1153,7 @@ async function scAddChamp(){
   if(c)Object.assign(c,{g,wr,kda});else p.champs.push({n,g,wr,kda});
   await scPersist(t);scmsg("Saved.");$("sc").value="";render();
 }
-let tSel="",DR=null;
+let tSel="",DR=null,itab="manual",tform="";
 function tierView(){
   const my=scMode==="my";
   $("tlc").hidden=!my;
@@ -1238,9 +1272,11 @@ function profCard(p){
   const rows=p.champs.slice().sort((a,b)=>b.g-a.g),w=c=>Math.max(1,c.g),tw=rows.reduce((a,c)=>a+w(c),0)||1;
   const tg=rows.reduce((a,c)=>a+c.g,0),wr=rows.reduce((a,c)=>a+w(c)*c.wr,0)/tw,kda=rows.reduce((a,c)=>a+w(c)*c.kda,0)/tw;
   const role=p.role||derivedRole(p),rid=p.riot||p.name,link=rid.includes("#")?"https://www.op.gg/summoners/"+encodeURIComponent(p.region||"euw")+"/"+encodeURIComponent(rid.replace("#","-")):"";
-  const stat=tg?`<span class="note">${tg} games, ${wr.toFixed(1)}% WR, ${kda.toFixed(2)} KDA</span>`:"";
-  const body=(my?`<div class="nl">Imported stats</div>`:"")+(rows.length?`<div style="overflow-x:auto"><table class="st"><tr><th>Champion</th><th>Games</th><th>WR</th><th>KDA</th><th></th></tr>${rows.map(c=>`<tr><td><button class="lnk" data-ped="${key}|${esc(c.n)}">${esc(c.n)}</button></td><td>${c.g}</td><td>${c.wr}%</td><td>${c.kda}</td><td><button data-pcx="${key}|${esc(c.n)}" aria-label="Remove ${esc(c.n)}">\u00d7</button></td></tr>`).join("")}</table></div>`:`<p class="note">${my?"No imported stats yet. Use the paste or Riot import below.":"No champions yet. Add the champions this player plays."}</p>`);
-  return`<details class="ng" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><b>${esc(p.name)}</b> ${role?`<span class="tag">${esc(RN[role]||role)}</span>`:""} ${stat}</summary>${body}<p style="margin:6px 0 0">${link?`<a href="${link}" target="_blank" rel="noopener">Open on op.gg</a> `:""}<button class="btn" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></p></details>`;
+  const wc=v=>v>=55?"hi":v&&v<48?"lo":"";
+  const pills=tg?`<span class="pill">${tg} games</span><span class="pill w ${wc(wr)}">${wr.toFixed(1)}% WR</span><span class="pill">${kda.toFixed(2)} KDA</span>`:"";
+  const tiles=rows.map(c=>`<div class="pt"><button class="lnk" data-ped="${key}|${esc(c.n)}">${icons?icon(c.n):""}${esc(c.n)}</button><div class="pts"><span class="w ${wc(c.wr)}">${c.wr}%</span><span>${c.g} games</span><span>${c.kda} KDA</span></div><button class="x" data-pcx="${key}|${esc(c.n)}" aria-label="Remove ${esc(c.n)}">\u00d7</button></div>`).join("");
+  const body=(my?`<div class="nl">Imported stats</div>`:"")+(rows.length?`<div class="pgrid">${tiles}</div>`:`<p class="note">${my?"No imported stats yet. Use the paste or Riot import above.":"No champions yet. Add the champions this player plays."}</p>`);
+  return`<details class="ng pc" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><span class="pn"><b>${esc(p.name)}</b> ${role?`<span class="tag">${esc(RN[role]||role)}</span>`:""}</span><span class="pills">${pills}</span></summary>${body}<p style="margin:8px 0 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap">${link?`<a href="${link}" target="_blank" rel="noopener">Open on op.gg</a>`:""}<button class="btn" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></p></details>`;
 }
 const synAdj=()=>{const a={};REL.syn.forEach(([x,y])=>{(a[x]=a[x]||new Set()).add(y);(a[y]=a[y]||new Set()).add(x)});return a};
 function maxCl(adj,nodes){
@@ -1318,9 +1354,11 @@ function scAnalysis(P,mine){
   const th=threats(P);
   let h=`<div class="card"><h2>${mine?"Combos your players can play":"Combos to watch out for"}</h2>`;
   if(!th.length)return h+`<p class="note">No combos found. Add champions to the ${mine?"players":"profiles"} and save team combos in Your notes. A combo appears here when different players can play all of its champions.</p></div>`;
-  h+=th.map(t=>{
+  h+=th.map((t,idx)=>{
     const cc=mine?[]:counterCombos(t.C),sg=mine?[]:singleCounters(t.C);
-    return`<div class="cc"><div><b>${t.C.map((c,i)=>esc(c)+` <span class="note">(${esc(t.mt[i].pn)}${t.mt[i].g?", "+t.mt[i].g+" games":""}${t.mt[i].wr?", "+t.mt[i].wr+"% WR":""})</span>`).join(" + ")}</b></div>${mine?"":`<div class="nl">Combos that are good against this</div>${cc.length?cc.map(c=>`<div>${c.C.map(esc).join(" + ")} <span class="note">counters ${c.hit.map(esc).join(", ")}</span></div>`).join(""):`<p class="note" style="margin:0">None found. Save "works well into" or "is weak against" notes for these champions.</p>`}${sg.length?`<div class="nl">Single counters</div><div>${sg.map(x=>`<span class="nc strong">${esc(x.n)}</span>`).join("")}</div>`:""}`}</div>`;
+    const tiles=t.C.map((c,i)=>{const m=t.mt[i];return`<span class="mem"><b>${esc(c)}</b><small>${esc(m.pn)}</small><span class="st">${m.g?m.g+" games":""}${m.wr?(m.g?" \u00b7 ":"")+m.wr+"% WR":""}</span></span>`}).join('<span class="cmb-plus">+</span>');
+    const good=mine?"":`<div class="cmb-b"><div class="nl good" style="margin:0 0 4px">Good against this</div>${cc.length?cc.map(c=>`<div class="cmb-m" style="margin:0 0 6px">${c.C.map(x=>`<span class="mem sm strong"><b>${esc(x)}</b></span>`).join('<span class="cmb-plus">+</span>')}<span class="note" style="align-self:center">counters ${c.hit.map(esc).join(", ")}</span></div>`).join(""):`<p class="note" style="margin:0 0 4px">No combo found. Save "strong against" or "weak against" notes for these champions.</p>`}${sg.length?`<div class="nl" style="margin:6px 0 3px">Single counters</div><div>${sg.map(x=>`<span class="nc strong">${esc(x.n)}</span>`).join("")}</div>`:""}</div>`;
+    return`<div class="cmb"><div class="cmb-h"><b>${mine?"Combo":"Threat"} ${idx+1}</b> <span class="tag">${t.C.length} champions</span></div><div class="cmb-m">${tiles}</div>${good}</div>`;
   }).join("");
   return h+`</div>`;
 }
@@ -1328,13 +1366,18 @@ function scView(){
   if(!DS.so)return;
   fixSel();
   const my=scMode==="my",t=curTeam(),P=t?t.data:[],list=SC.filter(x=>x.id!==MYID);
-  $("dst").textContent=my?"My team":"Team scouter";
+  $("dst").textContent="Teams";
+  $("stabs").innerHTML=[["my","My team"],["scout","Scout"]].map(([k,l])=>`<button data-stab="${k}" aria-pressed="${scMode===k}">${l}</button>`).join("");
   $("apt").textContent=my?"Add player":"Add profile";
   $("padd").textContent=my?"Add player":"Add profile";
   $("pn").placeholder=my?"Player name":"Riot ID, e.g. Name#EUW";
-  $("prid").hidden=!my;$("ordhint").hidden=!my;$("pcadd").textContent=my?"Save stats":"Save champion";$("acT").textContent=my?"Imported stats: add or update a champion":"Add or update a champion";$("sctc").hidden=my;
-  $("sct").innerHTML=list.length?list.map(x=>`<option value="${esc(x.id)}"${x.id===scId?" selected":""}>${esc(x.name)}</option>`).join(""):`<option value="">No team yet</option>`;
-  if($("scn").dataset.t!==scId){$("scn").value=t&&!my?t.name:"";$("scn").dataset.t=scId}
+  $("prid").hidden=!my;$("ordhint").hidden=!my;$("pcadd").textContent=my?"Save stats":"Save champion";$("acT").textContent=my?"Imported stats":"Champion data";
+  $("itabs").innerHTML=[["manual","Type in"],["paste","Paste table"],["riot","Riot import"]].map(([k,l])=>`<button data-itab="${k}" aria-pressed="${itab===k}">${l}</button>`).join("");
+  ["manual","paste","riot"].forEach(k=>{$("ip-"+k).hidden=itab!==k});
+  if(!P.length)$("apc").open=true;$("sctc").hidden=my;
+  $("tbar").innerHTML=list.map(x=>{const on=x.id===scId;return`<span class="tchip${on?" on":""}"><button class="tn" data-tsel="${esc(x.id)}" aria-pressed="${on}">${esc(x.name)}</button>${on?`<button class="ti" data-tren="1" aria-label="Rename team">\u270E</button><button class="ti" data-tdel="1" aria-label="Delete team">\u00d7</button>`:""}</span>`}).join("")+`<button class="tchip add" data-tnew="1">+ New team</button>`;
+  $("tth").textContent=!my&&t?"Team: "+t.name:"Team";
+  $("tf").hidden=!tform;$("tok").textContent=tform==="rename"?"Save":"Create";
   $("scmode").textContent=sb&&scOK?"Teams are saved in the shared database.":"Teams are saved in this browser only. Create the scouts table in Supabase to share them.";
   if(!P.find(p=>p.id===scSel))scSel=P[0]?P[0].id:"";
   $("psel").innerHTML=P.length?P.map(p=>`<option value="${esc(p.id)}"${p.id===scSel?" selected":""}>${esc(p.name)}</option>`).join(""):`<option value="">${my?"No player yet":"No profile yet"}</option>`;
@@ -1561,8 +1604,9 @@ function consider(){
 Object.values(DRAW).forEach(f=>f());
 let DS={lo:innerWidth>=1800,ro:false,so:false},icons=false,hide=false,VER="",IDS={};
 try{Object.assign(DS,JSON.parse(localStorage.getItem("lolDr")||"{}"));icons=localStorage.getItem("lolIcons")==="1";hide=localStorage.getItem("lolHide")==="1"}catch(e){}
+function setHH(){try{document.documentElement.style.setProperty("--hh",$("hh").offsetHeight+"px")}catch(e){}}
 function drawers(){
-  $("dl").classList.toggle("open",!!DS.lo);$("dr").classList.toggle("open",!!DS.ro);$("ds").classList.toggle("open",!!DS.so);$("so").setAttribute("aria-expanded",!!(DS.so&&scMode==="scout"));$("mt").setAttribute("aria-expanded",!!(DS.so&&scMode==="my"));
+  $("dl").classList.toggle("open",!!DS.lo);$("dr").classList.toggle("open",!!DS.ro);$("ds").classList.toggle("open",!!DS.so);$("so").setAttribute("aria-expanded",!!DS.so);
   $("lo").setAttribute("aria-expanded",!!DS.lo);$("ro").setAttribute("aria-expanded",!!DS.ro);
   document.body.classList.toggle("lo",!!DS.lo);document.body.classList.toggle("ro",!!DS.ro);
   try{localStorage.setItem("lolDr",JSON.stringify(DS))}catch(e){}
@@ -1586,7 +1630,7 @@ async function loadIcons(){
   render();
 }
 const icon=n=>VER?`<img class="ico" loading="lazy" alt="" src="https://ddragon.leagueoflegends.com/cdn/${VER}/img/champion/${IDS[n]||IDFIX[n]||n.replace(/[^A-Za-z0-9]/g,"")}.png" onerror="this.style.display='none'">`:"";
-drawers();
+drawers();setHH();window.addEventListener("resize",setHH);
 applyOvr();
 if(icons)loadIcons();
 setMode();
