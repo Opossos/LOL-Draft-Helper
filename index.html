@@ -70,6 +70,20 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+.cmb{border:1px solid var(--line);border-left:6px solid var(--gold);border-radius:10px;padding:10px;margin:10px 0;background:var(--bg)}
+.cmb-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:8px}
+.cmb-m{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
+.cmb-plus{align-self:center;color:var(--mute);font-weight:700}
+.mem{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:84px;padding:8px 10px;border:2px solid var(--line);border-radius:10px;background:var(--panel);font:inherit;color:inherit;text-align:center}
+.mem.yours{border-color:var(--ok);background:var(--chip)}
+.mem.need{border-style:dashed;cursor:pointer}
+.mem.need:hover{border-color:var(--gold)}
+.mem b{font-weight:600;font-size:14px}
+.mem small{color:var(--mute);font-size:12px}
+.mem .st{font-size:11px;font-weight:600}
+.mem.yours .st{color:var(--ok)}.mem.need .st{color:var(--gold)}
+.mem .ico{margin:0 0 2px}
+.cmb-b{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}
 #gate{display:none;position:fixed;inset:0;z-index:100;align-items:center;justify-content:center;background:var(--bg);padding:20px;overflow:auto}
 html.locked #gate{display:flex}
 html.locked body>*:not(#gate){display:none!important}
@@ -115,12 +129,14 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 .tb button[aria-expanded=true]{background:var(--gold);color:var(--bg);border-color:var(--gold)}
 .dr{position:fixed;top:0;bottom:0;width:min(560px,94vw);z-index:30;background:var(--bg);padding:calc(env(safe-area-inset-top,0px) + 8px) 10px calc(env(safe-area-inset-bottom,0px) + 10px);overflow-y:auto;box-shadow:0 0 24px rgba(0,0,0,.35);transform:translateX(-105%);transition:transform .2s,visibility .2s;visibility:hidden}
 .dl{left:0;border-right:1px solid var(--line)}
-.drr{right:0;transform:translateX(105%);border-left:1px solid var(--line)}
+.drr{left:0;right:0;top:auto;bottom:0;width:auto;height:min(55vh,560px);transform:translateY(105%);border-left:0;border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(0,0,0,.35)}
+.drr #q{max-width:380px}
 .dr.open{transform:none;visibility:visible}
 .dh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.dh h2{margin:0}
 .dh button,.dh .btn{padding:5px 11px;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
 .dh button[aria-pressed=true]{background:var(--gold);color:var(--bg);border-color:var(--gold)}
-@media(min-width:1800px){body.lo{padding-left:570px}body.ro{padding-right:570px}.dr{box-shadow:none}}
+body.ro{padding-bottom:min(55vh,560px)}
+@media(min-width:1800px){body.lo{padding-left:570px}body.lo .drr{left:570px}.dl{box-shadow:none}}
 details>summary{cursor:pointer;list-style:none}
 details>summary::-webkit-details-marker{display:none}
 details>summary h2{display:inline;margin:0}
@@ -562,8 +578,6 @@ function banIdeas(cb){
   };
   MY().forEach(p=>weakOf(p).forEach(b=>put(b,"counters "+p,2)));
   mk.pre.forEach(p=>weakOf(p).forEach(b=>put(b,"counters "+p+" (prepick)",1.5)));
-  const own=new Set([...MY(),...mk.pre]);
-  [...new Set(cb.slice(0,3).flatMap(c=>c.C))].filter(x=>!own.has(x)).forEach(x=>weakOf(x).forEach(b=>put(b,"counters "+x+" (combo)",1)));
   return[...m].sort((x,y)=>y[1].s-x[1].s).slice(0,8);
 }
 function dmgBar(a){
@@ -604,6 +618,26 @@ function grid(){
   const list=D.filter(c=>(!role||c.r.includes(role))&&(!q||c.n.toLowerCase().includes(q))&&!(hide&&u.has(c.n)));
   $("grid").innerHTML=list.length?list.map(c=>`<button class="ch ${c.d==="P"?"P":c.d==="M"?"M":""} ${u.has(c.n)?"off":""} ${mk.ban.includes(c.n)?"mb":mk.pre.includes(c.n)?"mp":""}" data-n="${c.n}">${icons?icon(c.n):""}<b>${c.n}</b><span>${c.r.map(r=>RN[r]).join(", ")}</span>${mk.ban.includes(c.n)?'<span class="bd">Ban candidate</span>':mk.pre.includes(c.n)?'<span class="bd">Prepick</span>':""}</button>`).join(""):`<p class="note">No champion matches. Clear the search or pick another role.</p>`;
 }
+function banFor(members){
+  const u=used(),foe=EN(),fo=foe.length?analyse(foe).open:RO,m=new Map();
+  members.forEach(x=>weakOf(x).forEach(b=>{
+    if(!BY[b]||u.has(b))return;
+    if(foe.length&&!BY[b].r.some(r=>fo.includes(r)))return;
+    const o=m.get(b)||{n:b,hit:[]};
+    if(!o.hit.includes(x))o.hit.push(x);
+    m.set(b,o);
+  }));
+  return[...m.values()].sort((a,b)=>b.hit.length-a.hit.length||a.n.localeCompare(b.n)).slice(0,5);
+}
+function comboCard(c,idx){
+  const ar=assign(c.C.map(x=>BY[x].r)),bb=banFor(c.C);
+  const tiles=c.C.map((x,i)=>{
+    const yours=c.mi.includes(x),role=ar[i]?RN[ar[i]]:BY[x].r.map(r=>RN[r]).join("/");
+    const inner=`${icons?icon(x):""}<b>${esc(x)}</b><small>${esc(role)}</small><span class="st">${yours?"\u2713 yours":"+ pick"}</span>`;
+    return yours?`<div class="mem yours">${inner}</div>`:`<button class="mem need" data-addmine="${esc(x)}" aria-label="Pick ${esc(x)}">${inner}</button>`;
+  }).join('<span class="cmb-plus">+</span>');
+  return`<div class="cmb"><div class="cmb-h"><b>Combo ${idx+1}</b> <span class="tag">${c.C.length} champions</span> <span class="${c.need.length?"note":"good"}">${c.need.length?c.need.length+" still needed":"Complete"}</span></div><div class="cmb-m">${tiles}</div>${c.alt&&c.alt.length?`<div class="note" style="margin:6px 0 0">Also fits this group: ${c.alt.map(esc).join(", ")}</div>`:""}<div class="cmb-b"><div class="nl bad" style="margin:0 0 4px">If you play this, ban</div>${bb.length?`<div class="sg">${bb.map(o=>`<button data-ban="${esc(o.n)}"><span>${esc(o.n)}</span><em>counters ${o.hit.map(esc).join(", ")}</em></button>`).join("")}</div>`:`<p class="note" style="margin:0">No counters saved for these champions yet.</p>`}</div></div>`;
+}
 function analysis(){
   const mine=MY(),foe=EN(),nm=me==="b"?"blue":"red",nf=me==="b"?"red":"blue",k=me==="b"?"bp":"rp";
   const i=stepNow(),cur=i<20?ORDER[i]:"",j=nextMine(),cb=combos(),sg=pickIdeas(cb),bn=banIdeas(cb),a=analyse(mine,roleMap(mine));
@@ -611,8 +645,8 @@ function analysis(){
   let h=`<details class="card" data-k="team" ${op("team")}><summary><h2>Your team (${nm})</h2></summary><p class="note" style="margin:0 0 4px">${turn}</p>${dmgBar(a)}${traits(a)}${insights()}<div class="note" style="margin:0">${mine.length<5?(a.open.length?"Open roles: "+a.open.map(r=>RN[r]).join(", "):"Roles are covered by flex picks."):"Draft complete."}</div>`;
   if(sg.length)h+=`<h3>Best picks now</h3><div class="sg">${sg.map(x=>`<button data-addmine="${esc(x.n)}"><span>${esc(x.n)}</span><em>${esc(x.w.join(", "))}</em></button>`).join("")}</div><p class="note">Ranked by your open roles, damage mix, team tools, your notes and the draft order (later enemy picks can counter early picks).</p>`;
   h+=`</details>`+playersCard(mine)+`<details class="card" data-k="combos" ${op("combos")}><summary><h2>Team combos</h2></summary>`;
-  h+=cb.length?cb.map(c=>`<div class="cc"><div>${c.C.map(x=>esc(x)+(c.mi.includes(x)?" (yours)":"")).join(" + ")}</div>${c.alt&&c.alt.length?`<div class="note" style="margin:2px 0">Also fits this group: ${c.alt.map(esc).join(", ")}</div>`:""}${c.need.length?`<div class="sg" style="margin-top:6px">${c.need.map(x=>`<button data-addmine="${esc(x)}"><span>${esc(x)}</span><em>${BY[x].r.map(r=>RN[r]).join(", ")}</em></button>`).join("")}</div>`:`<p class="good" style="margin:4px 0 0">Complete</p>`}</div>`).join("")+`<p class="note">Combos use champions you saved as working well together. Only available champions that fit your open roles are shown.</p>`:`<p class="note">No available combo fits yet. Save a team combo in Your notes to see combos here.</p>`;
-  h+=`</details><details class="card" data-k="bans" ${op("bans")}><summary><h2>Ban ideas${cb.length?" for your picks and combos":""}</h2></summary>`;
+  h+=cb.length?cb.map(comboCard).join("")+`<p class="note">Combos use champions you saved as working well together. Only available champions that fit your open roles are shown. Tap a dashed champion to pick it, or a ban to add it to your bans.</p>`:`<p class="note">No available combo fits yet. Save a team combo in Your notes to see combos here.</p>`;
+  h+=`</details><details class="card" data-k="bans" ${op("bans")}><summary><h2>Ban ideas for your picks</h2></summary>`;
   h+=bn.length?`<div class="sg">${bn.map(([b,o])=>`<button data-ban="${esc(b)}"><span>${esc(b)}</span><em>${esc(o.w.join(", "))}</em></button>`).join("")}</div><p class="note">Tap a champion to add it to your bans. Only champions the enemy can still play in their open roles are listed.</p>`:`<p class="note">Save weakness notes ("is weak against" or "works well into") and ban ideas will appear here.</p>`;
   h+=`</details>`;
   if(foe.length){
@@ -1476,7 +1510,7 @@ function consider(){
   $("cres").innerHTML=list.length?planCard()+list.map(champBlock).join(""):`<p class="note">Search a champion above to add it here. Prepicked champions appear here automatically.</p>`;
 }
 Object.values(DRAW).forEach(f=>f());
-let DS={lo:innerWidth>=1800,ro:innerWidth>=1800,so:false},icons=false,hide=false,VER="",IDS={};
+let DS={lo:innerWidth>=1800,ro:false,so:false},icons=false,hide=false,VER="",IDS={};
 try{Object.assign(DS,JSON.parse(localStorage.getItem("lolDr")||"{}"));icons=localStorage.getItem("lolIcons")==="1";hide=localStorage.getItem("lolHide")==="1"}catch(e){}
 function drawers(){
   $("dl").classList.toggle("open",!!DS.lo);$("dr").classList.toggle("open",!!DS.ro);$("ds").classList.toggle("open",!!DS.so);$("so").setAttribute("aria-expanded",!!(DS.so&&scMode==="scout"));$("mt").setAttribute("aria-expanded",!!(DS.so&&scMode==="my"));
