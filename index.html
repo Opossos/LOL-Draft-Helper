@@ -72,6 +72,11 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+/* champion boxes in the combo cards: at least 20% of the card width (minus the room of the + signs and gaps, so five still fit in one row) */
+body .cmb-m{gap:6px}
+body .cmb-m .cslot{flex:1 1 calc(20% - 18px);min-width:calc(20% - 18px)}
+body .cmb-m .cmb-plus{flex:none;width:10px;text-align:center}
+body .cslot .mem{width:100%;max-width:none;min-width:0}
 .tb button[aria-pressed=true]{background:var(--gold);color:var(--bg);border-color:var(--gold)}
 /* role text colors: darker on light backgrounds, brighter on dark ones */
 :root{--rT:#A63E0A;--rJ:#176A2F;--rM:#6A3FC4;--rB:#0F5CAB;--rS:#755800}
@@ -142,7 +147,7 @@ body .ng>summary b,body .ng>summary h2{overflow-wrap:anywhere}
 .lu small{color:var(--mute);font-size:11px}
 .lu.none{opacity:.55}
 .tp.bench .tlist{opacity:.7}
-.slot{display:flex;flex-direction:column;align-items:stretch;gap:4px}
+.cslot{display:flex;flex-direction:column;align-items:stretch;gap:4px}
 .alts{font-size:12px;color:var(--mute);text-align:center;line-height:1.7}
 .alts button{border:1px dashed var(--line);border-radius:999px;background:transparent;color:inherit;font:inherit;padding:0 8px;margin:0 2px;cursor:pointer}
 .alts button:hover{border-color:var(--gold);color:var(--ink)}
@@ -619,6 +624,7 @@ function analyse(names,fixed){
 }
 const ORDER=["bb","rb","bb","rb","bb","rb","bp","rp","rp","bp","bp","rp","rb","bb","rb","bb","rp","bp","bp","rp"];
 const SN={bb:"Blue ban",rb:"Red ban",bp:"Blue pick",rp:"Red pick"};
+let SW={};
 const OPEN={},op=k=>OPEN[k]===false?"":"open";
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.k)OPEN[d.dataset.k]=d.open},true);
 function stepNow(){
@@ -802,15 +808,26 @@ function comboSlots(C){
   return{slots:RO.filter(r=>slots[r]).map(r=>slots[r]),extra:C.filter(x=>!BY[x])};
 }
 function comboCard(c,idx){
-  const slots=slotsFixed(c.C,c.alt),bb=banFor(c.C);
+  const key=[...c.C,...(c.alt||[])].sort().join("|");
+  const slots=slotsFixed(c.C,c.alt).map(sl=>({role:sl.role,main:sl.main,alts:sl.alts.slice()}));
+  // a click on an alternative swaps it with the main champion of that slot (nothing is picked)
+  slots.forEach(sl=>{
+    const want=SW[key+"|"+sl.role];
+    if(want&&want!==sl.main&&!c.mi.includes(sl.main)&&sl.alts.includes(want)&&!slots.some(o=>o.main===want)){
+      sl.alts=[sl.main,...sl.alts.filter(a=>a!==want)];sl.main=want;
+    }
+  });
+  const shown=new Set(slots.map(sl=>sl.main));
+  slots.forEach(sl=>{sl.alts=sl.alts.filter(a=>!shown.has(a))});
+  const bb=banFor(slots.map(sl=>sl.main)),needN=slots.filter(sl=>!c.mi.includes(sl.main)).length;
   const tiles=slots.map(sl=>{
     const x=sl.main,yours=c.mi.includes(x),mc=mk.pre.includes(x)?"mp":mk.ban.includes(x)?"mb":"";
     const inner=`${icons?icon(x):""}<b>${esc(x)}</b><small>${rt(sl.role)}</small><span class="st">${yours?"\u2713 yours":mc==="mp"?"\u2605 prepick":mc==="mb"?"ban candidate":"+ pick"}</span>`;
     const main=yours?`<div class="mem yours">${inner}</div>`:`<button class="mem need ${mc}" data-addmine="${esc(x)}" aria-label="Pick ${esc(x)}">${inner}</button>`;
-    const alts=sl.alts.length?(yours?`<div class="alts dim">or ${sl.alts.map(a=>`<span class="altd" data-mk="${esc(a)}">${esc(a)}</span>`).join(" ")}</div>`:`<div class="alts">or ${sl.alts.map(a=>`<button data-addmine="${esc(a)}">${esc(a)}</button>`).join(" ")}</div>`):"";
-    return`<div class="slot">${main}${alts}</div>`;
+    const alts=sl.alts.length?(yours?`<div class="alts dim">or ${sl.alts.map(a=>`<span class="altd" data-mk="${esc(a)}">${esc(a)}</span>`).join(" ")}</div>`:`<div class="alts">or ${sl.alts.map(a=>`<button data-swap="${[key,sl.role,a].map(encodeURIComponent).join("|")}" data-mk="${esc(a)}" title="Show ${esc(a)} instead of ${esc(sl.main)}">${esc(a)}</button>`).join(" ")}</div>`):"";
+    return`<div class="cslot">${main}${alts}</div>`;
   }).join('<span class="cmb-plus">+</span>');
-  return`<div class="cmb"><div class="cmb-h"><b>Combo ${idx+1}</b> <span class="tag">${c.C.length} champions</span> <span class="${c.need.length?"note":"good"}">${c.need.length?c.need.length+" still needed":"Complete"}</span></div><div class="cmb-m">${tiles}</div><div class="cmb-b"><div class="nl bad" style="margin:0 0 4px">If you play this, ban</div>${bb.length?`<div class="sg">${bb.map(o=>`<button data-ban="${esc(o.n)}"${mk.ban.includes(o.n)?' class="mbk"':""}><span>${esc(o.n)}</span><em>counters ${o.hit.map(esc).join(", ")}</em></button>`).join("")}</div>`:`<p class="note" style="margin:0">No counters saved for these champions yet.</p>`}</div></div>`;
+  return`<div class="cmb"><div class="cmb-h"><b>Combo ${idx+1}</b> <span class="tag">${c.C.length} champions</span> <span class="${needN?"note":"good"}">${needN?needN+" still needed":"Complete"}</span></div><div class="cmb-m">${tiles}</div><div class="cmb-b"><div class="nl bad" style="margin:0 0 4px">If you play this, ban</div>${bb.length?`<div class="sg">${bb.map(o=>`<button data-ban="${esc(o.n)}"${mk.ban.includes(o.n)?' class="mbk"':""}><span>${esc(o.n)}</span><em>counters ${o.hit.map(esc).join(", ")}</em></button>`).join("")}</div>`:`<p class="note" style="margin:0">No counters saved for these champions yet.</p>`}</div></div>`;
 }
 function analysis(){
   const mine=MY(),foe=EN(),nm=me==="b"?"blue":"red",nf=me==="b"?"red":"blue",k=me==="b"?"bp":"rp";
@@ -847,8 +864,9 @@ document.addEventListener("click",e=>{
   else if(b.dataset.add){add(b.dataset.add,"bp")}
   else if(b.dataset.addr){add(b.dataset.addr,"rp")}
   else if(b.dataset.n){add(b.dataset.n)}
-  else if(b.id==="reset"){st={bp:[],rp:[],bb:[],rb:[]};mk={ban:[],pre:[]};cons=[];target=me==="b"?"bp":"rp";role="";query="";$("q").value=""}
+  else if(b.id==="reset"){st={bp:[],rp:[],bb:[],rb:[]};SW={};mk={ban:[],pre:[]};cons=[];target=me==="b"?"bp":"rp";role="";query="";$("q").value=""}
   else if(b.dataset.auto){auto=!auto}
+  else if(b.dataset.swap){const[k,r,a]=b.dataset.swap.split("|").map(decodeURIComponent);SW[k+"|"+r]=a}
   else if(b.dataset.mrm){const[id,n]=b.dataset.mrm.split("|");MS[id]=MS[id].filter(x=>x!==n);DRAW[id]();if(id==="fz")saveFear()}
   else if(b.dataset.m){menuAction(b.dataset.m)}
   else if(b.dataset.g){add(b.dataset.g,b.dataset.gk==="ban"?(me==="b"?"bb":"rb"):(me==="b"?"bp":"rp"))}
@@ -1667,10 +1685,10 @@ function notes(){
   if(nf!=="counter"){
     const adj=synAdj(),cl=maxCl(adj,Object.keys(adj)).filter(c=>c.some(match)).sort((a,b)=>b.length-a.length||a[0].localeCompare(b[0]));
     if(cl.length){
-      h+=`<h3 class="sec">Team combos <span class="note">${cl.length}</span></h3><div class="ngrid cg">`;
+      h+=`<h3 class="sec">Team combos <span class="note">${cl.length}</span></h3><div class="cg">`;
       h+=cl.map(c=>{
         const mem=c.slice().sort(),pairs=REL.syn.map((p,i)=>({a:p[0],b:p[1],i})).filter(x=>mem.includes(x.a)&&mem.includes(x.b));
-        const cs=comboSlots(mem),tiles=cs.slots.map(sl=>`<span class="slot"><span class="mem">${icons?icon(sl.main):""}<b>${esc(sl.main)}</b><small>${rt(sl.role)}</small></span>${sl.alts.length?`<span class="alts">or ${sl.alts.map(esc).join(", ")}</span>`:""}</span>`).concat(cs.extra.map(n=>`<span class="mem"><b>${esc(n)}</b></span>`)).join('<span class="cmb-plus">+</span>');
+        const cs=comboSlots(mem),tiles=cs.slots.map(sl=>`<span class="cslot"><span class="mem">${icons?icon(sl.main):""}<b>${esc(sl.main)}</b><small>${rt(sl.role)}</small></span>${sl.alts.length?`<span class="alts">or ${sl.alts.map(esc).join(", ")}</span>`:""}</span>`).concat(cs.extra.map(n=>`<span class="mem"><b>${esc(n)}</b></span>`)).join('<span class="cmb-plus">+</span>');
         return`<div class="cmb"><div class="cmb-h"><b>${mem.length===2?"Pair":"Combo"}</b> <span class="tag">${mem.length} champions</span>${canWrite?` <button class="btn" data-dcb="${esc(mem.join("|"))}">Delete all</button>`:""}</div><div class="cmb-m">${tiles}</div><details style="margin-top:8px"><summary class="note">Single notes (${pairs.length})</summary><div style="margin-top:6px">${pairs.map(x=>`<span class="nc syn">${esc(x.a)} + ${esc(x.b)}${canWrite?`<button data-del="syn:${x.i}" aria-label="Delete note: ${esc(TXT("syn",x.a,x.b))}">\u00d7</button>`:""}</span>`).join("")}</div></details></div>`;
       }).join("")+`</div>`;
     }
