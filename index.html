@@ -72,6 +72,13 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+/* matchup tiles: full width of the card; the champion name and each role stay on one line */
+body .mem.sm.mt{display:flex;width:100%;max-width:none;align-items:center;gap:8px;box-sizing:border-box}
+body .mem.sm.mt .mtx{display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;flex:1 1 auto;min-width:0}
+body .mem.sm.mt b{white-space:nowrap;overflow-wrap:normal;text-align:left;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+body .mem.sm.mt .rls{display:flex;flex-wrap:wrap;gap:0 10px;font-size:12px}
+body .mem.sm.mt .rl{white-space:nowrap;overflow-wrap:normal}
+body .mem.sm.mt button{margin-left:auto;flex:none}
 .epl{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .epl .lu b{font-weight:600}
 .epl .lu.got{border-color:var(--red)}
@@ -1772,9 +1779,10 @@ function ntView(){
   $("nbg").hidden=ntype==="combo";
 }
 function ntile(n,cls,k,i){
-  const b=BY[n],role=b?b.r.map(r=>RN[r]).join("/"):"",p=k?REL[k][i]:null;
+  const b=BY[n],p=k?REL[k][i]:null;
+  const roles=b?b.r.map(r=>`<span class="rl">${ri(r)}${rt(r)}</span>`).join(""):"";
   const del=p&&canWrite?`<button data-del="${k}:${i}" aria-label="Delete note: ${esc(TXT(k,p[0],p[1]))}">\u00d7</button>`:"";
-  return`<span class="mem sm ${cls||""}">${icons?icon(n):""}<b>${esc(n)}</b>${role?`<small>${esc(role)}</small>`:""}${del}</span>`;
+  return`<span class="mem sm mt ${cls||""}">${icons?icon(n):""}<span class="mtx"><b>${esc(n)}</b>${roles?`<span class="rls">${roles}</span>`:""}</span>${del}</span>`;
 }
 async function delCombo(v){
   const mem=v.split("|"),idx=REL.syn.map((p,i)=>mem.includes(p[0])&&mem.includes(p[1])?i:-1).filter(i=>i>=0).reverse();
