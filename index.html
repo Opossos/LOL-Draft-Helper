@@ -197,7 +197,7 @@ summary{cursor:pointer;color:var(--mute)}
 <p class="note">You can also type the stats by hand. The op.gg link is on each profile.</p>
 </details>
 <details class="card tools" open><summary><h2>Paste a champion table</h2></summary>
-<p class="note" style="margin:0 0 6px">On op.gg open the player's profile and click the Champions tab. Press Ctrl+A, then Ctrl+C, and paste below. On a phone, long-press and choose Select all, then Copy. The app picks out champions, games, win rate and KDA and adds them to the profile chosen above.</p>
+<p class="note" style="margin:0 0 6px">On op.gg open the player's profile and click the Champions tab. Select only the champion table by dragging from the first champion name down to the last row, copy it (Ctrl+C) and paste below. Do not use Select all, because the page also lists recent matches with different numbers. The app picks out champions, games, win rate and KDA and adds them to the profile chosen above.</p>
 <textarea id="pp" aria-label="Pasted champion table" placeholder="Paste here" style="min-height:90px"></textarea>
 <div id="ppv"></div>
 </details>
@@ -1077,9 +1077,9 @@ function parsePaste(txt){
   const names=D.map(c=>c.n).sort((a,b)=>b.length-a.length).map(n=>n.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"));
   const re=new RegExp("(^|[^A-Za-z'])("+names.join("|")+")(?![A-Za-z])","g");
   const hits=[...t.matchAll(re)].map(m=>({n:m[2],e:m.index+m[1].length+m[2].length,i:m.index+m[1].length}));
-  const out=[],seen=new Set();
+  const out=[],seen=new Set();let dups=0;
   hits.forEach((h,k)=>{
-    if(seen.has(h.n))return;
+    if(seen.has(h.n)){dups++;return}
     const seg=t.slice(h.e,k+1<hits.length?hits[k+1].i:t.length);
     let g=0,wr=0,kda=0;
     const w=seg.match(/(\d+)\s*W\b\D{0,6}?(\d+)\s*L\b/i);
@@ -1099,12 +1099,13 @@ function parsePaste(txt){
     seen.add(h.n);
     out.push({n:canon(h.n),g,wr,kda});
   });
+  out.dups=dups;
   return out;
 }
 function ppView(){
   const t=curTeam(),p=t&&t.data.find(x=>x.id===scSel);
   if(!$("pp").value.trim()){$("ppv").innerHTML="";return}
-  $("ppv").innerHTML=PP.length?`<p class="note" style="margin:6px 0 4px">Found ${PP.length} champions${p?" for "+esc(p.name):""}. Remove any that look wrong, then import.</p><div style="overflow-x:auto"><table class="st"><tr><th>Champion</th><th>Games</th><th>WR</th><th>KDA</th><th></th></tr>${PP.map((r,i)=>`<tr><td>${esc(r.n)}</td><td>${r.g}</td><td>${r.wr}%</td><td>${r.kda}</td><td><button data-ppx="${i}" aria-label="Remove ${esc(r.n)}">\u00d7</button></td></tr>`).join("")}</table></div><button class="btn" id="pimp" style="margin-top:6px">Import ${PP.length} champions</button>`:`<p class="note">No champions found. Make sure you copied from the Champions tab, or add them by hand above.</p>`;
+  $("ppv").innerHTML=PP.length?`<p class="note" style="margin:6px 0 4px">Found ${PP.length} champions${p?" for "+esc(p.name):""}. Remove any that look wrong, then import.</p>${PP.dups>0?`<p class="bad" style="margin:0 0 4px">Some champions appear more than once, so you probably copied more than the table. Select only the table for correct numbers.</p>`:""}<div style="overflow-x:auto"><table class="st"><tr><th>Champion</th><th>Games</th><th>WR</th><th>KDA</th><th></th></tr>${PP.map((r,i)=>`<tr><td>${esc(r.n)}</td><td>${r.g}</td><td>${r.wr}%</td><td>${r.kda}</td><td><button data-ppx="${i}" aria-label="Remove ${esc(r.n)}">\u00d7</button></td></tr>`).join("")}</table></div><button class="btn" id="pimp" style="margin-top:6px">Import ${PP.length} champions</button>`:`<p class="note">No champions found. Make sure you copied from the Champions tab, or add them by hand above.</p>`;
 }
 async function scImport(){
   const t=curTeam(),p=t&&t.data.find(x=>x.id===scSel);
