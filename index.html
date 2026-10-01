@@ -71,6 +71,26 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+/* tags with a role icon: keep the pill shape and the row height the same as tags without an icon */
+body .tag{display:inline-flex;align-items:center;gap:4px;line-height:1.35;white-space:nowrap;vertical-align:middle;max-width:100%}
+body .tag:has(.rico){padding-left:4px}
+body .tag .rico{width:1.2em;height:1.2em;margin:0;vertical-align:baseline;box-shadow:0 0 0 1px var(--rc,var(--line));flex:none}
+body .tag .rico svg.ic{inset:12%;width:76%;height:76%}
+body .lu small{display:flex;align-items:center;gap:4px}
+body .lu small .rico{width:1.2em;height:1.2em;margin:0;vertical-align:baseline;flex:none}
+body .rf button .rico{margin:0 4px 0 0;vertical-align:-.4em}
+.rico{display:inline-block;position:relative;width:1.45em;height:1.45em;vertical-align:-.45em;margin-right:.35em;border-radius:50%;box-shadow:0 0 0 2px var(--rc,var(--line));background:rgba(0,0,0,.18)}
+.rico svg.ic{position:absolute;inset:15%;width:70%;height:70%;margin:0;color:var(--rc)}
+.rico img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;border-radius:50%}
+.rico.ok img{opacity:1}.rico.ok svg.ic{display:none}.rico.x img{display:none}
+.tag .rico,.lu small .rico{width:1.3em;height:1.3em;vertical-align:-.35em}
+.ic{width:1.1em;height:1.1em;vertical-align:-.2em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;margin-right:.3em}
+summary>.ic,.dh .ic,h2 .ic{color:var(--gold)}
+.tb button{display:inline-flex;align-items:center}
+.tag .ic{width:.95em;height:.95em;margin-right:3px;color:inherit}
+.lu small .ic{width:.95em;height:.95em}
+.rf button .ic{margin-right:4px}
+.cm button .ic{margin-right:6px;color:var(--gold)}
 /* long names: wrap or cut them instead of breaking the layout */
 body .dr{overflow-x:hidden}
 body .dr b,body .dr small,body .dr em,body .dr h2,body .dr h3,body .dr .tname,body .dr .note{overflow-wrap:anywhere}
@@ -244,6 +264,25 @@ summary{cursor:pointer;color:var(--mute)}
 </style>
 </head>
 <body>
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true" focusable="false"><defs>
+<symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17 14.2c2.8.2 4.6 2.2 4.6 5"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></symbol>
+<symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="m13.5 6.5 4 4"/></symbol>
+<symbol id="i-note" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h6M9 16h6"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></symbol>
+<symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+<symbol id="r-T" viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 4.2 3 7.2 7 9 4-1.8 7-4.8 7-9V6z"/></symbol>
+<symbol id="r-J" viewBox="0 0 24 24"><path d="M12 21v-7"/><path d="M12 14c-4 0-7-3-7-7 4 0 7 3 7 7zM12 14c4 0 7-3 7-7-4 0-7 3-7 7z"/></symbol>
+<symbol id="r-M" viewBox="0 0 24 24"><path d="M12 3 21 12 12 21 3 12z"/></symbol>
+<symbol id="r-B" viewBox="0 0 24 24"><path d="M5 19 19 5M10 5h9v9"/></symbol>
+<symbol id="r-S" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4.2 4.2 0 0 1 7-3 4.2 4.2 0 0 1 7 3c0 5.6-7 10-7 10z"/></symbol>
+</defs></svg>
 <div id="gate">
 <p id="gl" style="color:var(--mute)">Loading...</p>
 <form id="gf" hidden><h1>Draft helper</h1><p>Enter the password to continue.</p>
@@ -252,26 +291,26 @@ summary{cursor:pointer;color:var(--mute)}
 <button type="submit">Open</button><p id="gm" role="status"></p></form>
 
 </div>
-<header class="top" id="hh"><h1>Draft helper</h1><div class="tb"><button id="lo" aria-expanded="false">Suggestions</button><button id="ro" aria-expanded="false">Champions</button><button id="so" aria-expanded="false">Teams</button></div></header>
+<header class="top" id="hh"><h1>Draft helper</h1><div class="tb"><button id="lo" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-bulb"/></svg>Suggestions</button><button id="ro" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Champions</button><button id="so" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>Teams</button></div></header>
 <main>
 <p class="sub">Open the Champions panel to pick, and the Suggestions panel for picks, combos and bans.</p>
-<details class="card tools" open><summary><h2>Draft board</h2></summary>
+<details class="card tools" open><summary><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg><h2>Draft board</h2></summary>
 <div class="tg" id="side" role="group" aria-label="Your side"></div>
 <div class="board" id="board"></div>
 <div class="tg" id="tg" role="group" aria-label="Add champion to"></div>
 </details>
-<details class="card tools" open><summary><h2>Fearless bans</h2></summary><p class="note" style="margin:0 0 6px">Banned for everyone. These do not use blue or red bans.</p><div class="cbw"><div class="mcs" id="fz-c"></div><input id="fz" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Fearless bans" placeholder="Search a champion to ban for everyone" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div></details>
-<details class="card tools" open><summary><h2>Consider champions</h2></summary>
+<details class="card tools" open><summary><svg class="ic" aria-hidden="true"><use href="#i-ban"/></svg><h2>Fearless bans</h2></summary><p class="note" style="margin:0 0 6px">Banned for everyone. These do not use blue or red bans.</p><div class="cbw"><div class="mcs" id="fz-c"></div><input id="fz" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Fearless bans" placeholder="Search a champion to ban for everyone" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div></details>
+<details class="card tools" open><summary><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg><h2>Consider champions</h2></summary>
 <div class="cbw"><input id="cq" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Champion to add to consider" placeholder="Search a champion to add" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
 <div id="cres"></div>
 </details>
-<details class="card tools"><summary><h2>Edit champion data</h2></summary>
+<details class="card tools"><summary><svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg><h2>Edit champion data</h2></summary>
 <div class="cbw"><input id="ec" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Champion to edit" placeholder="Search a champion to edit" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
 <div id="ef"></div>
 <span id="emsg" class="note" role="status"></span>
 <p class="note" id="emode"></p>
 </details>
-<details class="card tools" open><summary><h2>Your notes</h2></summary>
+<details class="card tools" open><summary><svg class="ic" aria-hidden="true"><use href="#i-note"/></svg><h2>Your notes</h2></summary>
 <div class="tcards" id="ntc" role="group" aria-label="Note type"></div>
 <label class="fl" id="nla" for="na">Champions</label>
 <div class="cbw"><div class="mcs" id="na-c"></div><input id="na" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" placeholder="Search champion" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
@@ -292,28 +331,28 @@ summary{cursor:pointer;color:var(--mute)}
 <div class="cm" id="cm" role="menu" hidden></div>
 <dialog id="cfm"><form method="dialog"><p id="cfm-t"></p><button class="btn" value="0">Cancel</button> <button class="btn" id="cfm-y" value="1">Delete</button></form></dialog>
 </main>
-<aside class="dr dl" id="dl" aria-label="Suggestions"><div class="dh"><h2>Suggestions</h2><button data-close="dl">Close</button></div><div class="an" id="an"></div></aside>
-<aside class="dr drr" id="dr" aria-label="Champions"><div class="dh"><h2>Champions</h2><span><button id="icons" aria-pressed="false">Icons</button> <button id="hide" aria-pressed="false">Hide taken</button> <button data-close="dr">Close</button></span></div>
+<aside class="dr dl" id="dl" aria-label="Suggestions"><div class="dh"><h2><svg class="ic" aria-hidden="true"><use href="#i-bulb"/></svg>Suggestions</h2><button data-close="dl">Close</button></div><div class="an" id="an"></div></aside>
+<aside class="dr drr" id="dr" aria-label="Champions"><div class="dh"><h2><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Champions</h2><span><button id="icons" aria-pressed="false">Icons</button> <button id="hide" aria-pressed="false">Hide taken</button> <button data-close="dr">Close</button></span></div>
 <input type="search" id="q" placeholder="Search champions" aria-label="Search champions">
 <div class="rf" id="rf" role="group" aria-label="Filter by role"></div>
 <p class="note" style="margin:0 0 4px">Right-click a champion (long-press on touch) to mark a ban candidate, a prepick or a fearless ban.</p>
 <p class="note" id="icost" style="margin:0 0 4px"></p>
 <div class="grid" id="grid"></div></aside>
-<aside class="dr drs" id="ds" aria-label="Teams"><div class="dh"><h2 id="dst">Teams</h2><button data-close="ds">Close</button></div>
+<aside class="dr drs" id="ds" aria-label="Teams"><div class="dh"><h2 id="dst"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>Teams</h2><button data-close="ds">Close</button></div>
 <div class="rf" id="stabs" role="group" aria-label="Team view"></div>
-<details class="card tools" open id="sctc"><summary><h2 id="tth">Team</h2></summary>
+<details class="card tools" open id="sctc"><summary><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg><h2 id="tth">Team</h2></summary>
 <div class="tbar" id="tbar" role="group" aria-label="Scouted teams"></div>
 <form class="bar" id="tf" hidden><input id="scn" type="text" placeholder="Team name" aria-label="Team name"><button class="btn" id="tok" type="submit">Create</button><button class="btn" id="tcancel" type="button">Cancel</button></form>
 <p class="note" id="scmode" style="margin:0"></p>
 </details>
-<details class="card tools" id="apc"><summary><h2 id="apt">Add profile</h2></summary>
+<details class="card tools" id="apc"><summary><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><h2 id="apt">Add profile</h2></summary>
 <div class="bar"><input id="pn" type="text" placeholder="Riot ID, e.g. Name#EUW" aria-label="Riot ID">
 <select id="pr" aria-label="Region"><option>euw</option><option>eune</option><option>na</option><option>kr</option><option>br</option><option>lan</option><option>las</option><option>oce</option><option>tr</option><option>ru</option><option>jp</option></select>
 <select id="pro" aria-label="Main role"><option value="">Role: auto</option><option value="T">Top</option><option value="J">Jungle</option><option value="M">Mid</option><option value="B">Bot</option><option value="S">Support</option></select></div>
 <input id="prid" type="text" placeholder="Riot ID (optional), e.g. Name#EUW" aria-label="Riot ID" hidden>
 <button class="btn" id="padd">Add profile</button>
 </details>
-<details class="card tools" open id="tlc" hidden><summary><h2>Tier lists (what they like to play)</h2></summary>
+<details class="card tools" open id="tlc" hidden><summary><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><h2>Tier lists (what they like to play)</h2></summary>
 <select id="tsel" aria-label="Player"></select>
 <div class="cbw"><input id="tc" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Champion" placeholder="Search a champion to add" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
 <button class="btn" id="tadd">Add to tier list</button> <button class="btn" id="cadd">Add to can't play</button> <button class="btn" id="ticons" aria-pressed="false">Icons</button> <span class="note" id="tmsg" role="status"></span>
@@ -321,7 +360,7 @@ summary{cursor:pointer;color:var(--mute)}
 <div id="tll"></div>
 <p class="note">Drag the ☰ handle to put champions in order, best first. With the keyboard, focus the handle and press the up or down arrow key. The can't play list is for champions a player does not play at all. A suggestion drops out when every player who could fill its role can't play it.</p>
 </details>
-<details class="card tools" open id="cdc"><summary><h2 id="acT">Champion data</h2></summary>
+<details class="card tools" open id="cdc"><summary><svg class="ic" aria-hidden="true"><use href="#i-db"/></svg><h2 id="acT">Champion data</h2></summary>
 <select id="psel" aria-label="Profile"></select>
 <div class="rf" id="itabs" role="group" aria-label="How to add data"></div>
 <div id="ip-manual">
@@ -347,6 +386,11 @@ summary{cursor:pointer;color:var(--mute)}
 <script>
 function __start(){
 const RN={T:"Top",J:"Jungle",M:"Mid",B:"Bot",S:"Support"},RO=["T","J","M","B","S"];
+const ic=n=>`<svg class="ic" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+// Role icons from emoji.gg. Each role also gets its own ring color, so top and bot are easy to tell apart. If an image cannot load, the drawn icon stays visible.
+const RIMG={T:"7990-lol-role-top.png",J:"1152-lol-role-jungle.png",M:"6934-lol-role-mid.png",B:"9366-lol-role-bot.png",S:"7990-lol-role-support.png"};
+const RCOL={T:"#FF8A3D",J:"#4CC76B",M:"#B07CFF",B:"#3DA5FF",S:"#F2C94C"};
+const ri=r=>r&&RIMG[r]?`<span class="rico" style="--rc:${RCOL[r]}" title="${RN[r]}"><svg class="ic" aria-hidden="true"><use href="#r-${r}"/></svg><img src="https://cdn3.emoji.gg/emojis/${RIMG[r]}" alt="${RN[r]}" loading="lazy" referrerpolicy="no-referrer" onload="this.parentNode.classList.add('ok')" onerror="this.parentNode.classList.add('x')"></span>`:"";
 // name|roles|damage (A=AD,P=AP,M=mixed)|tags: t=frontline e=engage c=crowd control s=sustain
 const D=`Aatrox|T|A|t
 Ahri|M|P|
@@ -612,7 +656,7 @@ function playersCard(mine){
   const bench=myPlayers().filter(x=>!roster.includes(x));
   return`<details class="card" data-k="players" ${op("players")}><summary><h2>Your players</h2></summary>${roster.map(x=>{
     const role=x.role||derivedRole(x),src=x.pool||[],av=src.filter(n=>!ub.has(n)).slice(0,6).map(n=>({n}));
-    return`<div class="cc"><div><b>${esc(x.name)}</b> <span class="tag">${esc(RN[role]||"?")}</span>${taken.has(x.id)?' <span class="note">(picked)</span>':""}</div>${av.length?`<div style="margin-top:4px">${av.map(c=>`<button class="chip" data-addmine="${esc(c.n)}">${esc(c.n)}</button>`).join(" ")}</div>`:`<p class="note" style="margin:2px 0 0">${src.length?"All champions in the tier list are taken.":"No champions in the tier list yet."}</p>`}</div>`;
+    return`<div class="cc"><div><b>${esc(x.name)}</b> <span class="tag">${ri(role)}${esc(RN[role]||"?")}</span>${taken.has(x.id)?' <span class="note">(picked)</span>':""}</div>${av.length?`<div style="margin-top:4px">${av.map(c=>`<button class="chip" data-addmine="${esc(c.n)}">${esc(c.n)}</button>`).join(" ")}</div>`:`<p class="note" style="margin:2px 0 0">${src.length?"All champions in the tier list are taken.":"No champions in the tier list yet."}</p>`}</div>`;
   }).join("")}<p class="note">The first free champions in each active player's list. Tap one to pick it.${bench.length?" Bench: "+bench.map(x=>esc(pl(x))).join(", ")+".":""}</p></details>`;
 }
 function pickIdeas(cb){
@@ -699,7 +743,7 @@ function controls(){
   $("side").innerHTML=[["b","Play blue"],["r","Play red"]].map(([k,l])=>`<button data-me="${k}" aria-pressed="${me===k}">${l}</button>`).join("");
   const i=stepNow();
   $("tg").innerHTML=`<button data-auto="1" aria-pressed="${auto}">Follow draft order</button>`+(auto?`<span class="note" style="align-self:center">${i<20?"Step "+(i+1)+" of 20: "+SN[ORDER[i]]+(ORDER[i][0]===me?" (you)":""):"Draft complete"}</span>`:TARGETS.map(([k,l])=>`<button data-t="${k}" aria-pressed="${target===k}">${l} (${st[k].length}/5)</button>`).join(""));
-  $("rf").innerHTML=[["","All"],...RO.map(r=>[r,RN[r]])].map(([r,l])=>`<button data-r="${r}" aria-pressed="${role===r}">${l}</button>`).join("");
+  $("rf").innerHTML=[["","All"],...RO.map(r=>[r,RN[r]])].map(([r,l])=>`<button data-r="${r}" aria-pressed="${role===r}">${ri(r)}${l}</button>`).join("");
 }
 function grid(){
   const u=used(),q=query.trim().toLowerCase();
@@ -897,8 +941,8 @@ function openMenu(n,x,y){
   const isB=mk.ban.includes(n),isP=mk.pre.includes(n);
   cm.dataset.n=n;
   const on=[isB,cons.includes(n)||isP,isP,MS.fz.includes(n)];
-  const it=[["ban","Consider banning"],["look","Consider picking"],["pre","Prepick"],["fear","Fearless ban"]];
-  cm.innerHTML=it.map(([m,l],i)=>`<button role="menuitem" data-m="${m}">${on[i]?"\u2713 ":""}${l}</button>`).join("");
+  const it=[["ban","Consider banning","ban"],["look","Consider picking","eye"],["pre","Prepick","star"],["fear","Fearless ban","lock"]];
+  cm.innerHTML=it.map(([m,l,g],i)=>`<button role="menuitem" data-m="${m}">${ic(g)}${on[i]?"\u2713 ":""}${l}</button>`).join("");
   cm.hidden=false;
   const r=cm.getBoundingClientRect();
   cm.style.left=Math.max(4,Math.min(x,innerWidth-r.width-8))+"px";
@@ -1196,7 +1240,7 @@ async function scAddProfile(){
 }
 function lineupHtml(P){
   const act=actOf(P);
-  return P.length?`<div class="nl" style="margin:6px 0 2px">Active lineup</div><div class="lineup">${RO.map(r=>{const a=act.filter(x=>(x.role||derivedRole(x))===r);return`<span class="lu${a.length?"":" none"}"><small>${RN[r]}</small><b>${a.length?esc(a.map(x=>x.name).join(", ")):"\u2013"}</b></span>`}).join("")}</div>`:"";
+  return P.length?`<div class="nl" style="margin:6px 0 2px">Active lineup</div><div class="lineup">${RO.map(r=>{const a=act.filter(x=>(x.role||derivedRole(x))===r);return`<span class="lu${a.length?"":" none"}"><small>${ri(r)}${RN[r]}</small><b>${a.length?esc(a.map(x=>x.name).join(", ")):"\u2013"}</b></span>`}).join("")}</div>`:"";
 }
 async function playerActive(id){
   const t=curTeam(),p=t&&t.data.find(x=>x.id===id);
@@ -1235,11 +1279,11 @@ function tierView(){
   if(!P.find(x=>x.id===tSel))tSel=P[0]?P[0].id:"";
   $("tsel").innerHTML=P.length?P.map(x=>`<option value="${esc(x.id)}"${x.id===tSel?" selected":""}>${esc(pl(x))}</option>`).join(""):`<option value="">No player yet</option>`;
   const act=actOf(P);
-  $("tlu").innerHTML=P.length?`<div class="nl" style="margin:6px 0 2px">Active lineup</div><div class="lineup">${RO.map(r=>{const a=act.filter(x=>(x.role||derivedRole(x))===r);return`<span class="lu${a.length?"":" none"}"><small>${RN[r]}</small><b>${a.length?esc(a.map(x=>x.name).join(", ")):"\u2013"}</b></span>`}).join("")}</div>`:"";
+  $("tlu").innerHTML=P.length?`<div class="nl" style="margin:6px 0 2px">Active lineup</div><div class="lineup">${RO.map(r=>{const a=act.filter(x=>(x.role||derivedRole(x))===r);return`<span class="lu${a.length?"":" none"}"><small>${ri(r)}${RN[r]}</small><b>${a.length?esc(a.map(x=>x.name).join(", ")):"\u2013"}</b></span>`}).join("")}</div>`:"";
   $("tll").innerHTML=P.length?P.map(x=>{
     const pool=x.pool||[],role=x.role||derivedRole(x);
     const on=actOf(P).includes(x);
-    return`<div class="tp${on?"":" bench"}"><div><b>${esc(x.name)}</b> ${role?`<span class="tag">${esc(RN[role]||role)}</span>`:""} <button class="actb${on?" on":""}" data-pact="${esc(x.id)}" aria-pressed="${on}" title="${on?"Playing. Click to move to the bench":"On the bench. Click to make this player active"}">${on?"\u2605 Active":"Bench"}</button></div>${pool.length?`<ol class="tlist">${pool.map((n,i)=>`<li data-pid="${esc(x.id)}" data-tn="${esc(n)}"><span class="dg" data-drag tabindex="0" role="button" aria-label="Drag to reorder ${esc(n)}">\u2630</span><span class="tn">${i+1}</span>${icons?icon(n):""}<span class="tname">${esc(n)}</span><button data-tcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from the tier list">\u00d7</button></li>`).join("")}</ol>`:`<p class="note">No champions yet.</p>`}${(x.cant||[]).length?`<div class="nl">Can't play</div><div>${x.cant.map(n=>`<span class="nc weak">${esc(n)}<button data-ccx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from can't play">\u00d7</button></span>`).join("")}</div>`:""}</div>`;
+    return`<div class="tp${on?"":" bench"}"><div><b>${esc(x.name)}</b> ${role?`<span class="tag">${ri(role)}${esc(RN[role]||role)}</span>`:""} <button class="actb${on?" on":""}" data-pact="${esc(x.id)}" aria-pressed="${on}" title="${on?"Playing. Click to move to the bench":"On the bench. Click to make this player active"}">${on?"\u2605 Active":"Bench"}</button></div>${pool.length?`<ol class="tlist">${pool.map((n,i)=>`<li data-pid="${esc(x.id)}" data-tn="${esc(n)}"><span class="dg" data-drag tabindex="0" role="button" aria-label="Drag to reorder ${esc(n)}">\u2630</span><span class="tn">${i+1}</span>${icons?icon(n):""}<span class="tname">${esc(n)}</span><button data-tcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from the tier list">\u00d7</button></li>`).join("")}</ol>`:`<p class="note">No champions yet.</p>`}${(x.cant||[]).length?`<div class="nl">Can't play</div><div>${x.cant.map(n=>`<span class="nc weak">${esc(n)}<button data-ccx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from can't play">\u00d7</button></span>`).join("")}</div>`:""}</div>`;
   }).join(""):`<p class="note">Add a player first.</p>`;
 }
 async function tierAdd(){
@@ -1352,7 +1396,7 @@ function profCard(p){
   const pills=tg?`<span class="pill">${tg} games</span><span class="pill w ${wc(wr)}">${wr.toFixed(1)}% WR</span><span class="pill">${kda.toFixed(2)} KDA</span>`:"";
   const tiles=rows.map(c=>`<div class="pt"><button class="lnk" data-ped="${key}|${esc(c.n)}">${icons?icon(c.n):""}${esc(c.n)}</button><div class="pts"><span class="w ${wc(c.wr)}">${c.wr}%</span><span>${c.g} games</span><span>${c.kda} KDA</span></div><button class="x" data-pcx="${key}|${esc(c.n)}" aria-label="Remove ${esc(c.n)}">\u00d7</button></div>`).join("");
   const body=(my?`<div class="nl">Imported stats</div>`:"")+(rows.length?`<div class="pgrid">${tiles}</div>`:`<p class="note">${my?"No imported stats yet. Use the paste or Riot import above.":"No champions yet. Add the champions this player plays."}</p>`);
-  return`<details class="ng pc" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><span class="pn"><b>${esc(p.name)}</b> ${role?`<span class="tag">${esc(RN[role]||role)}</span>`:""} <span class="tag">${isAct?"Active":"Bench"}</span></span><span class="pills">${pills}</span></summary>${body}<p style="margin:8px 0 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="actb${isAct?" on":""}" data-pact="${key}" aria-pressed="${isAct}">${isAct?"\u2605 Active":"Bench"}</button>${link?`<a href="${link}" target="_blank" rel="noopener">Open on op.gg</a>`:""}<button class="btn" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></p></details>`;
+  return`<details class="ng pc" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><span class="pn"><b>${esc(p.name)}</b> ${role?`<span class="tag">${ri(role)}${esc(RN[role]||role)}</span>`:""} <span class="tag">${isAct?"Active":"Bench"}</span></span><span class="pills">${pills}</span></summary>${body}<p style="margin:8px 0 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="actb${isAct?" on":""}" data-pact="${key}" aria-pressed="${isAct}">${isAct?"\u2605 Active":"Bench"}</button>${link?`<a href="${link}" target="_blank" rel="noopener">Open on op.gg</a>`:""}<button class="btn" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></p></details>`;
 }
 const synAdj=()=>{const a={};REL.syn.forEach(([x,y])=>{(a[x]=a[x]||new Set()).add(y);(a[y]=a[y]||new Set()).add(x)});return a};
 function maxCl(adj,nodes){
@@ -1443,7 +1487,7 @@ function scView(){
   if(!DS.so)return;
   fixSel();
   const my=scMode==="my",t=curTeam(),P=t?sortP(t.data):[],list=SC.filter(x=>x.id!==MYID);
-  $("dst").textContent="Teams";
+  $("dst").innerHTML=ic("users")+"Teams";
   $("stabs").innerHTML=[["my","My team"],["scout","Scout"]].map(([k,l])=>`<button data-stab="${k}" aria-pressed="${scMode===k}">${l}</button>`).join("");
   $("apt").textContent=my?"Add player":"Add profile";
   $("padd").textContent=my?"Add player":"Add profile";
