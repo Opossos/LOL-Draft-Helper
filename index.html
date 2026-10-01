@@ -320,6 +320,29 @@ details{margin-top:10px}
 .cbl li.on,.cbl li:hover{background:var(--chip)}
 .cbl li.none{color:var(--mute);cursor:default}
 summary{cursor:pointer;color:var(--mute)}
+/* phones and small tablets */
+button,a,summary,.ch,.slot,.ban{touch-action:manipulation}
+.dr{overscroll-behavior:contain;padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}
+@supports(height:100dvh){.drr{height:min(55dvh,560px,calc(100dvh - var(--hh,56px) - 12px))}body.ro{padding-bottom:min(55dvh,560px)}}
+@media(max-width:700px){
+main{padding:10px max(10px,env(safe-area-inset-left,0px)) 40px max(10px,env(safe-area-inset-right,0px))}
+.top{padding:6px max(10px,env(safe-area-inset-left,0px)) 6px max(10px,env(safe-area-inset-right,0px));gap:4px}
+.top h1{font-size:22px}
+.tb{width:100%;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+.tb::-webkit-scrollbar{display:none}
+.tb button{flex:none;white-space:nowrap;min-height:40px}
+.dr.dl,.dr.drs{width:100%;border-left:0;border-right:0}
+input,select,textarea{font-size:16px!important}
+.slot{min-height:44px}
+.ban{min-height:38px;font-size:12px}
+.tg button,.rf button,.dh button,.dh .btn,.btn,.nt button,.tchip button,.tc,.reset{min-height:40px}
+.cm button{padding:12px 10px}
+.cbl li{padding:11px 10px}
+.tlist .dg{padding:8px 10px}
+.tlist button,.pt .x,.mem.sm button,.nc button,.st button,.mcs .chip button{min-width:32px;min-height:32px}
+.pt{padding-right:34px}
+body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
+}
 </style>
 </head>
 <body>
@@ -1001,12 +1024,12 @@ document.addEventListener("click",e=>{
   else if(b.id==="esave"){doSaveChamp();return}
   else if(b.id==="ereset"){doResetChamp();return}
   else if(b.id==="hide"){hide=!hide;try{localStorage.setItem("lolHide",hide?"1":"0")}catch(e){}}
-  else if(b.id==="lo"){DS.lo=!DS.lo;drawers()}
-  else if(b.id==="ro"){DS.ro=!DS.ro;drawers()}
+  else if(b.id==="lo"){DS.lo=!DS.lo;if(DS.lo)solo("lo");drawers()}
+  else if(b.id==="ro"){DS.ro=!DS.ro;if(DS.ro)solo("ro");drawers()}
   else if(b.dataset.close){DS[{dl:"lo",dr:"ro",ds:"so",de:"eo"}[b.dataset.close]]=false;drawers()}
   else if(b.id==="stl"){toggleStyle();return}
-  else if(b.id==="so"){DS.so=!DS.so;if(DS.so)DS.eo=false;drawers()}
-  else if(b.id==="eb"){DS.eo=!DS.eo;if(DS.eo)DS.so=false;drawers()}
+  else if(b.id==="so"){DS.so=!DS.so;if(DS.so){DS.eo=false;solo("so")}drawers()}
+  else if(b.id==="eb"){DS.eo=!DS.eo;if(DS.eo){DS.so=false;solo("eo")}drawers()}
   else if(b.dataset.stab){scMode=b.dataset.stab;fixSel()}
   else if(b.dataset.esel){enId=b.dataset.esel}
   else if(b.dataset.itab){itab=b.dataset.itab}
@@ -1913,6 +1936,10 @@ function toggleStyle(){
   }catch(e){}
   styleBtn();
 }
+// on narrow screens the drawers cover each other, so only one stays open
+const narrow=()=>innerWidth<900;
+function solo(k){if(narrow())for(const x in DS)if(x!==k)DS[x]=false}
+if(narrow()){const k=Object.keys(DS).find(x=>DS[x]);if(k)solo(k)}
 function setHH(){try{document.documentElement.style.setProperty("--hh",$("hh").offsetHeight+"px")}catch(e){}}
 function drawers(){
   $("dl").classList.toggle("open",!!DS.lo);$("dr").classList.toggle("open",!!DS.ro);$("ds").classList.toggle("open",!!DS.so);$("so").setAttribute("aria-expanded",!!DS.so);$("de").classList.toggle("open",!!DS.eo);$("eb").setAttribute("aria-expanded",!!DS.eo);
