@@ -194,7 +194,7 @@ summary{cursor:pointer;color:var(--mute)}
 <div class="cbw"><input id="sc" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Champion" placeholder="Search a champion" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
 <div class="row"><input id="pg" type="number" min="0" placeholder="Games" aria-label="Games"><input id="pw" type="number" min="0" max="100" step="0.1" placeholder="Win rate %" aria-label="Win rate"><input id="pk" type="number" min="0" step="0.01" placeholder="KDA" aria-label="KDA"></div>
 <button class="btn" id="pcadd">Save champion</button> <span class="note" id="scmsg" role="status"></span>
-<div style="margin-top:8px"><button class="btn" id="priot">Import from Riot</button> <select id="prc" aria-label="Games to read" style="width:auto;display:inline-block"><option value="20">last 20 ranked games</option><option value="40">last 40 ranked games</option></select></div>
+<div style="margin-top:8px"><button class="btn" id="priot">Import from Riot</button> <select id="prc" aria-label="Games to read" style="width:auto;display:inline-block"><option value="20">last 20 ranked games</option><option value="100">last 100 ranked games</option><option value="300">last 300 ranked games</option><option value="all">all ranked games (slow)</option></select> <button class="btn" id="pstop" hidden>Stop</button></div>
 <p class="note">You can also type the stats by hand. The op.gg link is on each profile.</p>
 </details>
 <details class="card tools" open><summary><h2>Paste a champion table</h2></summary>
@@ -593,6 +593,7 @@ document.addEventListener("click",e=>{
   else if(b.id==="pcadd"){scAddChamp();return}
   else if(b.id==="pimp"){scImport();return}
   else if(b.id==="priot"){riotImport();return}
+  else if(b.id==="pstop"){riotStop=true;return}
   else if(b.dataset.ppx){PP.splice(+b.dataset.ppx,1);ppView();return}
   else if(b.dataset.ped){scEdit(b.dataset.ped);return}
   else if(b.dataset.pcx){scRmChamp(b.dataset.pcx);return}
@@ -1079,23 +1080,39 @@ function idToName(id){
   D.forEach(c=>{[IDS[c.n],IDFIX[c.n],c.n.replace(/[^A-Za-z0-9]/g,"")].forEach(k=>{if(k)m[k.toLowerCase()]=c.n})});
   return m[String(id).toLowerCase()]||null;
 }
+let riotStop=false;
 async function riotImport(){
   const t=curTeam(),p=t&&t.data.find(x=>x.id===scSel);
   if(!p){scmsg("Add a profile first and choose it above.");return}
   if(!SB.url){scmsg("The Riot import needs the Supabase connection.");return}
   if(!p.name.includes("#")){scmsg("The profile needs a Riot ID like Name#EUW.");return}
+  const mode=$("prc").value,cap=mode==="all"?Infinity:+mode||20;
+  const per={},roles={},wait=ms=>new Promise(r=>setTimeout(r,ms));
+  let start=0,puuid="",games=0,err="";
+  riotStop=false;$("priot").disabled=true;$("pstop").hidden=false;
   scmsg("Reading Riot data...");
   try{
-    const r=await fetch(SB.url+"/functions/v1/riot-stats",{method:"POST",headers:{apikey:SB.key,"Content-Type":"application/json",...(SB.key.startsWith("sb_")?{}:{Authorization:"Bearer "+SB.key})},body:JSON.stringify({riotId:p.name,region:p.region||"euw",count:+$("prc").value||20})});
-    const d=await r.json().catch(()=>({}));
-    if(!r.ok){
-      scmsg(r.status===401||r.status===403?"The function or Riot rejected the request. Check that Verify JWT is off for the function and that the Riot key has not expired (development keys last 24 hours).":r.status===429?"Riot rate limit reached. Wait two minutes and try again.":(d.error||"Import failed ("+r.status+")"));
-      return;
+    while(start<cap&&!riotStop){
+      const r=await fetch(SB.url+"/functions/v1/riot-stats",{method:"POST",headers:{apikey:SB.key,"Content-Type":"application/json",...(SB.key.startsWith("sb_")?{}:{Authorization:"Bearer "+SB.key})},body:JSON.stringify({riotId:p.name,region:p.region||"euw",start,count:Math.min(40,cap-start),puuid})});
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok){
+        err=r.status===401||r.status===403?"The function or Riot rejected the request. Check that Verify JWT is off for the function and that the Riot key has not expired (development keys last 24 hours).":(d.error||"Import failed ("+r.status+")");
+        break;
+      }
+      puuid=d.puuid||puuid;
+      (d.champs||[]).forEach(c=>{const x=per[c.n]||(per[c.n]={g:0,w:0,k:0,d:0,a:0});x.g+=c.g;x.w+=c.w;x.k+=c.k;x.d+=c.d;x.a+=c.a});
+      Object.keys(d.roles||{}).forEach(k=>{roles[k]=(roles[k]||0)+d.roles[k]});
+      games+=d.processed||0;start=d.next;
+      scmsg("Read "+games+" ranked games...");
+      if(d.done)break;
+      if(d.limited)for(let w=d.retry||120;w>0&&!riotStop;w--){scmsg("Read "+games+" games. Riot rate limit, continuing in "+w+" s. Press Stop to use what is read so far.");await wait(1000)}
     }
-    PP=(d.champs||[]).map(c=>({n:idToName(c.n),g:c.g,wr:c.wr,kda:c.kda})).filter(c=>c.n);
-    PP.dups=0;PPROLE=d.role||"";$("pp").value="";ppView();
-    scmsg("Read "+(d.games||0)+" ranked games. Check the preview below and import.");
-  }catch(e){scmsg("Could not reach the Riot function. Check that it is deployed under the name riot-stats.")}
+  }catch(e){err="Could not reach the Riot function. Check that it is deployed under the name riot-stats."}
+  $("priot").disabled=false;$("pstop").hidden=true;
+  PP=Object.keys(per).map(k=>({n:idToName(k),g:per[k].g,wr:Math.round(1000*per[k].w/per[k].g)/10,kda:Math.round(100*(per[k].k+per[k].a)/Math.max(1,per[k].d))/100})).filter(c=>c.n).sort((x,y)=>y.g-x.g);
+  PP.dups=0;PPROLE=Object.keys(roles).sort((x,y)=>roles[y]-roles[x])[0]||"";
+  $("pp").value="";ppView();
+  scmsg(err?err+(games?" Read "+games+" games before that.":""):(riotStop?"Stopped after ":"Read ")+games+" ranked games. Check the preview below and import.");
 }
 function parsePaste(txt){
   const t=txt.replace(/[\u2018\u2019]/g,"'").replace(/\u00a0/g," ");
