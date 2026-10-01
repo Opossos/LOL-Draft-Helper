@@ -70,6 +70,10 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+.slot{display:flex;flex-direction:column;align-items:stretch;gap:4px}
+.alts{font-size:12px;color:var(--mute);text-align:center;line-height:1.7}
+.alts button{border:1px dashed var(--line);border-radius:999px;background:transparent;color:inherit;font:inherit;padding:0 8px;margin:0 2px;cursor:pointer}
+.alts button:hover{border-color:var(--gold);color:var(--ink)}
 .tbar{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
 .tchip{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;background:var(--panel);overflow:hidden}
 .tchip button{border:0;background:transparent;color:inherit;font:inherit;padding:6px 12px;cursor:pointer}
@@ -680,15 +684,30 @@ function banFor(members){
   }));
   return[...m.values()].sort((a,b)=>b.hit.length-a.hit.length||a.n.localeCompare(b.n)).slice(0,5);
 }
+function slotsFixed(C,alts){
+  const ar=assign(C.map(x=>BY[x].r)),slots={};
+  C.forEach((x,i)=>{if(ar[i])slots[ar[i]]={role:ar[i],main:x,alts:[]}});
+  (alts||[]).filter(a=>BY[a]).forEach(a=>BY[a].r.forEach(r=>{if(slots[r]&&!slots[r].alts.includes(a))slots[r].alts.push(a)}));
+  return RO.filter(r=>slots[r]).map(r=>slots[r]);
+}
+function comboSlots(C){
+  const rk=x=>{let b=99;myPlayers().forEach(p=>{const i=(p.pool||[]).indexOf(x);if(i>=0&&i<b)b=i});return b};
+  const known=C.filter(x=>BY[x]).sort((a,b)=>rk(a)-rk(b)||a.localeCompare(b));
+  const ar=assign(known.map(x=>BY[x].r)),slots={};
+  known.forEach((x,i)=>{if(ar[i])slots[ar[i]]={role:ar[i],main:x,alts:[]}});
+  known.forEach((x,i)=>{if(!ar[i])BY[x].r.forEach(r=>{if(slots[r])slots[r].alts.push(x)})});
+  return{slots:RO.filter(r=>slots[r]).map(r=>slots[r]),extra:C.filter(x=>!BY[x])};
+}
 function comboCard(c,idx){
-  const ar=assign(c.C.map(x=>BY[x].r)),bb=banFor(c.C);
-  const tiles=c.C.map((x,i)=>{
-    const yours=c.mi.includes(x),role=ar[i]?RN[ar[i]]:BY[x].r.map(r=>RN[r]).join("/");
-    const mc=mk.pre.includes(x)?"mp":mk.ban.includes(x)?"mb":"";
-    const inner=`${icons?icon(x):""}<b>${esc(x)}</b><small>${esc(role)}</small><span class="st">${yours?"\u2713 yours":mc==="mp"?"\u2605 prepick":mc==="mb"?"ban candidate":"+ pick"}</span>`;
-    return yours?`<div class="mem yours">${inner}</div>`:`<button class="mem need ${mc}" data-addmine="${esc(x)}" aria-label="Pick ${esc(x)}">${inner}</button>`;
+  const slots=slotsFixed(c.C,c.alt),bb=banFor(c.C);
+  const tiles=slots.map(sl=>{
+    const x=sl.main,yours=c.mi.includes(x),mc=mk.pre.includes(x)?"mp":mk.ban.includes(x)?"mb":"";
+    const inner=`${icons?icon(x):""}<b>${esc(x)}</b><small>${esc(RN[sl.role])}</small><span class="st">${yours?"\u2713 yours":mc==="mp"?"\u2605 prepick":mc==="mb"?"ban candidate":"+ pick"}</span>`;
+    const main=yours?`<div class="mem yours">${inner}</div>`:`<button class="mem need ${mc}" data-addmine="${esc(x)}" aria-label="Pick ${esc(x)}">${inner}</button>`;
+    const alts=!yours&&sl.alts.length?`<div class="alts">or ${sl.alts.map(a=>`<button data-addmine="${esc(a)}">${esc(a)}</button>`).join(" ")}</div>`:"";
+    return`<div class="slot">${main}${alts}</div>`;
   }).join('<span class="cmb-plus">+</span>');
-  return`<div class="cmb"><div class="cmb-h"><b>Combo ${idx+1}</b> <span class="tag">${c.C.length} champions</span> <span class="${c.need.length?"note":"good"}">${c.need.length?c.need.length+" still needed":"Complete"}</span></div><div class="cmb-m">${tiles}</div>${c.alt&&c.alt.length?`<div class="note" style="margin:6px 0 0">Also fits this group: ${c.alt.map(esc).join(", ")}</div>`:""}<div class="cmb-b"><div class="nl bad" style="margin:0 0 4px">If you play this, ban</div>${bb.length?`<div class="sg">${bb.map(o=>`<button data-ban="${esc(o.n)}"${mk.ban.includes(o.n)?' class="mbk"':""}><span>${esc(o.n)}</span><em>counters ${o.hit.map(esc).join(", ")}</em></button>`).join("")}</div>`:`<p class="note" style="margin:0">No counters saved for these champions yet.</p>`}</div></div>`;
+  return`<div class="cmb"><div class="cmb-h"><b>Combo ${idx+1}</b> <span class="tag">${c.C.length} champions</span> <span class="${c.need.length?"note":"good"}">${c.need.length?c.need.length+" still needed":"Complete"}</span></div><div class="cmb-m">${tiles}</div><div class="cmb-b"><div class="nl bad" style="margin:0 0 4px">If you play this, ban</div>${bb.length?`<div class="sg">${bb.map(o=>`<button data-ban="${esc(o.n)}"${mk.ban.includes(o.n)?' class="mbk"':""}><span>${esc(o.n)}</span><em>counters ${o.hit.map(esc).join(", ")}</em></button>`).join("")}</div>`:`<p class="note" style="margin:0">No counters saved for these champions yet.</p>`}</div></div>`;
 }
 function analysis(){
   const mine=MY(),foe=EN(),nm=me==="b"?"blue":"red",nf=me==="b"?"red":"blue",k=me==="b"?"bp":"rp";
@@ -1517,7 +1536,7 @@ function notes(){
       h+=`<h3 class="sec">Team combos <span class="note">${cl.length}</span></h3>`;
       h+=cl.map(c=>{
         const mem=c.slice().sort(),pairs=REL.syn.map((p,i)=>({a:p[0],b:p[1],i})).filter(x=>mem.includes(x.a)&&mem.includes(x.b));
-        const tiles=mem.map(n=>{const b=BY[n];return`<span class="mem">${icons?icon(n):""}<b>${esc(n)}</b>${b?`<small>${esc(b.r.map(r=>RN[r]).join("/"))}</small>`:""}</span>`}).join('<span class="cmb-plus">+</span>');
+        const cs=comboSlots(mem),tiles=cs.slots.map(sl=>`<span class="slot"><span class="mem">${icons?icon(sl.main):""}<b>${esc(sl.main)}</b><small>${esc(RN[sl.role])}</small></span>${sl.alts.length?`<span class="alts">or ${sl.alts.map(esc).join(", ")}</span>`:""}</span>`).concat(cs.extra.map(n=>`<span class="mem"><b>${esc(n)}</b></span>`)).join('<span class="cmb-plus">+</span>');
         return`<div class="cmb"><div class="cmb-h"><b>${mem.length===2?"Pair":"Combo"}</b> <span class="tag">${mem.length} champions</span>${canWrite?` <button class="btn" data-dcb="${esc(mem.join("|"))}">Delete all</button>`:""}</div><div class="cmb-m">${tiles}</div><details style="margin-top:8px"><summary class="note">Single notes (${pairs.length})</summary><div style="margin-top:6px">${pairs.map(x=>`<span class="nc syn">${esc(x.a)} + ${esc(x.b)}${canWrite?`<button data-del="syn:${x.i}" aria-label="Delete note: ${esc(TXT("syn",x.a,x.b))}">\u00d7</button>`:""}</span>`).join("")}</div></details></div>`;
       }).join("");
     }
