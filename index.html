@@ -72,6 +72,19 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+.chh{display:flex;align-items:center;gap:10px;min-width:0}
+.chh .ico{width:44px;height:44px;margin:0;border-radius:8px;flex:none}
+.chh .cn{font-size:16px}
+.chh .tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.cinfo{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2px 14px;margin:6px 0}
+.cinfo .nl{margin:6px 0 3px}
+.chip .ico{width:18px;height:18px;display:inline-block;margin:0 5px 0 0;vertical-align:-4px;border-radius:4px}
+.cprow{margin:10px 0}
+.cph{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+.cptiles{display:flex;flex-wrap:wrap;gap:6px}
+button.mem.sm{cursor:pointer;text-align:left}
+button.mem.sm .ico{display:inline-block}
+button.mem.sm small{display:block}
 #rf button[aria-pressed=true]{background:var(--panel);color:inherit;border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
 /* champion boxes in the combo cards: at least 20% of the card width (minus the room of the + signs and gaps, so five still fit in one row) */
 body .cmb-m{gap:6px}
@@ -829,6 +842,31 @@ function comboCard(c,idx){
   }).join('<span class="cmb-plus">+</span>');
   return`<div class="cmb"><div class="cmb-h"><b>Combo ${idx+1}</b> <span class="tag">${c.C.length} champions</span> <span class="${needN?"note":"good"}">${needN?needN+" still needed":"Complete"}</span></div><div class="cmb-m">${tiles}</div><div class="cmb-b"><div class="nl bad" style="margin:0 0 4px">If you play this, ban</div>${bb.length?`<div class="sg">${bb.map(o=>`<button data-ban="${esc(o.n)}"${mk.ban.includes(o.n)?' class="mbk"':""}><span>${esc(o.n)}</span><em>counters ${o.hit.map(esc).join(", ")}</em></button>`).join("")}</div>`:`<p class="note" style="margin:0">No counters saved for these champions yet.</p>`}</div></div>`;
 }
+function counterCard(mine){
+  const foe=EN();
+  let h=`<details class="card" data-k="counters" ${op("counters")}><summary>${ic("target")}<h2>Counter picks</h2></summary>`;
+  if(!foe.length)return h+`<p class="note">When the enemy has picked champions, good counters against them show up here. They come from your "weak against" and "strong against" notes and fit your open roles.</p></details>`;
+  const u=used(),a=analyse(mine,roleMap(mine)),pool=a.open.length?a.open:RO,role=x=>x.role||derivedRole(x);
+  const roster=activePlayers(),taken=matchPlayers(mine,roster),free=roster.filter(x=>!taken.has(x.id));
+  const info=c=>{
+    const rr=BY[c].r.filter(r=>pool.includes(r));
+    if(!rr.length)return null;
+    const el=free.filter(x=>rr.includes(role(x)));let best=null,blocked=0;
+    el.forEach(x=>{if((x.cant||[]).includes(c)){blocked++;return}const i=(x.pool||[]).indexOf(c);if(i>=0&&(!best||i<best.i))best={x,i}});
+    if(el.length&&blocked===el.length)return null;
+    return{c,rr,best};
+  };
+  const tile=o=>`<button class="mem sm strong" data-addmine="${esc(o.c)}" title="Pick ${esc(o.c)}">${icon(o.c)}<span><b>${esc(o.c)}</b><small>${o.rr.map(rt).join(" / ")}</small>${o.best?`<small>${esc(o.best.x.name)} \u00b7 #${o.best.i+1}</small>`:""}</span></button>`;
+  const cnt=new Map();
+  foe.forEach(e=>weakOf(e).forEach(c=>{if(BY[c]&&!u.has(c)){const v=cnt.get(c)||[];if(!v.includes(e))v.push(e);cnt.set(c,v)}}));
+  const multi=[...cnt].filter(([c,v])=>v.length>1).map(([c,v])=>({o:info(c),v})).filter(x=>x.o).sort((x,y)=>y.v.length-x.v.length||x.o.c.localeCompare(y.o.c)).slice(0,6);
+  if(multi.length)h+=`<div class="cprow"><div class="nl good" style="margin:0 0 4px">Counter several enemy champions</div><div class="cptiles">${multi.map(x=>`<span title="Counters ${esc(x.v.join(", "))}">${tile(x.o)}</span>`).join("")}</div></div>`;
+  h+=foe.map(e=>{
+    const list=weakOf(e).filter(c=>BY[c]&&!u.has(c)).map(info).filter(Boolean).sort((x,y)=>(x.best?x.best.i:99)-(y.best?y.best.i:99)||x.c.localeCompare(y.c)).slice(0,8);
+    return`<div class="cprow"><div class="cph"><span class="mem sm weak">${icon(e)}<b>${esc(e)}</b></span><span class="note">is weak against</span></div>${list.length?`<div class="cptiles">${list.map(tile).join("")}</div>`:`<p class="note" style="margin:0">No counters saved for ${esc(e)} that fit your open roles. Save "weak against" or "strong against" notes.</p>`}</div>`;
+  }).join("");
+  return h+`<p class="note">Tap a champion to pick it. Right-click for more options.</p></details>`;
+}
 function analysis(){
   const mine=MY(),foe=EN(),nm=me==="b"?"blue":"red",nf=me==="b"?"red":"blue",k=me==="b"?"bp":"rp";
   const i=stepNow(),cur=i<20?ORDER[i]:"",j=nextMine(),cb=combos(),sg=pickIdeas(cb),bn=banIdeas(cb),a=analyse(mine,roleMap(mine));
@@ -837,7 +875,7 @@ function analysis(){
   if(sg.length)h+=`<h3>Best picks now</h3><div class="sg">${sg.map(x=>`<button data-addmine="${esc(x.n)}"><span>${esc(x.n)}</span><em>${esc(x.w.join(", "))}</em></button>`).join("")}</div><p class="note">Ranked by your open roles, damage mix, team tools, your notes and the draft order (later enemy picks can counter early picks).</p>`;
   h+=`</details>`+playersCard(mine)+`<details class="card" data-k="combos" ${op("combos")}><summary><h2>Team combos</h2></summary>`;
   h+=cb.length?cb.map(comboCard).join("")+`<p class="note">Combos use champions you saved as working well together. Only available champions that fit your open roles are shown. Tap a dashed champion to pick it, or a ban to add it to your bans. Right-click a champion (long-press on touch) to prepick it or mark it as a ban candidate.</p>`:`<p class="note">No available combo fits yet. Save a team combo in Your notes to see combos here.</p>`;
-  h+=`</details><details class="card" data-k="bans" ${op("bans")}><summary><h2>Ban ideas for your picks</h2></summary>`;
+  h+=`</details>`+counterCard(mine)+`<details class="card" data-k="bans" ${op("bans")}><summary><h2>Ban ideas for your picks</h2></summary>`;
   h+=bn.length?`<div class="sg">${bn.map(([b,o])=>`<button data-ban="${esc(b)}"><span>${esc(b)}</span><em>${esc(o.w.join(", "))}</em></button>`).join("")}</div><p class="note">Tap a champion to add it to your bans. Only champions the enemy can still play in their open roles are listed.</p>`:`<p class="note">Save weakness notes ("is weak against" or "works well into") and ban ideas will appear here.</p>`;
   h+=`</details>`;
   if(foe.length){
@@ -1717,11 +1755,11 @@ function insights(){
   return L.length?`<div class="ins">${[...new Set(L)].join("")}</div>`:"";
 }
 function chips(list){
-  if(!list.length)return`<p class="note" style="margin:0 0 8px">Nothing saved yet.</p>`;
+  if(!list.length)return`<p class="note" style="margin:0">Nothing saved yet.</p>`;
   return`<div class="chips">${list.map(x=>{
     const f=EN().includes(x)?"en":MY().includes(x)?"al":"";
     const t=f==="en"?" (enemy)":f==="al"?" (yours)":st.bb.includes(x)||st.rb.includes(x)?" (banned)":"";
-    return`<button class="chip ${f}" data-c="${esc(x)}">${esc(x)}${t}</button>`}).join("")}</div>`;
+    return`<button class="chip ${f}" data-c="${esc(x)}">${icon(x)}${esc(x)}${t}</button>`}).join("")}</div>`;
 }
 const TN={t:"frontline",e:"engage",c:"crowd control",s:"sustain"};
 const teamBase=()=>[...MY(),...mk.pre.filter(x=>!MY().includes(x))].filter(x=>BY[x]);
@@ -1759,12 +1797,13 @@ function planCard(){
 function champBlock(n){
   const c=BY[n],wk=weakOf(n),sr=strongOf(n),sy=synOf(n),pre=mk.pre.includes(n);
   const risky=wk.filter(x=>EN().includes(x)),good=sr.filter(x=>EN().includes(x)),link=sy.filter(x=>teamBase().includes(x));
-  let h=`<div class="cc"><div class="cch"><h3 style="margin:0">${esc(n)}${c?", "+c.r.map(r=>RN[r]).join("/"):""}${pre?' <span class="tag">Prepick</span>':""}</h3><button class="btn" ${pre?`data-unpre="${esc(n)}"`:`data-cx="${esc(n)}"`}>${pre?"Remove prepick":"Remove"}</button></div>`;
+  const roles=c?c.r.map(r=>`<span class="tag">${ri(r)}${rt(r)}</span>`).join(""):"";
+  let h=`<div class="cc"><div class="cch"><span class="chh">${icon(n)}<span style="min-width:0"><b class="cn">${esc(n)}</b>${pre?' <span class="tag">\u2605 Prepick</span>':""}<span class="tags">${roles}</span></span></span><button class="btn" ${pre?`data-unpre="${esc(n)}"`:`data-cx="${esc(n)}"`}>${pre?"Remove prepick":"Remove"}</button></div>`;
   if(risky.length)h+=`<p class="bad">Risky: the enemy has ${risky.map(esc).join(", ")}.</p>`;
   if(good.length)h+=`<p class="good">Good pick: it beats ${good.map(esc).join(", ")}.</p>`;
   if(link.length)h+=`<p class="good">Works well with your ${link.map(x=>esc(x)+(mk.pre.includes(x)?" (prepick)":"")).join(", ")}.</p>`;
   h+=fitLines(n);
-  h+=`<h3>Weak against</h3>${chips(wk)}<h3>Strong against</h3>${chips(sr)}<h3>Works well with</h3>${chips(sy)}`;
+  h+=`<div class="cinfo"><div><div class="nl">Weak against</div>${chips(wk)}</div><div><div class="nl">Strong against</div>${chips(sr)}</div><div><div class="nl">Works well with</div>${chips(sy)}</div></div>`;
   if(c&&!used().has(n)){
     if(st.bp.length<5)h+=`<button class="btn" data-add="${esc(n)}">Add to blue team</button> `;
     if(st.rp.length<5)h+=`<button class="btn" data-addr="${esc(n)}">Add to red team</button>`;
@@ -1773,10 +1812,11 @@ function champBlock(n){
 }
 function consider(){
   const list=[...mk.pre,...cons.filter(x=>!mk.pre.includes(x))];
+  if(list.length&&!VER&&!icoAsked){icoAsked=true;loadIcons()}
   $("cres").innerHTML=list.length?planCard()+list.map(champBlock).join(""):`<p class="note">Search a champion above to add it here. Prepicked champions appear here automatically.</p>`;
 }
 Object.values(DRAW).forEach(f=>f());
-let DS={lo:innerWidth>=1800,ro:false,so:false},icons=false,hide=false,VER="",IDS={};
+let DS={lo:innerWidth>=1800,ro:false,so:false},icons=false,hide=false,VER="",IDS={},icoAsked=false;
 try{Object.assign(DS,JSON.parse(localStorage.getItem("lolDr")||"{}"));icons=localStorage.getItem("lolIcons")==="1";hide=localStorage.getItem("lolHide")==="1"}catch(e){}
 function styleBtn(){try{$("stl").setAttribute("aria-pressed",document.documentElement.getAttribute("data-style")==="gg")}catch(e){}}
 function toggleStyle(){
