@@ -66,6 +66,16 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+.tp{margin:12px 0}
+.tlist{list-style:none;margin:6px 0 0;padding:0}
+.tlist li{display:flex;align-items:center;gap:8px;padding:5px 8px;margin:0 0 4px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.tlist li.drag{opacity:.45}
+.tlist li.over{border-color:var(--gold);box-shadow:inset 0 3px 0 var(--gold)}
+.tlist .dg{cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;color:var(--mute);padding:2px 6px}
+.tlist .tn{width:1.6em;color:var(--mute);font-size:13px}
+.tlist .tname{flex:1}
+.tlist .ico{width:28px;height:28px;margin:0}
+.tlist button{border:0;background:transparent;color:var(--mute);font-size:18px;line-height:1;cursor:pointer}
 .drs{right:0;transform:translateX(105%);border-left:1px solid var(--line);width:min(980px,98vw);z-index:35}
 .st{width:100%;border-collapse:collapse}.st td,.st th{padding:3px 6px;text-align:left;border-bottom:1px solid var(--line);font-size:13px}
 .st button{border:0;background:transparent;color:var(--mute);font-size:16px;line-height:1;cursor:pointer}
@@ -190,15 +200,21 @@ summary{cursor:pointer;color:var(--mute)}
 <input id="prid" type="text" placeholder="Riot ID (optional), e.g. Name#EUW" aria-label="Riot ID" hidden>
 <button class="btn" id="padd">Add profile</button>
 </details>
-<details class="card tools" open><summary><h2>Add or update a champion</h2></summary>
+<details class="card tools" open id="tlc" hidden><summary><h2>Tier lists (what they like to play)</h2></summary>
+<select id="tsel" aria-label="Player"></select>
+<div class="cbw"><input id="tc" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Champion" placeholder="Search a champion to add" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
+<button class="btn" id="tadd">Add to tier list</button> <button class="btn" id="ticons" aria-pressed="false">Icons</button> <span class="note" id="tmsg" role="status"></span>
+<div id="tll"></div>
+<p class="note">Drag the ☰ handle to put champions in order, best first. With the keyboard, focus the handle and press the up or down arrow key.</p>
+</details>
+<details class="card tools" open><summary><h2 id="acT">Add or update a champion</h2></summary>
 <select id="psel" aria-label="Profile"></select>
 <div class="cbw"><input id="sc" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Champion" placeholder="Search a champion" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
 <div class="row"><input id="pg" type="number" min="0" placeholder="Games" aria-label="Games"><input id="pw" type="number" min="0" max="100" step="0.1" placeholder="Win rate %" aria-label="Win rate"><input id="pk" type="number" min="0" step="0.01" placeholder="KDA" aria-label="KDA"></div>
-<input id="prk" type="number" min="1" placeholder="Position in the list (optional)" aria-label="Position in the list" hidden>
-<button class="btn" id="ptadd" hidden>Add to tier list</button> <button class="btn" id="pcadd">Save champion</button> <span class="note" id="scmsg" role="status"></span>
+<button class="btn" id="pcadd">Save champion</button> <span class="note" id="scmsg" role="status"></span>
 <div style="margin-top:8px"><button class="btn" id="priot">Import from Riot</button> <select id="prc" aria-label="Games to read" style="width:auto;display:inline-block"><option value="20">last 20 ranked games</option><option value="100">last 100 ranked games</option><option value="300">last 300 ranked games</option><option value="all">all ranked games (slow)</option></select> <button class="btn" id="pstop" hidden>Stop</button></div>
 <p class="note">You can also type the stats by hand. The op.gg link is on each profile.</p>
-<p class="note" id="ordhint" hidden>The tier list is what a player likes to play, best first. Add champions with Add to tier list; a position puts one exactly there, otherwise it goes to the end. Imported stats (games, win rate, KDA) are kept separately below it.</p>
+<p class="note" id="ordhint" hidden>These stats are separate from the tier list. Fill them with the imports below or by hand.</p>
 </details>
 <details class="card tools" open><summary><h2>Paste a champion table</h2></summary>
 <p class="note" style="margin:0 0 6px">On op.gg open the player's profile and click the Champions tab. Select only the champion table by dragging from the first champion name down to the last row, copy it (Ctrl+C) and paste below. Do not use Select all, because the page also lists recent matches with different numbers. The app picks out champions, games, win rate and KDA and adds them to the profile chosen above.</p>
@@ -448,7 +464,7 @@ function combos(){
   return uniq.sort((x,y)=>y.s-x.s).slice(0,4);
 }
 function matchPlayers(mine,roster){
-  const u=new Set(),role=x=>x.role||derivedRole(x),has=(x,n)=>(x.pool||[]).includes(n)||x.champs.some(c=>c.n===n);
+  const u=new Set(),role=x=>x.role||derivedRole(x),has=(x,n)=>(x.pool||[]).includes(n);
   mine.forEach(n=>{
     const b=BY[n];if(!b)return;
     const f=roster.find(x=>!u.has(x.id)&&has(x,n)&&b.r.includes(role(x)))||roster.find(x=>!u.has(x.id)&&has(x,n))||roster.find(x=>!u.has(x.id)&&b.r.includes(role(x)));
@@ -461,8 +477,8 @@ function playersCard(mine){
   if(!roster.length)return"";
   const ub=used(),taken=matchPlayers(mine,roster);
   return`<details class="card" data-k="players" ${op("players")}><summary><h2>Your players</h2></summary>${roster.map(x=>{
-    const role=x.role||derivedRole(x),src=(x.pool&&x.pool.length)?x.pool:x.champs.slice().sort((a,b)=>b.g-a.g).map(c=>c.n),av=src.filter(n=>!ub.has(n)).slice(0,6).map(n=>({n}));
-    return`<div class="cc"><div><b>${esc(x.name)}</b> <span class="tag">${esc(RN[role]||"?")}</span>${taken.has(x.id)?' <span class="note">(picked)</span>':""}</div>${av.length?`<div style="margin-top:4px">${av.map(c=>`<button class="chip" data-addmine="${esc(c.n)}">${esc(c.n)}</button>`).join(" ")}</div>`:`<p class="note" style="margin:2px 0 0">${src.length?"All champions in the pool are taken.":"No champions in the pool yet."}</p>`}</div>`;
+    const role=x.role||derivedRole(x),src=x.pool||[],av=src.filter(n=>!ub.has(n)).slice(0,6).map(n=>({n}));
+    return`<div class="cc"><div><b>${esc(x.name)}</b> <span class="tag">${esc(RN[role]||"?")}</span>${taken.has(x.id)?' <span class="note">(picked)</span>':""}</div>${av.length?`<div style="margin-top:4px">${av.map(c=>`<button class="chip" data-addmine="${esc(c.n)}">${esc(c.n)}</button>`).join(" ")}</div>`:`<p class="note" style="margin:2px 0 0">${src.length?"All champions in the tier list are taken.":"No champions in the tier list yet."}</p>`}</div>`;
   }).join("")}<p class="note">The first free champions in each player's list. Tap one to pick it.</p></details>`;
 }
 function pickIdeas(cb){
@@ -472,7 +488,7 @@ function pickIdeas(cb){
   const later=j<0?0:Math.min(ORDER.slice(j+1).filter(x=>x===ek).length,5-foe.length);
   const inC=new Set();cb.forEach(c=>c.need.forEach(x=>inC.add(x)));
   const pre=mk.pre.filter(x=>!mine.includes(x)),out=[];
-  const roster=myPlayers(),taken=matchPlayers(mine,roster),free=roster.filter(x=>!taken.has(x.id)&&((x.pool&&x.pool.length)||x.champs.length));
+  const roster=myPlayers(),taken=matchPlayers(mine,roster),free=roster.filter(x=>!taken.has(x.id)&&x.pool&&x.pool.length);
   D.forEach(c=>{
     if(u.has(c.n))return;
     const fit=c.r.filter(r=>pool.includes(r));if(!fit.length)return;
@@ -489,18 +505,15 @@ function pickIdeas(cb){
     if(wk.length){s-=3*wk.length;w.push("weak vs "+wk.join(", "))}
     if(inC.has(c.n)){s+=1.5;w.push("part of a combo")}
     if(free.length){
-      const rr=c.r.filter(r=>pool.includes(r));let best=null,st=null,has=false;
+      const rr=c.r.filter(r=>pool.includes(r));let best=null,has=false;
       free.forEach(x=>{
         if(!rr.includes(x.role||derivedRole(x)))return;
         has=true;
-        const i=(x.pool||[]).indexOf(c.n);
+        const i=x.pool.indexOf(c.n);
         if(i>=0&&(!best||i<best.i))best={x,i};
-        const y=x.champs.find(z=>z.n===c.n);
-        if(y&&y.g>=5&&(!st||y.g>st.y.g))st={x,y};
       });
       if(best){s+=Math.max(2,7-.6*best.i);w.push(best.x.name+" plays it (#"+(best.i+1)+" in the tier list)")}
-      else if(st){s+=2;w.push(st.x.name+" played it "+st.y.g+" times ("+st.y.wr+"% WR)")}
-      else if(has){s-=2;w.push("not in your players' pools")}
+      else if(has){s-=2;w.push("not in your players' tier lists")}
     }
     out.push({n:c.n,s,w});
   });
@@ -575,7 +588,7 @@ function analysis(){
   }
   $("an").innerHTML=h;
 }
-function render(){document.body.dataset.me=me;$("icons").setAttribute("aria-pressed",icons);$("hide").setAttribute("aria-pressed",hide);board();controls();grid();analysis();consider();notes();histView();scView()}
+function render(){document.body.dataset.me=me;$("icons").setAttribute("aria-pressed",icons);$("ticons").setAttribute("aria-pressed",icons);$("hide").setAttribute("aria-pressed",hide);board();controls();grid();analysis();consider();notes();histView();scView()}
 function add(n,k){
   k=k||(auto&&stepNow()<20?ORDER[stepNow()]:target);
   if(used().has(n)||st[k].length>=5)return false;
@@ -625,16 +638,16 @@ document.addEventListener("click",e=>{
   else if(b.id==="padd"){scAddProfile();return}
   else if(b.id==="pcadd"){scAddChamp();return}
   else if(b.id==="pimp"){scImport();return}
+  else if(b.id==="tadd"){tierAdd();return}
+  else if(b.id==="ticons"){icons=!icons;try{localStorage.setItem("lolIcons",icons?"1":"0")}catch(e){}if(icons)loadIcons()}
   else if(b.id==="priot"){riotImport();return}
   else if(b.id==="pstop"){riotStop=true;return}
   else if(b.dataset.ppx){PP.splice(+b.dataset.ppx,1);ppView();return}
   else if(b.dataset.ped){scEdit(b.dataset.ped);return}
   else if(b.dataset.pcx){scRmChamp(b.dataset.pcx);return}
   else if(b.dataset.pmv){scMove(b.dataset.pmv);return}
-  else if(b.id==="ptadd"){scAddTier();return}
   else if(b.dataset.tmv){scTierMove(b.dataset.tmv);return}
   else if(b.dataset.tcx){scTierRm(b.dataset.tcx);return}
-  else if(b.dataset.t2p){scToTier(b.dataset.t2p);return}
   else if(b.dataset.prm){scRmProfile(b.dataset.prm);return}
   else if(b.id==="icons"){icons=!icons;try{localStorage.setItem("lolIcons",icons?"1":"0")}catch(e){}if(icons)loadIcons()}
   else return;
@@ -689,7 +702,8 @@ function combo(id,multi){
 combo("cq");combo("na",1);combo("nb",1);combo("fz",1);combo("ec");
 $("ec").addEventListener("change",()=>{$("emsg").textContent="";editForm()});
 $("nsearch").addEventListener("input",e=>{nq=e.target.value;notes()});
-combo("sc");
+combo("sc");combo("tc");
+$("tsel").addEventListener("change",()=>{tSel=$("tsel").value});
 $("pp").addEventListener("input",()=>{PP=parsePaste($("pp").value);PPROLE="";ppView()});
 $("sct").addEventListener("change",()=>{scId=$("sct").value;render()});
 $("psel").addEventListener("change",()=>{scSel=$("psel").value});
@@ -1015,17 +1029,64 @@ async function scAddChamp(){
   if(c)Object.assign(c,{g,wr,kda});else p.champs.push({n,g,wr,kda});
   await scPersist(t);scmsg("Saved.");$("sc").value="";render();
 }
-async function scAddTier(){
-  const t=curTeam(),p=t&&t.data.find(x=>x.id===scSel),n=canon($("sc").value),pos=parseInt($("prk").value);
-  if(!p){scmsg("Add a player first and choose it above.");return}
-  if(!BY[n]){scmsg("Choose a champion from the list.");return}
-  p.pool=p.pool||[];
-  const i=p.pool.indexOf(n);
-  if(i>=0&&!(pos>=1)){scmsg(n+" is already in the tier list. Enter a position to move it.");return}
-  if(i>=0)p.pool.splice(i,1);
-  p.pool.splice(pos>=1?Math.min(pos-1,p.pool.length):p.pool.length,0,n);
-  await scPersist(t);scmsg("Saved to the tier list.");$("sc").value="";$("prk").value="";render();
+let tSel="",DR=null;
+function tierView(){
+  const my=scMode==="my";
+  $("tlc").hidden=!my;
+  if(!my)return;
+  const t=curTeam(),P=t?t.data:[];
+  if(!P.find(x=>x.id===tSel))tSel=P[0]?P[0].id:"";
+  $("tsel").innerHTML=P.length?P.map(x=>`<option value="${esc(x.id)}"${x.id===tSel?" selected":""}>${esc(x.name)}</option>`).join(""):`<option value="">No player yet</option>`;
+  $("tll").innerHTML=P.length?P.map(x=>{
+    const pool=x.pool||[],role=x.role||derivedRole(x);
+    return`<div class="tp"><div><b>${esc(x.name)}</b> ${role?`<span class="tag">${esc(RN[role]||role)}</span>`:""}</div>${pool.length?`<ol class="tlist">${pool.map((n,i)=>`<li data-pid="${esc(x.id)}" data-tn="${esc(n)}"><span class="dg" data-drag tabindex="0" role="button" aria-label="Drag to reorder ${esc(n)}">\u2630</span><span class="tn">${i+1}</span>${icons?icon(n):""}<span class="tname">${esc(n)}</span><button data-tcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from the tier list">\u00d7</button></li>`).join("")}</ol>`:`<p class="note">No champions yet.</p>`}</div>`;
+  }).join(""):`<p class="note">Add a player first.</p>`;
 }
+async function tierAdd(){
+  const t=curTeam(),p=t&&t.data.find(x=>x.id===tSel),n=canon($("tc").value);
+  if(!p){$("tmsg").textContent="Add a player first and choose them above.";return}
+  if(!BY[n]){$("tmsg").textContent="Choose a champion from the list.";return}
+  p.pool=p.pool||[];
+  if(p.pool.includes(n)){$("tmsg").textContent=n+" is already in the list.";return}
+  p.pool.push(n);
+  await scPersist(t);$("tmsg").textContent="Added.";$("tc").value="";render();
+}
+async function tierDrop(pid,n,over){
+  const t=curTeam(),p=t&&t.data.find(x=>x.id===pid);
+  if(!p||!p.pool)return;
+  const i=p.pool.indexOf(n),j=p.pool.indexOf(over);
+  if(i<0||j<0||i===j)return;
+  p.pool.splice(i,1);p.pool.splice(j,0,n);
+  await scPersist(t);render();
+}
+document.addEventListener("pointerdown",e=>{
+  const h=e.target.closest&&e.target.closest("[data-drag]");
+  if(!h)return;
+  const li=h.closest("li");
+  e.preventDefault();
+  DR={pid:li.dataset.pid,n:li.dataset.tn,over:null};
+  li.classList.add("drag");
+  try{h.setPointerCapture(e.pointerId)}catch(_){}
+});
+document.addEventListener("pointermove",e=>{
+  if(!DR)return;
+  const el=document.elementFromPoint(e.clientX,e.clientY),li=el&&el.closest("li[data-tn]");
+  document.querySelectorAll("li.over").forEach(x=>x.classList.remove("over"));
+  if(li&&li.dataset.pid===DR.pid&&li.dataset.tn!==DR.n){li.classList.add("over");DR.over=li.dataset.tn}else DR.over=null;
+});
+document.addEventListener("pointerup",()=>{
+  if(!DR)return;
+  const d=DR;DR=null;
+  document.querySelectorAll("li.drag,li.over").forEach(x=>x.classList.remove("drag","over"));
+  if(d.over)tierDrop(d.pid,d.n,d.over);
+});
+document.addEventListener("keydown",e=>{
+  const h=e.target.closest&&e.target.closest("[data-drag]");
+  if(!h||(e.key!=="ArrowUp"&&e.key!=="ArrowDown"))return;
+  e.preventDefault();
+  const li=h.closest("li");
+  scTierMove(li.dataset.pid+"|"+li.dataset.tn+"|"+(e.key==="ArrowUp"?-1:1));
+});
 async function scTierMove(v){
   const[id,n,d]=v.split("|"),t=curTeam(),p=t&&t.data.find(x=>x.id===id);
   if(!p||!p.pool)return;
@@ -1039,21 +1100,14 @@ async function scTierRm(v){
   if(!p||!p.pool)return;
   p.pool=p.pool.filter(x=>x!==n);await scPersist(t);render();
 }
-async function scToTier(v){
-  const[id,n]=v.split("|"),t=curTeam(),p=t&&t.data.find(x=>x.id===id);
-  if(!p)return;
-  p.pool=p.pool||[];
-  if(!p.pool.includes(n))p.pool.push(n);
-  await scPersist(t);render();
-}
 function scEdit(v){
   const[id,n]=v.split("|"),t=curTeam(),p=t&&t.data.find(x=>x.id===id);
   if(!p)return;
-  const c=p.champs.find(x=>x.n===n),ti=(p.pool||[]).indexOf(n);
-  if(!c&&ti<0)return;
-  scSel=id;$("psel").value=id;$("sc").value=n;$("prk").value=ti>=0?ti+1:"";
+  const c=p.champs.find(x=>x.n===n);
+  if(!c)return;
+  scSel=id;$("psel").value=id;$("sc").value=n;
   $("pg").value=c?c.g:"";$("pw").value=c?c.wr:"";$("pk").value=c?c.kda:"";
-  scmsg(scMode==="my"?"Change the position and click Add to tier list, or change the stats and click Save stats.":"Change the numbers and click Save champion.");
+  scmsg(scMode==="my"?"Change the numbers and click Save stats.":"Change the numbers and click Save champion.");
 }
 async function scRmChamp(v){
   const[id,n]=v.split("|"),t=curTeam(),p=t&&t.data.find(x=>x.id===id);
@@ -1065,23 +1119,19 @@ async function scRmProfile(id){
   if(!p||!await ask('Remove profile "'+p.name+'"?',"Remove"))return;
   t.data=t.data.filter(x=>x.id!==id);await scPersist(t);render();
 }
-const pcs=p=>[...p.champs.map(c=>({n:c.n,g:c.g,wr:c.wr})),...(p.pool||[]).filter(n=>!p.champs.some(c=>c.n===n)).map(n=>({n,g:0,wr:0}))];
+const pcs=p=>Array.isArray(p.pool)?p.pool.map(n=>({n,g:0,wr:0})):p.champs.map(c=>({n:c.n,g:c.g,wr:c.wr}));
 function derivedRole(p){
   const w={};
   pcs(p).forEach(c=>{const b=BY[c.n];if(b)b.r.forEach(r=>{w[r]=(w[r]||0)+Math.max(1,c.g)/b.r.length})});
   return Object.keys(w).sort((a,b)=>w[b]-w[a])[0]||"";
 }
 function profCard(p){
-  const my=scId===MYID,key=esc(p.id),pool=p.pool||[];
+  const my=scId===MYID,key=esc(p.id);
   const rows=p.champs.slice().sort((a,b)=>b.g-a.g),w=c=>Math.max(1,c.g),tw=rows.reduce((a,c)=>a+w(c),0)||1;
   const tg=rows.reduce((a,c)=>a+c.g,0),wr=rows.reduce((a,c)=>a+w(c)*c.wr,0)/tw,kda=rows.reduce((a,c)=>a+w(c)*c.kda,0)/tw;
   const role=p.role||derivedRole(p),rid=p.riot||p.name,link=rid.includes("#")?"https://www.op.gg/summoners/"+encodeURIComponent(p.region||"euw")+"/"+encodeURIComponent(rid.replace("#","-")):"";
   const stat=tg?`<span class="note">${tg} games, ${wr.toFixed(1)}% WR, ${kda.toFixed(2)} KDA</span>`:"";
-  let body="";
-  if(my){
-    body+=`<div class="nl">Tier list (what they like to play)</div>`+(pool.length?`<div style="overflow-x:auto"><table class="st"><tr><th>#</th><th>Champion</th><th></th></tr>${pool.map((n,i)=>`<tr><td>${i+1}</td><td><button class="lnk" data-ped="${key}|${esc(n)}">${esc(n)}</button></td><td style="white-space:nowrap"><button data-tmv="${key}|${esc(n)}|-1" aria-label="Move ${esc(n)} up">\u2191</button><button data-tmv="${key}|${esc(n)}|1" aria-label="Move ${esc(n)} down">\u2193</button><button data-tcx="${key}|${esc(n)}" aria-label="Remove ${esc(n)} from the tier list">\u00d7</button></td></tr>`).join("")}</table></div>`:`<p class="note">No champions in the tier list yet.</p>`)+`<div class="nl">Imported stats</div>`;
-  }
-  body+=rows.length?`<div style="overflow-x:auto"><table class="st"><tr><th>Champion</th><th>Games</th><th>WR</th><th>KDA</th><th></th></tr>${rows.map(c=>`<tr><td><button class="lnk" data-ped="${key}|${esc(c.n)}">${esc(c.n)}</button></td><td>${c.g}</td><td>${c.wr}%</td><td>${c.kda}</td><td style="white-space:nowrap">${my&&!pool.includes(c.n)?`<button data-t2p="${key}|${esc(c.n)}" aria-label="Add ${esc(c.n)} to the tier list">+</button>`:""}<button data-pcx="${key}|${esc(c.n)}" aria-label="Remove ${esc(c.n)}">\u00d7</button></td></tr>`).join("")}</table></div>`:`<p class="note">${my?"No imported stats yet. Use the paste or Riot import below.":"No champions yet. Add the champions this player plays."}</p>`;
+  const body=(my?`<div class="nl">Imported stats</div>`:"")+(rows.length?`<div style="overflow-x:auto"><table class="st"><tr><th>Champion</th><th>Games</th><th>WR</th><th>KDA</th><th></th></tr>${rows.map(c=>`<tr><td><button class="lnk" data-ped="${key}|${esc(c.n)}">${esc(c.n)}</button></td><td>${c.g}</td><td>${c.wr}%</td><td>${c.kda}</td><td><button data-pcx="${key}|${esc(c.n)}" aria-label="Remove ${esc(c.n)}">\u00d7</button></td></tr>`).join("")}</table></div>`:`<p class="note">${my?"No imported stats yet. Use the paste or Riot import below.":"No champions yet. Add the champions this player plays."}</p>`);
   return`<details class="ng" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><b>${esc(p.name)}</b> ${role?`<span class="tag">${esc(RN[role]||role)}</span>`:""} ${stat}</summary>${body}<p style="margin:6px 0 0">${link?`<a href="${link}" target="_blank" rel="noopener">Open on op.gg</a> `:""}<button class="btn" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></p></details>`;
 }
 const synAdj=()=>{const a={};REL.syn.forEach(([x,y])=>{(a[x]=a[x]||new Set()).add(y);(a[y]=a[y]||new Set()).add(x)});return a};
@@ -1174,7 +1224,7 @@ function scView(){
   $("apt").textContent=my?"Add player":"Add profile";
   $("padd").textContent=my?"Add player":"Add profile";
   $("pn").placeholder=my?"Player name":"Riot ID, e.g. Name#EUW";
-  $("prid").hidden=!my;$("prk").hidden=!my;$("ordhint").hidden=!my;$("ptadd").hidden=!my;$("pcadd").textContent=my?"Save stats":"Save champion";$("sctc").hidden=my;
+  $("prid").hidden=!my;$("ordhint").hidden=!my;$("pcadd").textContent=my?"Save stats":"Save champion";$("acT").textContent=my?"Imported stats: add or update a champion":"Add or update a champion";$("sctc").hidden=my;
   $("sct").innerHTML=list.length?list.map(x=>`<option value="${esc(x.id)}"${x.id===scId?" selected":""}>${esc(x.name)}</option>`).join(""):`<option value="">No team yet</option>`;
   if($("scn").dataset.t!==scId){$("scn").value=t&&!my?t.name:"";$("scn").dataset.t=scId}
   $("scmode").textContent=sb&&scOK?"Teams are saved in the shared database.":"Teams are saved in this browser only. Create the scouts table in Supabase to share them.";
@@ -1182,6 +1232,7 @@ function scView(){
   $("psel").innerHTML=P.length?P.map(p=>`<option value="${esc(p.id)}"${p.id===scSel?" selected":""}>${esc(p.name)}</option>`).join(""):`<option value="">${my?"No player yet":"No profile yet"}</option>`;
   $("scp").innerHTML=P.length?P.map(profCard).join(""):`<p class="note">${my?"Add your players to see their pools and get pick suggestions that fit them.":"Add a profile to start scouting."}</p>`;
   $("sca").innerHTML=P.length?scAnalysis(P,my):"";
+  tierView();
 }
 let PP=[],PPROLE="";
 function idToName(id){
