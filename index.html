@@ -194,7 +194,12 @@ summary{cursor:pointer;color:var(--mute)}
 <div class="cbw"><input id="sc" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Champion" placeholder="Search a champion" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
 <div class="row"><input id="pg" type="number" min="0" placeholder="Games" aria-label="Games"><input id="pw" type="number" min="0" max="100" step="0.1" placeholder="Win rate %" aria-label="Win rate"><input id="pk" type="number" min="0" step="0.01" placeholder="KDA" aria-label="KDA"></div>
 <button class="btn" id="pcadd">Save champion</button> <span class="note" id="scmsg" role="status"></span>
-<p class="note">Stats are typed in by hand. Copy them from op.gg using the link on each profile.</p>
+<p class="note">You can also type the stats by hand. The op.gg link is on each profile.</p>
+</details>
+<details class="card tools" open><summary><h2>Paste a champion table</h2></summary>
+<p class="note" style="margin:0 0 6px">On op.gg open the player's profile and click the Champions tab. Press Ctrl+A, then Ctrl+C, and paste below. On a phone, long-press and choose Select all, then Copy. The app picks out champions, games, win rate and KDA and adds them to the profile chosen above.</p>
+<textarea id="pp" aria-label="Pasted champion table" placeholder="Paste here" style="min-height:90px"></textarea>
+<div id="ppv"></div>
 </details>
 <div id="scp"></div>
 <div id="sca"></div></aside>
@@ -585,6 +590,8 @@ document.addEventListener("click",e=>{
   else if(b.id==="scdel"){scDel();return}
   else if(b.id==="padd"){scAddProfile();return}
   else if(b.id==="pcadd"){scAddChamp();return}
+  else if(b.id==="pimp"){scImport();return}
+  else if(b.dataset.ppx){PP.splice(+b.dataset.ppx,1);ppView();return}
   else if(b.dataset.ped){scEdit(b.dataset.ped);return}
   else if(b.dataset.pcx){scRmChamp(b.dataset.pcx);return}
   else if(b.dataset.prm){scRmProfile(b.dataset.prm);return}
@@ -642,6 +649,7 @@ combo("cq");combo("na",1);combo("nb",1);combo("fz",1);combo("ec");
 $("ec").addEventListener("change",()=>{$("emsg").textContent="";editForm()});
 $("nsearch").addEventListener("input",e=>{nq=e.target.value;notes()});
 combo("sc");
+$("pp").addEventListener("input",()=>{PP=parsePaste($("pp").value);ppView()});
 $("sct").addEventListener("change",()=>{scId=$("sct").value;render()});
 $("psel").addEventListener("change",()=>{scSel=$("psel").value});
 $("fz").addEventListener("mchange",()=>{saveFear();render()});
@@ -1062,6 +1070,49 @@ function scView(){
   $("psel").innerHTML=P.length?P.map(p=>`<option value="${esc(p.id)}"${p.id===scSel?" selected":""}>${esc(p.name)}</option>`).join(""):`<option value="">No profile yet</option>`;
   $("scp").innerHTML=P.length?P.map(profCard).join(""):`<p class="note">Add a profile to start scouting.</p>`;
   $("sca").innerHTML=P.length?scAnalysis(P):"";
+}
+let PP=[];
+function parsePaste(txt){
+  const t=txt.replace(/[\u2018\u2019]/g,"'").replace(/\u00a0/g," ");
+  const names=D.map(c=>c.n).sort((a,b)=>b.length-a.length).map(n=>n.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"));
+  const re=new RegExp("(^|[^A-Za-z'])("+names.join("|")+")(?![A-Za-z])","g");
+  const hits=[...t.matchAll(re)].map(m=>({n:m[2],e:m.index+m[1].length+m[2].length,i:m.index+m[1].length}));
+  const out=[],seen=new Set();
+  hits.forEach((h,k)=>{
+    if(seen.has(h.n))return;
+    const seg=t.slice(h.e,k+1<hits.length?hits[k+1].i:t.length);
+    let g=0,wr=0,kda=0;
+    const w=seg.match(/(\d+)\s*W\b\D{0,6}?(\d+)\s*L\b/i);
+    if(w)g=+w[1]+ +w[2];
+    else{const m=seg.match(/(\d+)\s*(?:games?|played|matches)\b/i)||seg.match(/\b(?:games?|played)\D{0,3}(\d+)/i);if(m)g=+m[1]}
+    const pm=seg.match(/(\d{1,3}(?:\.\d+)?)\s*%/);
+    if(pm)wr=+pm[1];else if(w&&g)wr=Math.round(1000*w[1]/g)/10;
+    const km=seg.match(/(\d+(?:\.\d+)?)\s*:\s*1\b/);
+    if(km)kda=+km[1];
+    else{const k3=seg.match(/(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);if(k3)kda=Math.round(100*(+k3[1]+ +k3[3])/(+k3[2]||1))/100}
+    if(!g){
+      const rest=seg.replace(/\d+(?:\.\d+)?\s*%/g," ").replace(/\d+(?:\.\d+)?\s*[:\/]\s*[\d.]+(?:\s*[:\/]\s*[\d.]+)*/g," ");
+      const m=rest.match(/(?:^|[^\d.])(\d{1,4})(?![\d.])/);
+      if(m&&+m[1]>0)g=+m[1];
+    }
+    if(!g&&!wr&&!kda)return;
+    seen.add(h.n);
+    out.push({n:canon(h.n),g,wr,kda});
+  });
+  return out;
+}
+function ppView(){
+  const t=curTeam(),p=t&&t.data.find(x=>x.id===scSel);
+  if(!$("pp").value.trim()){$("ppv").innerHTML="";return}
+  $("ppv").innerHTML=PP.length?`<p class="note" style="margin:6px 0 4px">Found ${PP.length} champions${p?" for "+esc(p.name):""}. Remove any that look wrong, then import.</p><div style="overflow-x:auto"><table class="st"><tr><th>Champion</th><th>Games</th><th>WR</th><th>KDA</th><th></th></tr>${PP.map((r,i)=>`<tr><td>${esc(r.n)}</td><td>${r.g}</td><td>${r.wr}%</td><td>${r.kda}</td><td><button data-ppx="${i}" aria-label="Remove ${esc(r.n)}">\u00d7</button></td></tr>`).join("")}</table></div><button class="btn" id="pimp" style="margin-top:6px">Import ${PP.length} champions</button>`:`<p class="note">No champions found. Make sure you copied from the Champions tab, or add them by hand above.</p>`;
+}
+async function scImport(){
+  const t=curTeam(),p=t&&t.data.find(x=>x.id===scSel);
+  if(!p){scmsg("Add a profile first and choose it above.");return}
+  if(!PP.length)return;
+  PP.forEach(r=>{const c=p.champs.find(x=>x.n===r.n);if(c){c.g=r.g;c.wr=r.wr;c.kda=r.kda}else p.champs.push({n:r.n,g:r.g,wr:r.wr,kda:r.kda})});
+  const n=PP.length;PP=[];$("pp").value="";ppView();
+  await scPersist(t);scmsg("Imported "+n+" champions.");render();
 }
 let nq="",nf="all";
 function cliques(){
