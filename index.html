@@ -8,13 +8,15 @@
 <script>
 var SB={url:"https://jddgnigdagyddbriqqaj.supabase.co",key:"sb_publishable__v2Iy4DatUS7aqXQWsAqCQ_Q9w2b9PP"};
 if(SB.url)document.documentElement.className+=" locked";
-try{if(localStorage.getItem("lolStyle")==="gg")document.documentElement.setAttribute("data-style","gg")}catch(e){}
+function applyTheme(t){var h=document.documentElement;h.removeAttribute("data-style");h.removeAttribute("data-theme");if(t==="gg")h.setAttribute("data-style","gg");else if(t==="light"||t==="dark")h.setAttribute("data-theme",t)}
+try{applyTheme(localStorage.getItem("lolTheme")||(localStorage.getItem("lolStyle")==="gg"?"gg":"auto"))}catch(e){}
 </script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap">
 <style>
 :root{--bg:#EEF1F5;--panel:#FFFFFF;--ink:#0F1B2D;--mute:#5A6678;--line:#D3D9E2;--gold:#8A6A1F;--blue:#1E5FBF;--red:#B4322A;--ok:#0F7F78;--ad:#C77B1F;--ap:#7B4FD1;--chip:#E6EAF0;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#091322;--panel:#0F1D33;--ink:#EAE6DA;--mute:#8C9AB0;--line:#24344F;--gold:#D2B26C;--blue:#5A9BFF;--red:#F0685E;--ok:#2FD1C4;--ad:#E8993A;--ap:#9C78EE;--chip:#182843}}
+:root{color-scheme:light dark}:root[data-theme="light"]{color-scheme:light}:root[data-theme="dark"]{color-scheme:dark}
 :root[data-theme="dark"]{--bg:#091322;--panel:#0F1D33;--ink:#EAE6DA;--mute:#8C9AB0;--line:#24344F;--gold:#D2B26C;--blue:#5A9BFF;--red:#F0685E;--ok:#2FD1C4;--ad:#E8993A;--ap:#9C78EE;--chip:#182843}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
@@ -42,8 +44,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-o
 input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:6px;margin-top:8px}
 .ch{display:block;text-align:left;padding:7px 8px;border:1px solid var(--line);border-left:5px solid var(--ad);border-radius:6px;background:var(--panel);min-height:48px}
-.ch.P{border-left-color:var(--ap)}.ch.M{border-left-color:transparent;border-image:linear-gradient(var(--ad),var(--ap)) 1 / 0 0 0 5px}
-.ch b{display:block;font-weight:600;font-size:14px;line-height:1.15}
+.ch.P{border-left-color:var(--ap)}.ch.M{border-left-color:transparent;background:linear-gradient(var(--ad),var(--ap)) left/5px 100% no-repeat border-box,var(--panel)}
+.ch b{display:block;font-weight:600;font-size:14px;line-height:1.15;hyphens:auto}
 .ch span{font-size:12px;color:var(--mute)}
 .ch.off{opacity:.35}
 .an{margin-top:18px;display:grid;gap:10px}
@@ -168,7 +170,9 @@ body .mem b,body .mem small,body .mem .st{max-width:100%;overflow-wrap:anywhere;
 body .tlist li,body .tlist .tname{min-width:0}
 body .tchip{max-width:100%}
 body .tchip .tn{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-body .sg button span,body .sg button em{min-width:0;overflow-wrap:anywhere}
+body .sg button{flex-wrap:wrap;align-items:baseline}
+body .sg button>span{flex:0 0 auto;font-weight:600}
+body .sg button em{flex:1 1 160px;min-width:0;text-align:right;overflow-wrap:anywhere}
 body .ng>summary b,body .ng>summary h2{overflow-wrap:anywhere}
 .actb{border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--mute);padding:1px 10px;font:inherit;font-size:12px;cursor:pointer}
 .actb.on{border-color:var(--ok);color:var(--ok);font-weight:600}
@@ -285,6 +289,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 .dl{left:0;border-right:1px solid var(--line)}
 .drr{left:0;right:0;top:auto;bottom:0;width:auto;height:min(55vh,560px,calc(100vh - var(--hh,56px) - 12px));transform:translateY(105%);border-left:0;border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(0,0,0,.35)}
 .drr #q{max-width:380px}
+.drh{position:sticky;top:-8px;z-index:2;margin:-8px -10px 0;padding:8px 10px 2px;background:var(--bg)}
 .dr.open{transform:none;visibility:visible}
 .dh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.dh h2{margin:0}
 .dh button,.dh .btn{padding:5px 11px;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
@@ -293,7 +298,7 @@ body.ro{padding-bottom:min(55vh,560px)}
 @media(min-width:2500px){body.lo{padding-left:1010px}body.lo .drr{left:1010px}.dl{box-shadow:none}}
 details>summary{cursor:pointer;list-style:none}
 details>summary::-webkit-details-marker{display:none}
-details>summary h2{display:inline;margin:0}
+details>summary h2{display:inline;margin:0;color:var(--ink)}
 details>summary::before{content:"\25B8";display:inline-block;width:1.1em;color:var(--gold)}
 details[open]>summary::before{content:"\25BE"}
 details.card[open]>summary{margin-bottom:8px}
@@ -303,8 +308,8 @@ details.card[open]>summary{margin-bottom:8px}
 .cch{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .tag{font:600 12px Barlow,system-ui,sans-serif;color:var(--gold);border:1px solid var(--gold);border-radius:999px;padding:1px 8px;vertical-align:middle}
 .ch,.slot.g,.ban.g{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-.ch.mb{opacity:.5;border:1px solid var(--red);border-left:5px solid var(--red);border-image:none}
-.ch.mp{border:1px solid var(--gold);border-left:5px solid var(--gold);border-image:none;box-shadow:inset 0 0 0 1px var(--gold)}
+.ch.mb{opacity:.5;border:1px solid var(--red);border-left:5px solid var(--red)}
+.ch.mp{border:1px solid var(--gold);border-left:5px solid var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
 .bd{display:block;font-weight:600}.mb .bd{color:var(--red)}.mp .bd{color:var(--gold)}
 .slot.g{opacity:.6;border-style:solid;border-color:var(--gold)}
 .ban.g{opacity:.6;border-style:solid;border-color:var(--red);color:var(--red)}
@@ -354,6 +359,10 @@ input,select,textarea{font-size:16px!important}
 .tlist button,.pt .x,.mem.sm button,.nc button,.st button,.mcs .chip button{min-width:32px;min-height:32px}
 .pt{padding-right:34px}
 body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
+.drr .dh{justify-content:flex-end;margin-bottom:6px}
+.drr .dh h2{display:none}
+.ch{padding:7px 6px}.ch b{font-size:13.5px}
+.drr .dh>span{display:flex;gap:6px}
 }
 </style>
 </head>
@@ -370,6 +379,8 @@ body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
 <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></symbol>
 <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
 <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
 <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
 <symbol id="r-T" viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 4.2 3 7.2 7 9 4-1.8 7-4.8 7-9V6z"/></symbol>
 <symbol id="r-J" viewBox="0 0 24 24"><path d="M12 21v-7"/><path d="M12 14c-4 0-7-3-7-7 4 0 7 3 7 7zM12 14c4 0 7-3 7-7-4 0-7 3-7 7z"/></symbol>
@@ -385,7 +396,7 @@ body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
 <button type="submit">Open</button><p id="gm" role="status"></p></form>
 
 </div>
-<header class="top" id="hh"><h1>Draft helper</h1><div class="tb"><button id="lo" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-bulb"/></svg>Suggestions</button><button id="ro" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Champions</button><button id="stl" aria-pressed="false" title="Switch between the default look and the GG look"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg>GG style</button><button id="so" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>Teams</button><button id="eb" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg>Enemy draft</button></div></header>
+<header class="top" id="hh"><h1>Draft helper</h1><div class="tb"><button id="lo" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-bulb"/></svg>Suggestions</button><button id="ro" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Champions</button><button id="so" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>Teams</button><button id="eb" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg>Enemy draft</button><button id="stl" title="Switch the look: Light, Dark or GG"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg><span>Light</span></button></div></header>
 <main>
 <p class="sub">Open the Champions panel to pick, and the Suggestions panel for picks, combos and bans.</p>
 <details class="card tools" open><summary><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg><h2>Draft board</h2></summary>
@@ -427,9 +438,9 @@ body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
 </main>
 <aside class="dr dl" id="dl" aria-label="Suggestions"><div class="dh"><h2><svg class="ic" aria-hidden="true"><use href="#i-bulb"/></svg>Suggestions</h2><button data-close="dl">Close</button></div><div class="an" id="an"></div></aside>
 <aside class="dr drs" id="de" aria-label="Enemy draft"><div class="dh"><h2><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg>Enemy draft</h2><button data-close="de">Close</button></div><div class="an" id="en"></div></aside>
-<aside class="dr drr" id="dr" aria-label="Champions"><div class="dh"><h2><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Champions</h2><span><button id="icons" aria-pressed="false">Icons</button> <button id="hide" aria-pressed="false">Hide taken</button> <button data-close="dr">Close</button></span></div>
+<aside class="dr drr" id="dr" aria-label="Champions"><div class="drh"><div class="dh"><h2><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Champions</h2><span><button id="icons" aria-pressed="false">Icons</button> <button id="hide" aria-pressed="false">Hide taken</button> <button data-close="dr">Close</button></span></div>
 <input type="search" id="q" placeholder="Search champions" aria-label="Search champions">
-<div class="rf" id="rf" role="group" aria-label="Filter by role"></div>
+<div class="rf" id="rf" role="group" aria-label="Filter by role"></div></div>
 <p class="note" style="margin:0 0 4px">Right-click a champion (long-press on touch) to mark a ban candidate, a prepick or a fearless ban.</p>
 <p class="note" id="icost" style="margin:0 0 4px"></p>
 <div class="grid" id="grid"></div></aside>
@@ -666,9 +677,14 @@ Zyra|S|P|c`.split("\n").map(l=>{const[n,r,d,t]=l.split("|");return{n,r:[...r],d,
 const BY=Object.fromEntries(D.map(c=>[c.n,c]));
 const BASE=Object.fromEntries(D.map(c=>[c.n,{r:c.r.slice(),d:c.d,t:c.t}]));
 const TARGETS=[["bp","Blue pick"],["rp","Red pick"],["bb","Blue ban"],["rb","Red ban"]];
-let st={bp:[],rp:[],bb:[],rb:[]},mk={ban:[],pre:[]},cons=[],role="",query="",me="b",auto=true;
+let st={bp:[],rp:[],bb:[],rb:[]},mk={ban:[],pre:[]},cons=[],SW={},role="",query="",me="b",auto=true;
 try{if(localStorage.getItem("lolMe")==="r")me="r"}catch(e){}
 let target=me==="b"?"bp":"rp";
+try{
+  const v=JSON.parse(localStorage.getItem("lolDraft")||"null"),ok=a=>Array.isArray(a)&&a.length<=5&&a.every(x=>typeof x==="string");
+  if(v&&v.st&&["bp","rp","bb","rb"].every(k=>ok(v.st[k]))){st=v.st;if(v.mk&&Array.isArray(v.mk.ban)&&Array.isArray(v.mk.pre))mk=v.mk;if(Array.isArray(v.cons))cons=v.cons;if(v.SW&&typeof v.SW==="object")SW=v.SW;auto=v.auto!==false;if(TARGETS.some(t=>t[0]===v.target))target=v.target}
+}catch(e){}
+function saveDraft(){try{localStorage.setItem("lolDraft",JSON.stringify({st,mk,cons,SW,auto,target}))}catch(e){}}
 const MY=()=>st[me==="b"?"bp":"rp"],EN=()=>st[me==="b"?"rp":"bp"];
 const $=id=>document.getElementById(id);
 const used=()=>new Set([].concat(st.bp,st.rp,st.bb,st.rb,MS.fz));
@@ -691,7 +707,6 @@ function analyse(names,fixed){
 }
 const ORDER=["bb","rb","bb","rb","bb","rb","bp","rp","rp","bp","bp","rp","rb","bb","rb","bb","rp","bp","bp","rp"];
 const SN={bb:"Blue ban",rb:"Red ban",bp:"Blue pick",rp:"Red pick"};
-let SW={};
 const OPEN={},op=k=>OPEN[k]===false?"":"open";
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.k)OPEN[d.dataset.k]=d.open},true);
 function stepNow(){
@@ -753,7 +768,7 @@ function playersCard(mine){
   if(!roster.length)return"";
   const ub=used(),taken=matchPlayers(mine,roster);
   const bench=myPlayers().filter(x=>!roster.includes(x));
-  return`<details class="card" data-k="players" ${op("players")}><summary><h2>Your players</h2></summary>${roster.map(x=>{
+  return`<details class="card" data-k="players" ${op("players")}><summary>${ic("star")}<h2>Your players</h2></summary>${roster.map(x=>{
     const role=x.role||derivedRole(x),src=x.pool||[],av=src.filter(n=>!ub.has(n)).slice(0,6).map(n=>({n}));
     return`<div class="cc"><div><b>${esc(x.name)}</b> <span class="tag">${ri(role)}${rt(role)}</span>${taken.has(x.id)?' <span class="note">(picked)</span>':""}</div>${av.length?`<div style="margin-top:4px">${av.map(c=>`<button class="chip" data-addmine="${esc(c.n)}">${esc(c.n)}</button>`).join(" ")}</div>`:`<p class="note" style="margin:2px 0 0">${src.length?"All champions in the tier list are taken.":"No champions in the tier list yet."}</p>`}</div>`;
   }).join("")}<p class="note">The first free champions in each active player's list. Tap one to pick it.${bench.length?" Bench: "+bench.map(x=>esc(pl(x))).join(", ")+".":""}</p></details>`;
@@ -798,7 +813,11 @@ function pickIdeas(cb){
     }
     out.push({n:c.n,s,w});
   });
-  return out.sort((x,y)=>y.s-x.s||x.n.localeCompare(y.n)).slice(0,6);
+  // a score of 1 only means "fills an open role"; that is no reason to suggest one champion over another
+  const top=out.filter(x=>x.s>1).sort((x,y)=>y.s-x.s||x.n.localeCompare(y.n));
+  const res=top.slice(0,6);
+  res.ties=res.length===6&&top.length>6&&top[6].s===res[5].s;
+  return res;
 }
 function banIdeas(cb){
   const u=used(),foe=EN(),fo=foe.length?analyse(foe).open:RO,m=new Map();
@@ -840,18 +859,18 @@ function traits(a){
 }
 function board(){
   const side=(k,bk,cls,title)=>{
-    const a=st[k].length?analyse(st[k]):{roles:[]};
     const mine=k===(me==="b"?"bp":"rp");
+    const a=st[k].length?analyse(st[k],mine?roleMap(st[k]):null):{roles:[]};
     let h=`<div class="side ${cls}"><h2>${title}</h2>`;
     for(let i=0;i<5;i++){
       const n=st[k][i];
-      h+=n?`<button class="slot f" data-rm="${k}" data-i="${i}" aria-label="Remove ${n}">${n}<small>${a.roles[i]?RN[a.roles[i]]:"Flex"}</small></button>`
+      h+=n?`<button class="slot f" data-rm="${k}" data-i="${i}" aria-label="Remove ${esc(n)}">${esc(n)}<small>${a.roles[i]?RN[a.roles[i]]:"Flex"}</small></button>`
           :(mine&&mk.pre[i-st[k].length]?`<button class="slot g" data-g="${mk.pre[i-st[k].length]}" data-gk="pre" title="Prepick. Tap to lock in, right-click to change."><span>${mk.pre[i-st[k].length]}</span><small>Prepick</small></button>`:`<button class="slot" data-t="${k}"><small>Empty</small></button>`);
     }
     h+=`<div class="bans">`;
     for(let i=0;i<5;i++){
       const n=st[bk][i];
-      h+=n?`<button class="ban f" data-rm="${bk}" data-i="${i}" title="Remove ${n}">${n}</button>`:(mine&&mk.ban[i-st[bk].length]?`<button class="ban g" data-g="${mk.ban[i-st[bk].length]}" data-gk="ban" title="Ban candidate. Tap to ban it, right-click to change.">${mk.ban[i-st[bk].length]}</button>`:`<button class="ban" data-t="${bk}">Ban</button>`);
+      h+=n?`<button class="ban f" data-rm="${bk}" data-i="${i}" title="Remove ${esc(n)}">${esc(n)}</button>`:(mine&&mk.ban[i-st[bk].length]?`<button class="ban g" data-g="${mk.ban[i-st[bk].length]}" data-gk="ban" title="Ban candidate. Tap to ban it, right-click to change.">${mk.ban[i-st[bk].length]}</button>`:`<button class="ban" data-t="${bk}">Ban</button>`);
     }
     return h+`</div></div>`;
   };
@@ -1002,21 +1021,21 @@ function analysis(){
   const i=stepNow(),cur=i<20?ORDER[i]:"",j=nextMine(),cb=combos(),sg=pickIdeas(cb),bn=banIdeas(cb),a=analyse(mine,roleMap(mine));
   const turn=cur===k?"It is your turn to pick.":cur===(me==="b"?"bb":"rb")?"It is your turn to ban.":j>=0?`Your next pick is step ${j+1}, after ${j-i} more actions.`:"";
   const now=cur===k||cur===(me==="b"?"bb":"rb");
-  let h=`<details class="card tcard" data-k="team" ${op("team")}><summary>${ic("users")}<h2>Your team (${nm})</h2> <span class="tag">${mine.length}/5 picked</span></summary>${turn?`<p class="turn${now?" now":""}">${turn}</p>`:""}${teamSlots(mine,a)}${dmgBar(a)}${traits(a)}${teamWarn(mine,a)}${insights()}${mine.length===5?`<div class="note" style="margin:0">Draft complete.</div>`:""}`;
-  if(sg.length)h+=`<h3>Best picks now</h3><div class="sg">${sg.map(x=>`<button data-addmine="${esc(x.n)}"><span>${esc(x.n)}</span><em>${esc(x.w.join(", "))}</em></button>`).join("")}</div><p class="note">Ranked by your open roles, damage mix, team tools, your notes and the draft order (later enemy picks can counter early picks).</p>`;
-  h+=`</details>`+playersCard(mine)+`<details class="card" data-k="combos" ${op("combos")}><summary><h2>Team combos</h2></summary>`;
+  let h=`<details class="card tcard" data-k="team" ${op("team")}><summary>${ic("users")}<h2>Your team (${nm})</h2> <span class="tag">${mine.length}/5 picked</span></summary>${turn?`<p class="turn${now?" now":""}">${turn}</p>`:""}${teamSlots(mine,a)}${mine.length?dmgBar(a):""}${traits(a)}${teamWarn(mine,a)}${insights()}${mine.length===5?`<div class="note" style="margin:0">Draft complete.</div>`:""}`;
+  if(mine.length<5)h+=`<h3>Best picks now</h3>`+(sg.length?`<div class="sg">${sg.map(x=>`<button data-addmine="${esc(x.n)}"><span>${esc(x.n)}</span><em>${esc(x.w.join(", "))}</em></button>`).join("")}</div><p class="note">Ranked by your open roles, damage mix, team tools, your notes and your players' tier lists.${sg.ties?" More champions fit just as well. Notes and tier lists narrow the list down.":""}</p>`:`<p class="note" style="margin:0">No clear favourite. Any champion for your open roles fits equally well. Save notes or add your players' tier lists to get real suggestions.</p>`);
+  h+=`</details>`+playersCard(mine)+`<details class="card" data-k="combos" ${op("combos")}><summary>${ic("grid")}<h2>Team combos</h2></summary>`;
   h+=cb.length?cb.map(comboCard).join("")+`<p class="note">Combos use champions you saved as working well together. Only available champions that fit your open roles are shown. Tap a dashed champion to pick it, or a ban to add it to your bans. Right-click a champion (long-press on touch) to prepick it or mark it as a ban candidate.</p>`:`<p class="note">No available combo fits yet. Save a team combo in Your notes to see combos here.</p>`;
-  h+=`</details>`+counterCard(mine)+`<details class="card" data-k="bans" ${op("bans")}><summary><h2>Ban ideas for your picks</h2></summary>`;
+  h+=`</details>`+counterCard(mine)+`<details class="card" data-k="bans" ${op("bans")}><summary>${ic("ban")}<h2>Ban ideas for your picks</h2></summary>`;
   h+=bn.length?`<div class="sg">${bn.map(([b,o])=>`<button data-ban="${esc(b)}"><span>${esc(b)}</span><em>${esc(o.w.join(", "))}</em></button>`).join("")}</div><p class="note">Tap a champion to add it to your bans. Only champions the enemy can still play in their open roles are listed.</p>`:`<p class="note">Save weakness notes ("is weak against" or "works well into") and ban ideas will appear here.</p>`;
   h+=`</details>`;
   if(foe.length){
     const e=analyse(foe),t=e.ad+e.ap||1,pa=e.ad/t;
     const tip=foe.length>=2?(pa>=.7?"Enemy damage is mostly physical. Armor and frontline help.":pa<=.3?"Enemy damage is mostly magic. Magic resist helps.":"Enemy damage is mixed. Build for the biggest threat."):"";
-    h+=`<details class="card" data-k="enemy" ${op("enemy")}><summary><h2>Enemy team (${nf})</h2></summary>${dmgBar(e)}${traits(e)}${tip?`<p class="note" style="margin:0">${tip}</p>`:""}</details>`;
+    h+=`<details class="card" data-k="enemy" ${op("enemy")}><summary>${ic("eye")}<h2>Enemy team (${nf})</h2></summary>${dmgBar(e)}${traits(e)}${tip?`<p class="note" style="margin:0">${tip}</p>`:""}</details>`;
   }
   $("an").innerHTML=h;
 }
-function render(){document.body.dataset.me=me;$("icons").setAttribute("aria-pressed",icons);$("ticons").setAttribute("aria-pressed",icons);$("hide").setAttribute("aria-pressed",hide);board();controls();grid();analysis();consider();notes();histView();scView();if(DS.eo)enemyView()}
+function render(){saveDraft();document.body.dataset.me=me;$("icons").setAttribute("aria-pressed",icons);$("ticons").setAttribute("aria-pressed",icons);$("hide").setAttribute("aria-pressed",hide);board();controls();grid();analysis();consider();notes();histView();scView();if(DS.eo)enemyView()}
 function add(n,k){
   k=k||(auto&&stepNow()<20?ORDER[stepNow()]:target);
   if(used().has(n)||st[k].length>=5)return false;
@@ -1033,7 +1052,7 @@ document.addEventListener("click",e=>{
   else if(b.dataset.add){add(b.dataset.add,"bp")}
   else if(b.dataset.addr){add(b.dataset.addr,"rp")}
   else if(b.dataset.n){add(b.dataset.n)}
-  else if(b.id==="reset"){st={bp:[],rp:[],bb:[],rb:[]};SW={};mk={ban:[],pre:[]};cons=[];target=me==="b"?"bp":"rp";role="";query="";$("q").value=""}
+  else if(b.id==="reset"){clearDraft();return}
   else if(b.dataset.auto){auto=!auto}
   else if(b.dataset.swap){const[k,r,a]=b.dataset.swap.split("|").map(decodeURIComponent),kk=k+"|"+r;delete SW[kk];SW[kk]=a}
   else if(b.dataset.mrm){const[id,n]=b.dataset.mrm.split("|");MS[id]=MS[id].filter(x=>x!==n);DRAW[id]();if(id==="fz")saveFear()}
@@ -1059,7 +1078,7 @@ document.addEventListener("click",e=>{
   else if(b.id==="lo"){DS.lo=!DS.lo;if(DS.lo)solo("lo");drawers()}
   else if(b.id==="ro"){DS.ro=!DS.ro;if(DS.ro)solo("ro");drawers()}
   else if(b.dataset.close){DS[{dl:"lo",dr:"ro",ds:"so",de:"eo"}[b.dataset.close]]=false;drawers()}
-  else if(b.id==="stl"){toggleStyle();return}
+  else if(b.id==="stl"){nextTheme();return}
   else if(b.id==="so"){DS.so=!DS.so;if(DS.so){DS.eo=false;solo("so")}drawers()}
   else if(b.id==="eb"){DS.eo=!DS.eo;if(DS.eo){DS.so=false;solo("eo")}drawers()}
   else if(b.dataset.stab){scMode=b.dataset.stab;fixSel()}
@@ -1093,6 +1112,12 @@ document.addEventListener("click",e=>{
   else return;
   render();
 });
+async function clearDraft(){
+  const n=st.bp.length+st.rp.length+st.bb.length+st.rb.length+mk.ban.length+mk.pre.length+cons.length;
+  if(n&&!await ask("Clear the whole draft? Picks, bans, prepicks and considered champions are removed.","Clear draft"))return;
+  st={bp:[],rp:[],bb:[],rb:[]};SW={};mk={ban:[],pre:[]};cons=[];target=me==="b"?"bp":"rp";role="";query="";$("q").value="";
+  render();
+}
 $("q").addEventListener("input",e=>{query=e.target.value;grid()});
 $("cq").addEventListener("change",()=>{const v=$("cq").value;$("cq").value="";if(v&&!cons.includes(v)&&!mk.pre.includes(v))cons.push(v);render()});
 const MS={na:[],nb:[],fz:[]},DRAW={};
@@ -1371,6 +1396,7 @@ function applyRows(rows){
   });
   REL=R;RID=I;SOFT=S;render();
 }
+let sbSig="";
 async function sbLoad(){
   let r=await sbf("notes?select=id,t,a,b,deleted&order=id");
   if(r.ok)soft=true;else{r=await sbf("notes?select=id,t,a,b&order=id");soft=false}
@@ -1378,7 +1404,9 @@ async function sbLoad(){
   const rows=await r.json();
   await loadChamps();
   await loadScouts();
-  applyRows(rows);
+  const sig=JSON.stringify([rows,OVR,SC]);
+  if(sig===sbSig)return;
+  sbSig=sig;applyRows(rows);
 }
 function watchShared(){
   shared.collection("notes").onSnapshot(snap=>{
@@ -1496,8 +1524,7 @@ function tierView(){
   $("tsel").innerHTML=P.length?P.map(x=>`<option value="${esc(x.id)}"${x.id===tSel?" selected":""}>${esc(pl(x))}</option>`).join(""):`<option value="">No player yet</option>`;
   { const tp=P.find(x=>x.id===tSel),tr=tp?(tp.role||derivedRole(tp)):"";$("tchint").textContent=tr?"Only "+RN[tr]+" champions are offered for "+tp.name+".":""; }
   if(P.some(x=>(x.cant||[]).length)&&!VER&&!icoAsked){icoAsked=true;loadIcons()}
-  const act=actOf(P);
-  $("tlu").innerHTML=P.length?`<div class="nl" style="margin:6px 0 2px">Active lineup</div><div class="lineup">${RO.map(r=>{const a=act.filter(x=>(x.role||derivedRole(x))===r);return`<span class="lu${a.length?"":" none"}"><small>${ri(r)}${rt(r)}</small><b>${a.length?esc(a.map(x=>x.name).join(", ")):"\u2013"}</b></span>`}).join("")}</div>`:"";
+  $("tlu").innerHTML=lineupHtml(P);
   $("tll").innerHTML=P.length?P.map(x=>{
     const pool=x.pool||[],role=x.role||derivedRole(x);
     const on=actOf(P).includes(x);
@@ -1823,17 +1850,6 @@ async function scImport(){
   await scPersist(t);scmsg("Imported "+n+" champions.");render();
 }
 let nq="",nf="all",ntype="combo";
-function cliques(){
-  const adj={};
-  REL.syn.forEach(([x,y])=>{(adj[x]=adj[x]||new Set()).add(y);(adj[y]=adj[y]||new Set()).add(x)});
-  const res=[];
-  (function bk(R,P,X){
-    if(res.length>100)return;
-    if(!P.length&&!X.length){if(R.length>=3)res.push(R.slice().sort());return}
-    for(const v of P.slice()){bk(R.concat(v),P.filter(x=>adj[v].has(x)),X.filter(x=>adj[v].has(x)));P=P.filter(x=>x!==v);X=X.concat(v)}
-  })([],Object.keys(adj),[]);
-  return res.sort((a,b)=>b.length-a.length);
-}
 const NTYPES=[["combo","Team combo","All of these champions work well together"],["syn","Works well with","Champions that fit well with others"],["strong","Strong against","Champions that beat others"],["weak","Weak against","Champions that struggle against others"]];
 function ntView(){
   $("ntc").innerHTML=NTYPES.map(([k,t,d])=>`<button class="tc" data-nty="${k}" aria-pressed="${ntype===k}"><b>${t}</b><small>${d}</small></button>`).join("");
@@ -1959,15 +1975,25 @@ function consider(){
 Object.values(DRAW).forEach(f=>f());
 let DS={lo:innerWidth>=1800,ro:false,so:false,eo:false},icons=false,hide=false,VER="",IDS={},icoAsked=false;
 try{Object.assign(DS,JSON.parse(localStorage.getItem("lolDr")||"{}"));icons=localStorage.getItem("lolIcons")==="1";hide=localStorage.getItem("lolHide")==="1"}catch(e){}
-function styleBtn(){try{$("stl").setAttribute("aria-pressed",document.documentElement.getAttribute("data-style")==="gg")}catch(e){}}
-function toggleStyle(){
-  try{
-    const on=document.documentElement.getAttribute("data-style")!=="gg";
-    if(on)document.documentElement.setAttribute("data-style","gg");else document.documentElement.removeAttribute("data-style");
-    try{localStorage.setItem("lolStyle",on?"gg":"")}catch(e){}
-  }catch(e){}
+// theme: light, dark or the GG look; until the user picks one, the device setting is used
+const THEMES=[["light","Light","sun"],["dark","Dark","moon"],["gg","GG","star"]];
+let theme="";
+try{theme=localStorage.getItem("lolTheme")||(localStorage.getItem("lolStyle")==="gg"?"gg":"")}catch(e){}
+if(!THEMES.some(t=>t[0]===theme))theme="";
+const devDark=()=>{try{return matchMedia("(prefers-color-scheme: dark)").matches}catch(e){return false}};
+const shownTheme=()=>theme||(devDark()?"dark":"light");
+function styleBtn(){
+  const t=THEMES.find(x=>x[0]===shownTheme()),b=$("stl");
+  b.innerHTML=ic(t[2])+`<span>${t[1]}</span>`;
+  b.setAttribute("aria-label","Theme: "+t[1]+". Click to switch.");
+}
+function nextTheme(){
+  theme=THEMES[(THEMES.findIndex(t=>t[0]===shownTheme())+1)%THEMES.length][0];
+  applyTheme(theme);
+  try{localStorage.setItem("lolTheme",theme);localStorage.removeItem("lolStyle")}catch(e){}
   styleBtn();
 }
+try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{if(!theme)styleBtn()})}catch(e){}
 // on narrow screens the drawers cover each other, so only one stays open
 const narrow=()=>innerWidth<900;
 function solo(k){if(narrow())for(const x in DS)if(x!==k)DS[x]=false}
@@ -2004,7 +2030,11 @@ if(icons)loadIcons();
 setMode();
 (async()=>{
   if(sb){
-    try{await sbLoad();setInterval(()=>sbLoad().catch(()=>{}),8000)}
+    try{
+      await sbLoad();
+      const poll=()=>{if(!document.hidden&&!DR)sbLoad().catch(()=>{})};
+      setInterval(poll,8000);document.addEventListener("visibilitychange",poll);
+    }
     catch(e){sb=false;REL=LOC;msg("Could not reach the shared notes. Using this browser only.")}
     setMode();render();return;
   }
