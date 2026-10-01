@@ -790,7 +790,10 @@ function pickIdeas(cb){
   const a=analyse(mine,roleMap(mine)),tot=a.ad+a.ap,sh=tot?a.ad/tot:.5,pool=a.open.length?a.open:RO;
   const fo=foe.length?analyse(foe).open:RO,j=nextMine();
   const later=j<0?0:Math.min(ORDER.slice(j+1).filter(x=>x===ek).length,5-foe.length);
-  const inC=new Set();cb.forEach(c=>c.need.forEach(x=>inC.add(x)));
+  // combos: remember for each champion whether it would finish a combo or only be one more piece of it
+  const inC=new Map();cb.forEach(c=>c.need.forEach(x=>{const o=inC.get(x),v=c.need.length===1?c.C.length:0;if(!o||v>o)inC.set(x,v)}));
+  // enemy champions and the lane they play; bot and support share the bot lane
+  const lane=r=>r==="S"?"B":r,fr=foe.length?analyse(foe).roles:[],eLane=new Map(foe.map((e,i)=>[e,fr[i]?lane(fr[i]):""]));
   const pre=mk.pre.filter(x=>!mine.includes(x)),out=[];
   const roster=activePlayers(),taken=matchPlayers(mine,roster),free=roster.filter(x=>!taken.has(x.id)&&((x.pool&&x.pool.length)||(x.cant&&x.cant.length)));
   D.forEach(c=>{
@@ -800,20 +803,25 @@ function pickIdeas(cb){
     // damage mix: reward picks that move the team toward half AD, half AP and penalise picks that push it further away
     if(mine.length>=2){
       const na=a.ad+(c.d==="A"?1:c.d==="M"?.5:0),np=a.ap+(c.d==="P"?1:c.d==="M"?.5:0);
-      const v=(Math.abs(.5-sh)-Math.abs(.5-na/(na+np)))*(mine.length>=3?16:10),more=sh<.5?"AP":"AD";
+      const v=(Math.abs(.5-sh)-Math.abs(.5-na/(na+np)))*(mine.length>=3?16:10),more=c.d==="A"?"AD":"AP";
       if(v>=.5){s+=v;w.push(c.d==="M"?"mixed damage":"adds "+(c.d==="A"?"AD":"AP"))}
-      else if(v<=-.5){s+=v;w.push("even more "+more)}
+      else if(v<=-.5){s+=v;w.push("team gets "+more+"-heavy")}
     }
     if(!a.tr.has("t")&&c.t.includes("t")){s+=2;w.push("frontline")}
     if(!a.tr.has("c")&&c.t.includes("c")){s+=1.5;w.push("crowd control")}
     if(!a.tr.has("e")&&c.t.includes("e")){s+=1;w.push("engage")}
     const sy=synOf(c.n).filter(x=>mine.includes(x)||pre.includes(x));
     if(sy.length){s+=2*sy.length;w.push("synergy with "+sy.join(", "))}
-    const cn=strongOf(c.n).filter(x=>foe.includes(x));
-    if(cn.length){s+=2*cn.length;w.push("counters "+cn.join(", "))}
-    const wk=weakOf(c.n).filter(x=>foe.includes(x));
-    if(wk.length){s-=3*wk.length;w.push("weak vs "+wk.join(", "))}
-    if(inC.has(c.n)){s+=1.5;w.push("part of a combo")}
+    // counters: the enemy in your own lane matters most
+    const inLane=e=>eLane.get(e)&&fit.some(r=>lane(r)===eLane.get(e));
+    strongOf(c.n).filter(x=>foe.includes(x)).forEach(x=>{if(inLane(x)){s+=5;w.push("counters "+x+" in lane")}else{s+=2;w.push("counters "+x)}});
+    weakOf(c.n).filter(x=>foe.includes(x)).forEach(x=>{if(inLane(x)){s-=6;w.push("weak vs "+x+" in lane")}else{s-=3;w.push("weak vs "+x)}});
+    if(inC.has(c.n)){const v=inC.get(c.n);if(v){s+=2+v;w.push("completes a "+v+"-champion combo")}else{s+=1.5;w.push("part of a combo")}}
+    // blind pick: when the enemy still picks after you, champions with many saved counters left are risky
+    if(later>0){
+      const left=weakOf(c.n).filter(x=>BY[x]&&!u.has(x)&&BY[x].r.some(r=>fo.includes(r))).length;
+      if(left>=2){s-=Math.min(3,.6*left);w.push("easy to counter ("+left+" counters left)")}
+    }
     if(free.length){
       const rr=c.r.filter(r=>pool.includes(r));let best=null,has=false,elig=0;const blocked=[];
       free.forEach(x=>{
@@ -1040,7 +1048,7 @@ function analysis(){
   const turn=cur===k?"It is your turn to pick.":cur===(me==="b"?"bb":"rb")?"It is your turn to ban.":j>=0?`Your next pick is step ${j+1}, after ${j-i} more actions.`:"";
   const now=cur===k||cur===(me==="b"?"bb":"rb");
   let h=`<details class="card tcard" data-k="team" ${op("team")}><summary>${ic("users")}<h2>Your team (${nm})</h2> <span class="tag">${mine.length}/5 picked</span></summary>${turn?`<p class="turn${now?" now":""}">${turn}</p>`:""}${teamSlots(mine,a)}${mine.length?dmgBar(a):""}${traits(a)}${teamWarn(mine,a)}${insights()}${mine.length===5?`<div class="note" style="margin:0">Draft complete.</div>`:""}`;
-  if(mine.length<5)h+=`<h3>Best picks now</h3>`+(sg.length?`<div class="sg bp">${sg.map(x=>`<button data-addmine="${esc(x.n)}"><span>${icon(x.n)}${esc(x.n)}</span><em>${x.w.map(t=>`<i class="${/^(weak vs|even more|not in|.* can't play)/.test(t)?"neg":""}">${esc(t)}</i>`).join("")}</em></button>`).join("")}</div><p class="note">Ranked by your open roles, damage mix, team tools, your notes and your players' tier lists.${sg.ties?" More champions fit just as well. Notes and tier lists narrow the list down.":""}</p>`:`<p class="note" style="margin:0">No clear favourite. Any champion for your open roles fits equally well. Save notes or add your players' tier lists to get real suggestions.</p>`);
+  if(mine.length<5)h+=`<h3>Best picks now</h3>`+(sg.length?`<div class="sg bp">${sg.map(x=>`<button data-addmine="${esc(x.n)}"><span>${icon(x.n)}${esc(x.n)}</span><em>${x.w.map(t=>`<i class="${/^(weak vs|team gets|not in|easy to counter|.* can't play)/.test(t)?"neg":""}">${esc(t)}</i>`).join("")}</em></button>`).join("")}</div><p class="note">Ranked by your open roles, damage mix, team tools, your notes, your players' tier lists and the draft order.${sg.ties?" More champions fit just as well. Notes and tier lists narrow the list down.":""}</p>`:`<p class="note" style="margin:0">No clear favourite. Any champion for your open roles fits equally well. Save notes or add your players' tier lists to get real suggestions.</p>`);
   h+=`</details>`+playersCard(mine)+`<details class="card" data-k="combos" ${op("combos")}><summary>${ic("grid")}<h2>Team combos</h2></summary>`;
   h+=cb.length?cb.map(comboCard).join("")+`<p class="note">Combos use champions you saved as working well together. Only available champions that fit your open roles are shown. Tap a dashed champion to pick it, or a ban to add it to your bans. Right-click a champion (long-press on touch) to prepick it or mark it as a ban candidate.</p>`:`<p class="note">No available combo fits yet. Save a team combo in Your notes to see combos here.</p>`;
   h+=`</details>`+counterCard(mine)+`<details class="card" data-k="bans" ${op("bans")}><summary>${ic("ban")}<h2>Ban ideas for your picks</h2></summary>`;
