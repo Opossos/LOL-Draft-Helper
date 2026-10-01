@@ -70,6 +70,26 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+/* long names: wrap or cut them instead of breaking the layout */
+body .dr{overflow-x:hidden}
+body .dr b,body .dr small,body .dr em,body .dr h2,body .dr h3,body .dr .tname,body .dr .note{overflow-wrap:anywhere}
+body .pc>summary,body .pc .pn,body .pc .pills{min-width:0;max-width:100%}
+body .pc .pn b{overflow-wrap:anywhere}
+body .tp>div:first-child{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-width:0}
+body .tp>div:first-child b{min-width:0;max-width:100%;overflow-wrap:anywhere}
+body .lu{max-width:100%;min-width:74px}
+body .lu b{overflow-wrap:anywhere}
+body .pt{min-width:0;overflow:hidden}
+body .pt .lnk{display:block;width:100%;white-space:normal;overflow-wrap:anywhere;text-align:left}
+body .pt .pts{min-width:0}
+body .pt .pts span{white-space:nowrap}
+body .mem{max-width:200px;min-width:0}
+body .mem b,body .mem small,body .mem .st{max-width:100%;overflow-wrap:anywhere;text-align:center}
+body .tlist li,body .tlist .tname{min-width:0}
+body .tchip{max-width:100%}
+body .tchip .tn{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body .sg button span,body .sg button em{min-width:0;overflow-wrap:anywhere}
+body .ng>summary b,body .ng>summary h2{overflow-wrap:anywhere}
 .actb{border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--mute);padding:1px 10px;font:inherit;font-size:12px;cursor:pointer}
 .actb.on{border-color:var(--ok);color:var(--ok);font-weight:600}
 .lineup{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
@@ -1431,7 +1451,7 @@ function scView(){
   $("itabs").innerHTML=[["manual","Type in"],["paste","Paste table"],["riot","Riot import"]].map(([k,l])=>`<button data-itab="${k}" aria-pressed="${itab===k}">${l}</button>`).join("");
   ["manual","paste","riot"].forEach(k=>{$("ip-"+k).hidden=itab!==k});
   if(!P.length)$("apc").open=true;$("sctc").hidden=my;
-  $("tbar").innerHTML=list.map(x=>{const on=x.id===scId;return`<span class="tchip${on?" on":""}"><button class="tn" data-tsel="${esc(x.id)}" aria-pressed="${on}">${esc(x.name)}</button>${on?`<button class="ti" data-tren="1" aria-label="Rename team">\u270E</button><button class="ti" data-tdel="1" aria-label="Delete team">\u00d7</button>`:""}</span>`}).join("")+`<button class="tchip add" data-tnew="1">+ New team</button>`;
+  $("tbar").innerHTML=list.map(x=>{const on=x.id===scId;return`<span class="tchip${on?" on":""}"><button class="tn" data-tsel="${esc(x.id)}" aria-pressed="${on}" title="${esc(x.name)}">${esc(x.name)}</button>${on?`<button class="ti" data-tren="1" aria-label="Rename team">\u270E</button><button class="ti" data-tdel="1" aria-label="Delete team">\u00d7</button>`:""}</span>`}).join("")+`<button class="tchip add" data-tnew="1">+ New team</button>`;
   $("tth").textContent=!my&&t?"Team: "+t.name:"Team";
   $("tf").hidden=!tform;$("tok").textContent=tform==="rename"?"Save":"Create";
   $("scmode").textContent=sb&&scOK?"Teams are saved in the shared database.":"Teams are saved in this browser only. Create the scouts table in Supabase to share them.";
