@@ -72,6 +72,7 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+.nc .ico{width:20px;height:20px;display:inline-block;margin:0 6px 0 -4px;border-radius:5px;flex:none}
 /* matchup tiles: full width of the card; the champion name and each role stay on one line */
 body .mem.sm.mt{display:flex;width:100%;max-width:none;align-items:center;gap:8px;box-sizing:border-box}
 body .mem.sm.mt .mtx{display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;flex:1 1 auto;min-width:0}
@@ -414,6 +415,7 @@ summary{cursor:pointer;color:var(--mute)}
 <details class="card tools" open id="tlc" hidden><summary><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><h2>Tier lists (what they like to play)</h2></summary>
 <select id="tsel" aria-label="Player"></select>
 <div class="cbw"><input id="tc" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Champion" placeholder="Search a champion to add" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
+<p class="note" id="tchint" style="margin:4px 0 6px"></p>
 <button class="btn" id="tadd">Add to tier list</button> <button class="btn" id="cadd">Add to can't play</button> <button class="btn" id="ticons" aria-pressed="false">Icons</button> <span class="note" id="tmsg" role="status"></span>
 <div id="tlu"></div>
 <div id="tll"></div>
@@ -1041,10 +1043,10 @@ $("cq").addEventListener("change",()=>{const v=$("cq").value;$("cq").value="";if
 const MS={na:[],nb:[],fz:[]},DRAW={};
 try{MS.fz=JSON.parse(localStorage.getItem("lolFear")||"[]").filter(x=>typeof x==="string")}catch(e){}
 function saveFear(){try{localStorage.setItem("lolFear",JSON.stringify(MS.fz))}catch(e){}}
-function combo(id,multi){
+function combo(id,multi,filt){
   const inp=$(id),ul=inp.parentNode.querySelector(".cbl"),cs=multi?$(id+"-c"):null;
   let idx=-1,items=[];
-  const find=q=>D.filter(c=>c.n.toLowerCase().includes(q.trim().toLowerCase())&&!(multi&&MS[id].includes(c.n))).map(c=>c.n);
+  const find=q=>D.filter(c=>c.n.toLowerCase().includes(q.trim().toLowerCase())&&!(multi&&MS[id].includes(c.n))&&(!filt||filt(c))).map(c=>c.n);
   const close=()=>{ul.hidden=true;inp.setAttribute("aria-expanded","false");idx=-1};
   const show=()=>{
     const q=inp.value.trim().toLowerCase();
@@ -1076,7 +1078,7 @@ function combo(id,multi){
   inp.addEventListener("blur",()=>{
     close();
     const t=inp.value.trim().toLowerCase(),ms=find(t);
-    const m=D.find(c=>c.n.toLowerCase()===t)||(ms.length===1&&t?BY[ms[0]]:null);
+    const m=D.find(c=>c.n.toLowerCase()===t&&(!filt||filt(c)))||(ms.length===1&&t?BY[ms[0]]:null);
     if(multi){inp.value="";if(m&&!MS[id].includes(m.n)){MS[id].push(m.n);draw();inp.dispatchEvent(new Event("mchange"))}return}
     const v=m?m.n:"";
     if(v!==inp.value){inp.value=v;inp.dispatchEvent(new Event("change"))}
@@ -1085,8 +1087,8 @@ function combo(id,multi){
 combo("cq");combo("na",1);combo("nb",1);combo("fz",1);combo("ec");
 $("ec").addEventListener("change",()=>{$("emsg").textContent="";editForm()});
 $("nsearch").addEventListener("input",e=>{nq=e.target.value;notes()});
-combo("sc");combo("tc");
-$("tsel").addEventListener("change",()=>{tSel=$("tsel").value});
+combo("sc");combo("tc",0,tierOk);
+$("tsel").addEventListener("change",()=>{tSel=$("tsel").value;$("tc").value="";$("tmsg").textContent="";tierView()});
 $("pp").addEventListener("input",()=>{PP=parsePaste($("pp").value);PPROLE="";ppView()});
 $("tf").addEventListener("submit",e=>{e.preventDefault();const m=tform;tform="";if(m==="rename")scRename();else scNew()});
 $("psel").addEventListener("change",()=>{scSel=$("psel").value});
@@ -1437,18 +1439,23 @@ function tierView(){
   const t=curTeam(),P=t?sortP(t.data):[];
   if(!P.find(x=>x.id===tSel))tSel=P[0]?P[0].id:"";
   $("tsel").innerHTML=P.length?P.map(x=>`<option value="${esc(x.id)}"${x.id===tSel?" selected":""}>${esc(pl(x))}</option>`).join(""):`<option value="">No player yet</option>`;
+  { const tp=P.find(x=>x.id===tSel),tr=tp?(tp.role||derivedRole(tp)):"";$("tchint").textContent=tr?"Only "+RN[tr]+" champions are offered for "+tp.name+".":""; }
+  if(P.some(x=>(x.cant||[]).length)&&!VER&&!icoAsked){icoAsked=true;loadIcons()}
   const act=actOf(P);
   $("tlu").innerHTML=P.length?`<div class="nl" style="margin:6px 0 2px">Active lineup</div><div class="lineup">${RO.map(r=>{const a=act.filter(x=>(x.role||derivedRole(x))===r);return`<span class="lu${a.length?"":" none"}"><small>${ri(r)}${rt(r)}</small><b>${a.length?esc(a.map(x=>x.name).join(", ")):"\u2013"}</b></span>`}).join("")}</div>`:"";
   $("tll").innerHTML=P.length?P.map(x=>{
     const pool=x.pool||[],role=x.role||derivedRole(x);
     const on=actOf(P).includes(x);
-    return`<div class="tp${on?"":" bench"}"><div><b>${esc(x.name)}</b> ${role?`<span class="tag">${ri(role)}${rt(role)}</span>`:""} <button class="actb${on?" on":""}" data-pact="${esc(x.id)}" aria-pressed="${on}" title="${on?"Playing. Click to move to the bench":"On the bench. Click to make this player active"}">${on?"\u2605 Active":"Bench"}</button></div>${pool.length?`<ol class="tlist">${pool.map((n,i)=>`<li data-pid="${esc(x.id)}" data-tn="${esc(n)}"><span class="dg" data-drag tabindex="0" role="button" aria-label="Drag to reorder ${esc(n)}">\u2630</span><span class="tn">${i+1}</span>${icons?icon(n):""}<span class="tname">${esc(n)}</span><button data-tcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from the tier list">\u00d7</button></li>`).join("")}</ol>`:`<p class="note">No champions yet.</p>`}${(x.cant||[]).length?`<div class="nl">Can't play</div><div>${x.cant.map(n=>`<span class="nc weak">${esc(n)}<button data-ccx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from can't play">\u00d7</button></span>`).join("")}</div>`:""}</div>`;
+    return`<div class="tp${on?"":" bench"}"><div><b>${esc(x.name)}</b> ${role?`<span class="tag">${ri(role)}${rt(role)}</span>`:""} <button class="actb${on?" on":""}" data-pact="${esc(x.id)}" aria-pressed="${on}" title="${on?"Playing. Click to move to the bench":"On the bench. Click to make this player active"}">${on?"\u2605 Active":"Bench"}</button></div>${pool.length?`<ol class="tlist">${pool.map((n,i)=>`<li data-pid="${esc(x.id)}" data-tn="${esc(n)}"><span class="dg" data-drag tabindex="0" role="button" aria-label="Drag to reorder ${esc(n)}">\u2630</span><span class="tn">${i+1}</span>${icons?icon(n):""}<span class="tname">${esc(n)}</span><button data-tcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from the tier list">\u00d7</button></li>`).join("")}</ol>`:`<p class="note">No champions yet.</p>`}${(x.cant||[]).length?`<div class="nl">Can't play</div><div>${x.cant.map(n=>`<span class="nc weak">${icon(n)}${esc(n)}<button data-ccx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from can't play">\u00d7</button></span>`).join("")}</div>`:""}</div>`;
   }).join(""):`<p class="note">Add a player first.</p>`;
 }
+function tierRole(){const t=curTeam(),p=t&&t.data.find(x=>x.id===tSel);return p?(p.role||derivedRole(p)):""}
+function tierOk(c){const r=tierRole();return !r||c.r.includes(r)}
 async function tierAdd(){
   const t=curTeam(),p=t&&t.data.find(x=>x.id===tSel),n=canon($("tc").value);
   if(!p){$("tmsg").textContent="Add a player first and choose them above.";return}
   if(!BY[n]){$("tmsg").textContent="Choose a champion from the list.";return}
+  {const r=p.role||derivedRole(p);if(r&&!BY[n].r.includes(r)){$("tmsg").textContent=n+" is not a "+RN[r]+" champion.";return}}
   p.pool=p.pool||[];
   if(p.pool.includes(n)){$("tmsg").textContent=n+" is already in the list.";return}
   const moved=(p.cant||[]).includes(n);
@@ -1460,6 +1467,7 @@ async function cantAdd(){
   const t=curTeam(),p=t&&t.data.find(x=>x.id===tSel),n=canon($("tc").value);
   if(!p){$("tmsg").textContent="Add a player first and choose them above.";return}
   if(!BY[n]){$("tmsg").textContent="Choose a champion from the list.";return}
+  {const r=p.role||derivedRole(p);if(r&&!BY[n].r.includes(r)){$("tmsg").textContent=n+" is not a "+RN[r]+" champion.";return}}
   p.cant=p.cant||[];
   if(p.cant.includes(n)){$("tmsg").textContent=n+" is already in the can't play list.";return}
   const moved=(p.pool||[]).includes(n);
