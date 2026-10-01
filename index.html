@@ -146,7 +146,8 @@ html.locked body>*:not(#gate){display:none!important}
 .tlist .tname{flex:1}
 .tlist .ico{width:28px;height:28px;margin:0}
 .tlist button{border:0;background:transparent;color:var(--mute);font-size:18px;line-height:1;cursor:pointer}
-.drs{right:0;transform:translateX(105%);border-left:1px solid var(--line);width:min(980px,98vw);z-index:35}
+.drs{right:0;border-left:1px solid var(--line);width:min(980px,98vw);z-index:35}
+.dr.drs:not(.open){transform:translateX(105%)}
 .st{width:100%;border-collapse:collapse}.st td,.st th{padding:3px 6px;text-align:left;border-bottom:1px solid var(--line);font-size:13px}
 .st button{border:0;background:transparent;color:var(--mute);font-size:16px;line-height:1;cursor:pointer}
 .st .lnk,.lnk{color:var(--gold);text-decoration:underline;font-size:13px;padding:0}
