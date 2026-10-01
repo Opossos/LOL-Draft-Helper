@@ -8,6 +8,7 @@
 <script>
 var SB={url:"https://jddgnigdagyddbriqqaj.supabase.co",key:"sb_publishable__v2Iy4DatUS7aqXQWsAqCQ_Q9w2b9PP"};
 if(SB.url)document.documentElement.className+=" locked";
+try{if(localStorage.getItem("lolStyle")==="gg")document.documentElement.setAttribute("data-style","gg")}catch(e){}
 </script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap">
 <style>
@@ -18,7 +19,7 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 Barlow,system-ui,-apple-system,"Segoe UI",sans-serif}
-main{max-width:920px;margin:0 auto;padding:14px 12px 40px}
+main{max-width:1440px;margin:0 auto;padding:14px 12px 40px}
 h1{font:700 26px/1.1 "Barlow Condensed","Arial Narrow",sans-serif;margin:4px 0 2px;color:var(--gold);letter-spacing:.3px}
 h2{font:700 19px/1.1 "Barlow Condensed","Arial Narrow",sans-serif;margin:0 0 8px}
 .sub{color:var(--mute);margin:0 0 12px}
@@ -71,17 +72,40 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+.tb button[aria-pressed=true]{background:var(--gold);color:var(--bg);border-color:var(--gold)}
+/* role text colors: darker on light backgrounds, brighter on dark ones */
+:root{--rT:#A63E0A;--rJ:#176A2F;--rM:#6A3FC4;--rB:#0F5CAB;--rS:#755800}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--rT:#FF8A3D;--rJ:#4CC76B;--rM:#B07CFF;--rB:#3DA5FF;--rS:#F2C94C}}
+:root[data-theme="dark"]{--rT:#FF8A3D;--rJ:#4CC76B;--rM:#B07CFF;--rB:#3DA5FF;--rS:#F2C94C}
+.rt.rT{color:var(--rT)}.rt.rJ{color:var(--rJ)}.rt.rM{color:var(--rM)}.rt.rB{color:var(--rB)}.rt.rS{color:var(--rS)}
+/* GG style (light). Background #CFDAEA, active color #0A2C59. Other palette colors: light blue #1B86D8, orange #F27052, dark pink #A61B67, pink #F24B6A. Change the variables in the first rule to adjust the look. */
+html:root[data-style="gg"]{--bg:#CFDAEA;--panel:#E9EFF8;--ink:#0B1F3A;--mute:#3E577A;--line:#A7B9D3;--gold:#0A2C59;--blue:#1B86D8;--red:#A61B67;--ok:#0B5EA6;--ad:#F27052;--ap:#A61B67;--chip:#BCCBE0;--lb:#1B86D8;--dp:#A61B67;--pk:#F24B6A;--rT:#A63E0A;--rJ:#176A2F;--rM:#6A3FC4;--rB:#0F5CAB;--rS:#755800;color-scheme:light}
+html:root[data-style="gg"] body{background:radial-gradient(900px 480px at 6% -8%,rgba(27,134,216,.22),transparent 60%),radial-gradient(760px 420px at 100% 0,rgba(242,75,106,.12),transparent 55%),var(--bg);background-attachment:fixed}
+html:root[data-style="gg"] h1{background:linear-gradient(90deg,var(--gold) 0%,var(--lb) 65%,var(--pk) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-transform:uppercase;letter-spacing:.14em}
+html:root[data-style="gg"] h2{text-transform:uppercase;letter-spacing:.08em;font-size:17px}
+html:root[data-style="gg"] .top{border-bottom:2px solid var(--gold);box-shadow:0 1px 14px rgba(10,44,89,.25)}
+html:root[data-style="gg"] .card,html:root[data-style="gg"] .side,html:root[data-style="gg"] .cmb,html:root[data-style="gg"] .ng,html:root[data-style="gg"] .cc{box-shadow:0 0 0 1px rgba(10,44,89,.10),0 8px 22px rgba(10,44,89,.12)}
+html:root[data-style="gg"] .cmb{border-left-color:var(--dp)}
+html:root[data-style="gg"] .btn:hover,html:root[data-style="gg"] .tc:hover,html:root[data-style="gg"] .tchip button:hover{border-color:var(--lb);box-shadow:0 0 10px rgba(27,134,216,.4)}
+html:root[data-style="gg"] .tg button[aria-pressed=true],html:root[data-style="gg"] .rf button[aria-pressed=true],html:root[data-style="gg"] .tb button[aria-expanded=true],html:root[data-style="gg"] .tb button[aria-pressed=true]{background:var(--gold);color:#E9EFF8;border-color:var(--gold);box-shadow:0 0 12px rgba(10,44,89,.35)}
+.cg .cmb-m{gap:6px}
+.cg .mem{min-width:0;padding:6px 8px}
+.cg .cmb-plus{align-self:center}
+.alts.dim{opacity:.85}
+.alts .altd{border:1px dashed var(--line);border-radius:999px;padding:0 8px;margin:0 2px;opacity:.7;cursor:default}
+a.btn{display:inline-block;text-decoration:none;color:inherit}
+.rt{font-weight:600}
 /* tags with a role icon: keep the pill shape and the row height the same as tags without an icon */
 body .tag{display:inline-flex;align-items:center;gap:4px;line-height:1.35;white-space:nowrap;vertical-align:middle;max-width:100%}
 body .tag:has(.rico){padding-left:4px}
-body .tag .rico{width:1.2em;height:1.2em;margin:0;vertical-align:baseline;box-shadow:0 0 0 1px var(--rc,var(--line));flex:none}
+body .tag .rico{width:1.2em;height:1.2em;margin:0;vertical-align:baseline;flex:none}
 body .tag .rico svg.ic{inset:12%;width:76%;height:76%}
 body .lu small{display:flex;align-items:center;gap:4px}
 body .lu small .rico{width:1.2em;height:1.2em;margin:0;vertical-align:baseline;flex:none}
 body .rf button .rico{margin:0 4px 0 0;vertical-align:-.4em}
-.rico{display:inline-block;position:relative;width:1.45em;height:1.45em;vertical-align:-.45em;margin-right:.35em;border-radius:50%;box-shadow:0 0 0 2px var(--rc,var(--line));background:rgba(0,0,0,.18)}
+.rico{display:inline-block;position:relative;width:1.45em;height:1.45em;vertical-align:-.45em;margin-right:.35em}
 .rico svg.ic{position:absolute;inset:15%;width:70%;height:70%;margin:0;color:var(--rc)}
-.rico img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;border-radius:50%}
+.rico img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0}
 .rico.ok img{opacity:1}.rico.ok svg.ic{display:none}.rico.x img{display:none}
 .tag .rico,.lu small .rico{width:1.3em;height:1.3em;vertical-align:-.35em}
 .ic{width:1.1em;height:1.1em;vertical-align:-.2em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;margin-right:.3em}
@@ -198,7 +222,7 @@ html.locked body>*:not(#gate){display:none!important}
 .tlist .tname{flex:1}
 .tlist .ico{width:28px;height:28px;margin:0}
 .tlist button{border:0;background:transparent;color:var(--mute);font-size:18px;line-height:1;cursor:pointer}
-.drs{right:0;border-left:1px solid var(--line);width:min(980px,98vw);z-index:35}
+.drs{right:0;border-left:1px solid var(--line);width:min(1000px,98vw);z-index:35}
 .dr.drs:not(.open){transform:translateX(105%)}
 .st{width:100%;border-collapse:collapse}.st td,.st th{padding:3px 6px;text-align:left;border-bottom:1px solid var(--line);font-size:13px}
 .st button{border:0;background:transparent;color:var(--mute);font-size:16px;line-height:1;cursor:pointer}
@@ -222,7 +246,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 .tb{display:flex;gap:6px}
 .tb button{padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel)}
 .tb button[aria-expanded=true]{background:var(--gold);color:var(--bg);border-color:var(--gold)}
-.dr{position:fixed;top:var(--hh,56px);bottom:0;width:min(560px,94vw);z-index:30;background:var(--bg);padding:8px 10px calc(env(safe-area-inset-bottom,0px) + 10px);overflow-y:auto;box-shadow:0 0 24px rgba(0,0,0,.35);transform:translateX(-105%);transition:transform .2s,visibility .2s;visibility:hidden}
+.dr{position:fixed;top:var(--hh,56px);bottom:0;width:min(1000px,94vw);z-index:30;background:var(--bg);padding:8px 10px calc(env(safe-area-inset-bottom,0px) + 10px);overflow-y:auto;box-shadow:0 0 24px rgba(0,0,0,.35);transform:translateX(-105%);transition:transform .2s,visibility .2s;visibility:hidden}
 .dl{left:0;border-right:1px solid var(--line)}
 .drr{left:0;right:0;top:auto;bottom:0;width:auto;height:min(55vh,560px,calc(100vh - var(--hh,56px) - 12px));transform:translateY(105%);border-left:0;border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(0,0,0,.35)}
 .drr #q{max-width:380px}
@@ -231,7 +255,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 .dh button,.dh .btn{padding:5px 11px;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
 .dh button[aria-pressed=true]{background:var(--gold);color:var(--bg);border-color:var(--gold)}
 body.ro{padding-bottom:min(55vh,560px)}
-@media(min-width:1800px){body.lo{padding-left:570px}body.lo .drr{left:570px}.dl{box-shadow:none}}
+@media(min-width:2500px){body.lo{padding-left:1010px}body.lo .drr{left:1010px}.dl{box-shadow:none}}
 details>summary{cursor:pointer;list-style:none}
 details>summary::-webkit-details-marker{display:none}
 details>summary h2{display:inline;margin:0}
@@ -291,7 +315,7 @@ summary{cursor:pointer;color:var(--mute)}
 <button type="submit">Open</button><p id="gm" role="status"></p></form>
 
 </div>
-<header class="top" id="hh"><h1>Draft helper</h1><div class="tb"><button id="lo" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-bulb"/></svg>Suggestions</button><button id="ro" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Champions</button><button id="so" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>Teams</button></div></header>
+<header class="top" id="hh"><h1>Draft helper</h1><div class="tb"><button id="lo" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-bulb"/></svg>Suggestions</button><button id="ro" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Champions</button><button id="stl" aria-pressed="false" title="Switch between the default look and the GG look"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg>GG style</button><button id="so" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>Teams</button></div></header>
 <main>
 <p class="sub">Open the Champions panel to pick, and the Suggestions panel for picks, combos and bans.</p>
 <details class="card tools" open><summary><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg><h2>Draft board</h2></summary>
@@ -380,6 +404,7 @@ summary{cursor:pointer;color:var(--mute)}
 <div id="ppv"></div>
 <p class="note" id="ordhint" hidden>These stats are separate from the tier list.</p>
 </details>
+<div id="msrow" style="margin:6px 0"></div>
 <div id="sclu"></div>
 <div id="scp"></div>
 <div id="sca"></div></aside>
@@ -390,6 +415,7 @@ const ic=n=>`<svg class="ic" aria-hidden="true"><use href="#i-${n}"/></svg>`;
 // Role icons from emoji.gg. Each role also gets its own ring color, so top and bot are easy to tell apart. If an image cannot load, the drawn icon stays visible.
 const RIMG={T:"7990-lol-role-top.png",J:"1152-lol-role-jungle.png",M:"6934-lol-role-mid.png",B:"9366-lol-role-bot.png",S:"7990-lol-role-support.png"};
 const RCOL={T:"#FF8A3D",J:"#4CC76B",M:"#B07CFF",B:"#3DA5FF",S:"#F2C94C"};
+const rt=r=>r&&RCOL[r]?`<span class="rt r${r}">${RN[r]}</span>`:esc(RN[r]||r||"?");
 const ri=r=>r&&RIMG[r]?`<span class="rico" style="--rc:${RCOL[r]}" title="${RN[r]}"><svg class="ic" aria-hidden="true"><use href="#r-${r}"/></svg><img src="https://cdn3.emoji.gg/emojis/${RIMG[r]}" alt="${RN[r]}" loading="lazy" referrerpolicy="no-referrer" onload="this.parentNode.classList.add('ok')" onerror="this.parentNode.classList.add('x')"></span>`:"";
 // name|roles|damage (A=AD,P=AP,M=mixed)|tags: t=frontline e=engage c=crowd control s=sustain
 const D=`Aatrox|T|A|t
@@ -656,7 +682,7 @@ function playersCard(mine){
   const bench=myPlayers().filter(x=>!roster.includes(x));
   return`<details class="card" data-k="players" ${op("players")}><summary><h2>Your players</h2></summary>${roster.map(x=>{
     const role=x.role||derivedRole(x),src=x.pool||[],av=src.filter(n=>!ub.has(n)).slice(0,6).map(n=>({n}));
-    return`<div class="cc"><div><b>${esc(x.name)}</b> <span class="tag">${ri(role)}${esc(RN[role]||"?")}</span>${taken.has(x.id)?' <span class="note">(picked)</span>':""}</div>${av.length?`<div style="margin-top:4px">${av.map(c=>`<button class="chip" data-addmine="${esc(c.n)}">${esc(c.n)}</button>`).join(" ")}</div>`:`<p class="note" style="margin:2px 0 0">${src.length?"All champions in the tier list are taken.":"No champions in the tier list yet."}</p>`}</div>`;
+    return`<div class="cc"><div><b>${esc(x.name)}</b> <span class="tag">${ri(role)}${rt(role)}</span>${taken.has(x.id)?' <span class="note">(picked)</span>':""}</div>${av.length?`<div style="margin-top:4px">${av.map(c=>`<button class="chip" data-addmine="${esc(c.n)}">${esc(c.n)}</button>`).join(" ")}</div>`:`<p class="note" style="margin:2px 0 0">${src.length?"All champions in the tier list are taken.":"No champions in the tier list yet."}</p>`}</div>`;
   }).join("")}<p class="note">The first free champions in each active player's list. Tap one to pick it.${bench.length?" Bench: "+bench.map(x=>esc(pl(x))).join(", ")+".":""}</p></details>`;
 }
 function pickIdeas(cb){
@@ -743,7 +769,7 @@ function controls(){
   $("side").innerHTML=[["b","Play blue"],["r","Play red"]].map(([k,l])=>`<button data-me="${k}" aria-pressed="${me===k}">${l}</button>`).join("");
   const i=stepNow();
   $("tg").innerHTML=`<button data-auto="1" aria-pressed="${auto}">Follow draft order</button>`+(auto?`<span class="note" style="align-self:center">${i<20?"Step "+(i+1)+" of 20: "+SN[ORDER[i]]+(ORDER[i][0]===me?" (you)":""):"Draft complete"}</span>`:TARGETS.map(([k,l])=>`<button data-t="${k}" aria-pressed="${target===k}">${l} (${st[k].length}/5)</button>`).join(""));
-  $("rf").innerHTML=[["","All"],...RO.map(r=>[r,RN[r]])].map(([r,l])=>`<button data-r="${r}" aria-pressed="${role===r}">${ri(r)}${l}</button>`).join("");
+  $("rf").innerHTML=[["","All"],...RO.map(r=>[r,RN[r]])].map(([r,l])=>`<button data-r="${r}" aria-pressed="${role===r}">${ri(r)}${r?rt(r):l}</button>`).join("");
 }
 function grid(){
   const u=used(),q=query.trim().toLowerCase();
@@ -779,9 +805,9 @@ function comboCard(c,idx){
   const slots=slotsFixed(c.C,c.alt),bb=banFor(c.C);
   const tiles=slots.map(sl=>{
     const x=sl.main,yours=c.mi.includes(x),mc=mk.pre.includes(x)?"mp":mk.ban.includes(x)?"mb":"";
-    const inner=`${icons?icon(x):""}<b>${esc(x)}</b><small>${esc(RN[sl.role])}</small><span class="st">${yours?"\u2713 yours":mc==="mp"?"\u2605 prepick":mc==="mb"?"ban candidate":"+ pick"}</span>`;
+    const inner=`${icons?icon(x):""}<b>${esc(x)}</b><small>${rt(sl.role)}</small><span class="st">${yours?"\u2713 yours":mc==="mp"?"\u2605 prepick":mc==="mb"?"ban candidate":"+ pick"}</span>`;
     const main=yours?`<div class="mem yours">${inner}</div>`:`<button class="mem need ${mc}" data-addmine="${esc(x)}" aria-label="Pick ${esc(x)}">${inner}</button>`;
-    const alts=!yours&&sl.alts.length?`<div class="alts">or ${sl.alts.map(a=>`<button data-addmine="${esc(a)}">${esc(a)}</button>`).join(" ")}</div>`:"";
+    const alts=sl.alts.length?(yours?`<div class="alts dim">or ${sl.alts.map(a=>`<span class="altd" data-mk="${esc(a)}">${esc(a)}</span>`).join(" ")}</div>`:`<div class="alts">or ${sl.alts.map(a=>`<button data-addmine="${esc(a)}">${esc(a)}</button>`).join(" ")}</div>`):"";
     return`<div class="slot">${main}${alts}</div>`;
   }).join('<span class="cmb-plus">+</span>');
   return`<div class="cmb"><div class="cmb-h"><b>Combo ${idx+1}</b> <span class="tag">${c.C.length} champions</span> <span class="${c.need.length?"note":"good"}">${c.need.length?c.need.length+" still needed":"Complete"}</span></div><div class="cmb-m">${tiles}</div><div class="cmb-b"><div class="nl bad" style="margin:0 0 4px">If you play this, ban</div>${bb.length?`<div class="sg">${bb.map(o=>`<button data-ban="${esc(o.n)}"${mk.ban.includes(o.n)?' class="mbk"':""}><span>${esc(o.n)}</span><em>counters ${o.hit.map(esc).join(", ")}</em></button>`).join("")}</div>`:`<p class="note" style="margin:0">No counters saved for these champions yet.</p>`}</div></div>`;
@@ -846,6 +872,7 @@ document.addEventListener("click",e=>{
   else if(b.id==="lo"){DS.lo=!DS.lo;drawers()}
   else if(b.id==="ro"){DS.ro=!DS.ro;drawers()}
   else if(b.dataset.close){DS[{dl:"lo",dr:"ro",ds:"so"}[b.dataset.close]]=false;drawers()}
+  else if(b.id==="stl"){toggleStyle();return}
   else if(b.id==="so"){DS.so=!DS.so;drawers()}
   else if(b.dataset.stab){scMode=b.dataset.stab;fixSel()}
   else if(b.dataset.itab){itab=b.dataset.itab}
@@ -949,9 +976,9 @@ function openMenu(n,x,y){
   cm.style.top=Math.max(4,Math.min(y,innerHeight-r.height-8))+"px";
 }
 function markTarget(e){
-  const t=e.target.closest("[data-n],[data-g],[data-addmine],[data-ban]");
+  const t=e.target.closest("[data-n],[data-g],[data-addmine],[data-ban],[data-mk]");
   if(!t||t.closest("#cm"))return null;
-  const n=t.dataset.n||t.dataset.g||t.dataset.addmine||t.dataset.ban;
+  const n=t.dataset.n||t.dataset.g||t.dataset.addmine||t.dataset.ban||t.dataset.mk;
   return t.dataset.g||!used().has(n)?n:null;
 }
 function menuAction(m){
@@ -1240,7 +1267,7 @@ async function scAddProfile(){
 }
 function lineupHtml(P){
   const act=actOf(P);
-  return P.length?`<div class="nl" style="margin:6px 0 2px">Active lineup</div><div class="lineup">${RO.map(r=>{const a=act.filter(x=>(x.role||derivedRole(x))===r);return`<span class="lu${a.length?"":" none"}"><small>${ri(r)}${RN[r]}</small><b>${a.length?esc(a.map(x=>x.name).join(", ")):"\u2013"}</b></span>`}).join("")}</div>`:"";
+  return P.length?`<div class="nl" style="margin:6px 0 2px">Active lineup</div><div class="lineup">${RO.map(r=>{const a=act.filter(x=>(x.role||derivedRole(x))===r);return`<span class="lu${a.length?"":" none"}"><small>${ri(r)}${rt(r)}</small><b>${a.length?esc(a.map(x=>x.name).join(", ")):"\u2013"}</b></span>`}).join("")}</div>`:"";
 }
 async function playerActive(id){
   const t=curTeam(),p=t&&t.data.find(x=>x.id===id);
@@ -1279,11 +1306,11 @@ function tierView(){
   if(!P.find(x=>x.id===tSel))tSel=P[0]?P[0].id:"";
   $("tsel").innerHTML=P.length?P.map(x=>`<option value="${esc(x.id)}"${x.id===tSel?" selected":""}>${esc(pl(x))}</option>`).join(""):`<option value="">No player yet</option>`;
   const act=actOf(P);
-  $("tlu").innerHTML=P.length?`<div class="nl" style="margin:6px 0 2px">Active lineup</div><div class="lineup">${RO.map(r=>{const a=act.filter(x=>(x.role||derivedRole(x))===r);return`<span class="lu${a.length?"":" none"}"><small>${ri(r)}${RN[r]}</small><b>${a.length?esc(a.map(x=>x.name).join(", ")):"\u2013"}</b></span>`}).join("")}</div>`:"";
+  $("tlu").innerHTML=P.length?`<div class="nl" style="margin:6px 0 2px">Active lineup</div><div class="lineup">${RO.map(r=>{const a=act.filter(x=>(x.role||derivedRole(x))===r);return`<span class="lu${a.length?"":" none"}"><small>${ri(r)}${rt(r)}</small><b>${a.length?esc(a.map(x=>x.name).join(", ")):"\u2013"}</b></span>`}).join("")}</div>`:"";
   $("tll").innerHTML=P.length?P.map(x=>{
     const pool=x.pool||[],role=x.role||derivedRole(x);
     const on=actOf(P).includes(x);
-    return`<div class="tp${on?"":" bench"}"><div><b>${esc(x.name)}</b> ${role?`<span class="tag">${ri(role)}${esc(RN[role]||role)}</span>`:""} <button class="actb${on?" on":""}" data-pact="${esc(x.id)}" aria-pressed="${on}" title="${on?"Playing. Click to move to the bench":"On the bench. Click to make this player active"}">${on?"\u2605 Active":"Bench"}</button></div>${pool.length?`<ol class="tlist">${pool.map((n,i)=>`<li data-pid="${esc(x.id)}" data-tn="${esc(n)}"><span class="dg" data-drag tabindex="0" role="button" aria-label="Drag to reorder ${esc(n)}">\u2630</span><span class="tn">${i+1}</span>${icons?icon(n):""}<span class="tname">${esc(n)}</span><button data-tcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from the tier list">\u00d7</button></li>`).join("")}</ol>`:`<p class="note">No champions yet.</p>`}${(x.cant||[]).length?`<div class="nl">Can't play</div><div>${x.cant.map(n=>`<span class="nc weak">${esc(n)}<button data-ccx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from can't play">\u00d7</button></span>`).join("")}</div>`:""}</div>`;
+    return`<div class="tp${on?"":" bench"}"><div><b>${esc(x.name)}</b> ${role?`<span class="tag">${ri(role)}${rt(role)}</span>`:""} <button class="actb${on?" on":""}" data-pact="${esc(x.id)}" aria-pressed="${on}" title="${on?"Playing. Click to move to the bench":"On the bench. Click to make this player active"}">${on?"\u2605 Active":"Bench"}</button></div>${pool.length?`<ol class="tlist">${pool.map((n,i)=>`<li data-pid="${esc(x.id)}" data-tn="${esc(n)}"><span class="dg" data-drag tabindex="0" role="button" aria-label="Drag to reorder ${esc(n)}">\u2630</span><span class="tn">${i+1}</span>${icons?icon(n):""}<span class="tname">${esc(n)}</span><button data-tcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from the tier list">\u00d7</button></li>`).join("")}</ol>`:`<p class="note">No champions yet.</p>`}${(x.cant||[]).length?`<div class="nl">Can't play</div><div>${x.cant.map(n=>`<span class="nc weak">${esc(n)}<button data-ccx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from can't play">\u00d7</button></span>`).join("")}</div>`:""}</div>`;
   }).join(""):`<p class="note">Add a player first.</p>`;
 }
 async function tierAdd(){
@@ -1396,7 +1423,7 @@ function profCard(p){
   const pills=tg?`<span class="pill">${tg} games</span><span class="pill w ${wc(wr)}">${wr.toFixed(1)}% WR</span><span class="pill">${kda.toFixed(2)} KDA</span>`:"";
   const tiles=rows.map(c=>`<div class="pt"><button class="lnk" data-ped="${key}|${esc(c.n)}">${icons?icon(c.n):""}${esc(c.n)}</button><div class="pts"><span class="w ${wc(c.wr)}">${c.wr}%</span><span>${c.g} games</span><span>${c.kda} KDA</span></div><button class="x" data-pcx="${key}|${esc(c.n)}" aria-label="Remove ${esc(c.n)}">\u00d7</button></div>`).join("");
   const body=(my?`<div class="nl">Imported stats</div>`:"")+(rows.length?`<div class="pgrid">${tiles}</div>`:`<p class="note">${my?"No imported stats yet. Use the paste or Riot import above.":"No champions yet. Add the champions this player plays."}</p>`);
-  return`<details class="ng pc" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><span class="pn"><b>${esc(p.name)}</b> ${role?`<span class="tag">${ri(role)}${esc(RN[role]||role)}</span>`:""} <span class="tag">${isAct?"Active":"Bench"}</span></span><span class="pills">${pills}</span></summary>${body}<p style="margin:8px 0 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="actb${isAct?" on":""}" data-pact="${key}" aria-pressed="${isAct}">${isAct?"\u2605 Active":"Bench"}</button>${link?`<a href="${link}" target="_blank" rel="noopener">Open on op.gg</a>`:""}<button class="btn" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></p></details>`;
+  return`<details class="ng pc" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><span class="pn"><b>${esc(p.name)}</b> ${role?`<span class="tag">${ri(role)}${rt(role)}</span>`:""} <span class="tag">${isAct?"Active":"Bench"}</span></span><span class="pills">${pills}</span></summary>${body}<p style="margin:8px 0 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="actb${isAct?" on":""}" data-pact="${key}" aria-pressed="${isAct}">${isAct?"\u2605 Active":"Bench"}</button>${link?`<a href="${link}" target="_blank" rel="noopener">Open on op.gg</a>`:""}<button class="btn" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></p></details>`;
 }
 const synAdj=()=>{const a={};REL.syn.forEach(([x,y])=>{(a[x]=a[x]||new Set()).add(y);(a[y]=a[y]||new Set()).add(x)});return a};
 function maxCl(adj,nodes){
@@ -1505,6 +1532,13 @@ function scView(){
   $("scp").innerHTML=P.length?P.map(profCard).join(""):`<p class="note">${my?"Add your players to see their pools and get pick suggestions that fit them.":"Add a profile to start scouting."}</p>`;
   $("sca").innerHTML=P.length?scAnalysis(actOf(P),my,P.length-actOf(P).length):"";
   $("sclu").innerHTML=!my?lineupHtml(P):"";
+  const mr=actOf(P).map(x=>({r:x.riot||x.name,g:x.region||"euw"})).filter(x=>x.r.includes("#"));
+  if(mr.length){
+    const cn={};mr.forEach(x=>{cn[x.g]=(cn[x.g]||0)+1});
+    const reg=Object.keys(cn).sort((a,b)=>cn[b]-cn[a])[0];
+    const url="https://op.gg/lol/multisearch/"+encodeURIComponent(reg)+"?summoners="+mr.map(x=>encodeURIComponent(x.r).replace(/%20/g,"+")).join("%2C");
+    $("msrow").innerHTML=`<a class="btn" href="${esc(url)}" target="_blank" rel="noopener">${ic("users")}Open multi op.gg (${mr.length})</a>`;
+  }else $("msrow").innerHTML="";
   tierView();
 }
 let PP=[],PPROLE="";
@@ -1633,12 +1667,12 @@ function notes(){
   if(nf!=="counter"){
     const adj=synAdj(),cl=maxCl(adj,Object.keys(adj)).filter(c=>c.some(match)).sort((a,b)=>b.length-a.length||a[0].localeCompare(b[0]));
     if(cl.length){
-      h+=`<h3 class="sec">Team combos <span class="note">${cl.length}</span></h3>`;
+      h+=`<h3 class="sec">Team combos <span class="note">${cl.length}</span></h3><div class="ngrid cg">`;
       h+=cl.map(c=>{
         const mem=c.slice().sort(),pairs=REL.syn.map((p,i)=>({a:p[0],b:p[1],i})).filter(x=>mem.includes(x.a)&&mem.includes(x.b));
-        const cs=comboSlots(mem),tiles=cs.slots.map(sl=>`<span class="slot"><span class="mem">${icons?icon(sl.main):""}<b>${esc(sl.main)}</b><small>${esc(RN[sl.role])}</small></span>${sl.alts.length?`<span class="alts">or ${sl.alts.map(esc).join(", ")}</span>`:""}</span>`).concat(cs.extra.map(n=>`<span class="mem"><b>${esc(n)}</b></span>`)).join('<span class="cmb-plus">+</span>');
+        const cs=comboSlots(mem),tiles=cs.slots.map(sl=>`<span class="slot"><span class="mem">${icons?icon(sl.main):""}<b>${esc(sl.main)}</b><small>${rt(sl.role)}</small></span>${sl.alts.length?`<span class="alts">or ${sl.alts.map(esc).join(", ")}</span>`:""}</span>`).concat(cs.extra.map(n=>`<span class="mem"><b>${esc(n)}</b></span>`)).join('<span class="cmb-plus">+</span>');
         return`<div class="cmb"><div class="cmb-h"><b>${mem.length===2?"Pair":"Combo"}</b> <span class="tag">${mem.length} champions</span>${canWrite?` <button class="btn" data-dcb="${esc(mem.join("|"))}">Delete all</button>`:""}</div><div class="cmb-m">${tiles}</div><details style="margin-top:8px"><summary class="note">Single notes (${pairs.length})</summary><div style="margin-top:6px">${pairs.map(x=>`<span class="nc syn">${esc(x.a)} + ${esc(x.b)}${canWrite?`<button data-del="syn:${x.i}" aria-label="Delete note: ${esc(TXT("syn",x.a,x.b))}">\u00d7</button>`:""}</span>`).join("")}</div></details></div>`;
-      }).join("");
+      }).join("")+`</div>`;
     }
   }
   if(nf!=="syn"){
@@ -1726,6 +1760,15 @@ function consider(){
 Object.values(DRAW).forEach(f=>f());
 let DS={lo:innerWidth>=1800,ro:false,so:false},icons=false,hide=false,VER="",IDS={};
 try{Object.assign(DS,JSON.parse(localStorage.getItem("lolDr")||"{}"));icons=localStorage.getItem("lolIcons")==="1";hide=localStorage.getItem("lolHide")==="1"}catch(e){}
+function styleBtn(){try{$("stl").setAttribute("aria-pressed",document.documentElement.getAttribute("data-style")==="gg")}catch(e){}}
+function toggleStyle(){
+  try{
+    const on=document.documentElement.getAttribute("data-style")!=="gg";
+    if(on)document.documentElement.setAttribute("data-style","gg");else document.documentElement.removeAttribute("data-style");
+    try{localStorage.setItem("lolStyle",on?"gg":"")}catch(e){}
+  }catch(e){}
+  styleBtn();
+}
 function setHH(){try{document.documentElement.style.setProperty("--hh",$("hh").offsetHeight+"px")}catch(e){}}
 function drawers(){
   $("dl").classList.toggle("open",!!DS.lo);$("dr").classList.toggle("open",!!DS.ro);$("ds").classList.toggle("open",!!DS.so);$("so").setAttribute("aria-expanded",!!DS.so);
@@ -1752,7 +1795,7 @@ async function loadIcons(){
   render();
 }
 const icon=n=>VER?`<img class="ico" loading="lazy" alt="" src="https://ddragon.leagueoflegends.com/cdn/${VER}/img/champion/${IDS[n]||IDFIX[n]||n.replace(/[^A-Za-z0-9]/g,"")}.png" onerror="this.style.display='none'">`:"";
-drawers();setHH();window.addEventListener("resize",setHH);
+drawers();setHH();styleBtn();window.addEventListener("resize",setHH);
 applyOvr();
 if(icons)loadIcons();
 setMode();
