@@ -70,6 +70,20 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+.tcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:6px}
+.tc{padding:10px;border:2px solid var(--line);border-radius:10px;background:var(--panel);text-align:left;cursor:pointer;font:inherit;color:inherit}
+.tc[aria-pressed=true]{border-color:var(--gold);background:var(--chip)}
+.tc b{display:block}.tc small{color:var(--mute);font-size:12px}
+.fl{display:block;margin:10px 0 4px;font-weight:600;font-size:14px}
+.sec{margin:16px 0 4px;font:600 16px/1.2 Barlow,system-ui,sans-serif}
+.ngrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.ngrid .cmb{margin:0}
+.cmb.mu{border-left-color:var(--mute)}
+.mem.sm{flex-direction:row;align-items:center;gap:6px;min-width:0;padding:4px 6px 4px 10px;border-width:1px}
+.mem.sm.strong{border-color:var(--ok)}.mem.sm.weak{border-color:var(--red)}
+.mem.sm .ico{width:22px;height:22px;margin:0}
+.mem.sm button{border:0;background:transparent;color:var(--mute);font-size:16px;line-height:1;padding:0 4px;cursor:pointer}
+.mem.sm button:hover{color:var(--red)}
 .cmb{border:1px solid var(--line);border-left:6px solid var(--gold);border-radius:10px;padding:10px;margin:10px 0;background:var(--bg)}
 .cmb-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:8px}
 .cmb-m{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
@@ -84,6 +98,9 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .mem.yours .st{color:var(--ok)}.mem.need .st{color:var(--gold)}
 .mem .ico{margin:0 0 2px}
 .cmb-b{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}
+.mem.mp{border-style:solid;border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+.mem.mb{opacity:.55;border-color:var(--red)}
+.sg button.mbk{border-color:var(--red);opacity:.6}
 #gate{display:none;position:fixed;inset:0;z-index:100;align-items:center;justify-content:center;background:var(--bg);padding:20px;overflow:auto}
 html.locked #gate{display:flex}
 html.locked body>*:not(#gate){display:none!important}
@@ -197,11 +214,11 @@ summary{cursor:pointer;color:var(--mute)}
 <p class="note" id="emode"></p>
 </details>
 <details class="card tools" open><summary><h2>Your notes</h2></summary>
-<div class="row">
-<div class="cbw"><div class="mcs" id="na-c"></div><input id="na" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="First champion" placeholder="Search champion" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
-<select id="nt" aria-label="Note type"><option value="syn">works well with</option><option value="weak">is weak against</option><option value="strong">works well into</option><option value="combo">all work well together (team combo)</option></select>
-<div class="cbw"><div class="mcs" id="nb-c"></div><input id="nb" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Second champion" placeholder="Search other champion" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
-</div>
+<div class="tcards" id="ntc" role="group" aria-label="Note type"></div>
+<label class="fl" id="nla" for="na">Champions</label>
+<div class="cbw"><div class="mcs" id="na-c"></div><input id="na" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" placeholder="Search champion" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
+<div id="nbg"><label class="fl" id="nlb" for="nb">Works well with</label>
+<div class="cbw"><div class="mcs" id="nb-c"></div><input id="nb" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" placeholder="Search champion" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div></div>
 <button class="btn" id="nadd">Save note</button> <span id="nmsg" class="note" role="status"></span>
 <input type="search" id="nsearch" placeholder="Filter notes by champion" aria-label="Filter notes by champion">
 <div class="rf" id="nfil" role="group" aria-label="Note type filter"></div>
@@ -633,10 +650,11 @@ function comboCard(c,idx){
   const ar=assign(c.C.map(x=>BY[x].r)),bb=banFor(c.C);
   const tiles=c.C.map((x,i)=>{
     const yours=c.mi.includes(x),role=ar[i]?RN[ar[i]]:BY[x].r.map(r=>RN[r]).join("/");
-    const inner=`${icons?icon(x):""}<b>${esc(x)}</b><small>${esc(role)}</small><span class="st">${yours?"\u2713 yours":"+ pick"}</span>`;
-    return yours?`<div class="mem yours">${inner}</div>`:`<button class="mem need" data-addmine="${esc(x)}" aria-label="Pick ${esc(x)}">${inner}</button>`;
+    const mc=mk.pre.includes(x)?"mp":mk.ban.includes(x)?"mb":"";
+    const inner=`${icons?icon(x):""}<b>${esc(x)}</b><small>${esc(role)}</small><span class="st">${yours?"\u2713 yours":mc==="mp"?"\u2605 prepick":mc==="mb"?"ban candidate":"+ pick"}</span>`;
+    return yours?`<div class="mem yours">${inner}</div>`:`<button class="mem need ${mc}" data-addmine="${esc(x)}" aria-label="Pick ${esc(x)}">${inner}</button>`;
   }).join('<span class="cmb-plus">+</span>');
-  return`<div class="cmb"><div class="cmb-h"><b>Combo ${idx+1}</b> <span class="tag">${c.C.length} champions</span> <span class="${c.need.length?"note":"good"}">${c.need.length?c.need.length+" still needed":"Complete"}</span></div><div class="cmb-m">${tiles}</div>${c.alt&&c.alt.length?`<div class="note" style="margin:6px 0 0">Also fits this group: ${c.alt.map(esc).join(", ")}</div>`:""}<div class="cmb-b"><div class="nl bad" style="margin:0 0 4px">If you play this, ban</div>${bb.length?`<div class="sg">${bb.map(o=>`<button data-ban="${esc(o.n)}"><span>${esc(o.n)}</span><em>counters ${o.hit.map(esc).join(", ")}</em></button>`).join("")}</div>`:`<p class="note" style="margin:0">No counters saved for these champions yet.</p>`}</div></div>`;
+  return`<div class="cmb"><div class="cmb-h"><b>Combo ${idx+1}</b> <span class="tag">${c.C.length} champions</span> <span class="${c.need.length?"note":"good"}">${c.need.length?c.need.length+" still needed":"Complete"}</span></div><div class="cmb-m">${tiles}</div>${c.alt&&c.alt.length?`<div class="note" style="margin:6px 0 0">Also fits this group: ${c.alt.map(esc).join(", ")}</div>`:""}<div class="cmb-b"><div class="nl bad" style="margin:0 0 4px">If you play this, ban</div>${bb.length?`<div class="sg">${bb.map(o=>`<button data-ban="${esc(o.n)}"${mk.ban.includes(o.n)?' class="mbk"':""}><span>${esc(o.n)}</span><em>counters ${o.hit.map(esc).join(", ")}</em></button>`).join("")}</div>`:`<p class="note" style="margin:0">No counters saved for these champions yet.</p>`}</div></div>`;
 }
 function analysis(){
   const mine=MY(),foe=EN(),nm=me==="b"?"blue":"red",nf=me==="b"?"red":"blue",k=me==="b"?"bp":"rp";
@@ -645,7 +663,7 @@ function analysis(){
   let h=`<details class="card" data-k="team" ${op("team")}><summary><h2>Your team (${nm})</h2></summary><p class="note" style="margin:0 0 4px">${turn}</p>${dmgBar(a)}${traits(a)}${insights()}<div class="note" style="margin:0">${mine.length<5?(a.open.length?"Open roles: "+a.open.map(r=>RN[r]).join(", "):"Roles are covered by flex picks."):"Draft complete."}</div>`;
   if(sg.length)h+=`<h3>Best picks now</h3><div class="sg">${sg.map(x=>`<button data-addmine="${esc(x.n)}"><span>${esc(x.n)}</span><em>${esc(x.w.join(", "))}</em></button>`).join("")}</div><p class="note">Ranked by your open roles, damage mix, team tools, your notes and the draft order (later enemy picks can counter early picks).</p>`;
   h+=`</details>`+playersCard(mine)+`<details class="card" data-k="combos" ${op("combos")}><summary><h2>Team combos</h2></summary>`;
-  h+=cb.length?cb.map(comboCard).join("")+`<p class="note">Combos use champions you saved as working well together. Only available champions that fit your open roles are shown. Tap a dashed champion to pick it, or a ban to add it to your bans.</p>`:`<p class="note">No available combo fits yet. Save a team combo in Your notes to see combos here.</p>`;
+  h+=cb.length?cb.map(comboCard).join("")+`<p class="note">Combos use champions you saved as working well together. Only available champions that fit your open roles are shown. Tap a dashed champion to pick it, or a ban to add it to your bans. Right-click a champion (long-press on touch) to prepick it or mark it as a ban candidate.</p>`:`<p class="note">No available combo fits yet. Save a team combo in Your notes to see combos here.</p>`;
   h+=`</details><details class="card" data-k="bans" ${op("bans")}><summary><h2>Ban ideas for your picks</h2></summary>`;
   h+=bn.length?`<div class="sg">${bn.map(([b,o])=>`<button data-ban="${esc(b)}"><span>${esc(b)}</span><em>${esc(o.w.join(", "))}</em></button>`).join("")}</div><p class="note">Tap a champion to add it to your bans. Only champions the enemy can still play in their open roles are listed.</p>`:`<p class="note">Save weakness notes ("is weak against" or "works well into") and ban ideas will appear here.</p>`;
   h+=`</details>`;
@@ -708,6 +726,8 @@ document.addEventListener("click",e=>{
   else if(b.id==="pimp"){scImport();return}
   else if(b.id==="tadd"){tierAdd();return}
   else if(b.id==="cadd"){cantAdd();return}
+  else if(b.dataset.nty){ntype=b.dataset.nty;if(ntype==="combo"){MS.nb=[];DRAW.nb()}}
+  else if(b.dataset.dcb){delCombo(b.dataset.dcb);return}
   else if(b.dataset.ccx){cantRm(b.dataset.ccx);return}
   else if(b.id==="ticons"){icons=!icons;try{localStorage.setItem("lolIcons",icons?"1":"0")}catch(e){}if(icons)loadIcons()}
   else if(b.id==="priot"){riotImport();return}
@@ -795,9 +815,9 @@ function openMenu(n,x,y){
   cm.style.top=Math.max(4,Math.min(y,innerHeight-r.height-8))+"px";
 }
 function markTarget(e){
-  const t=e.target.closest("[data-n],[data-g]");
+  const t=e.target.closest("[data-n],[data-g],[data-addmine],[data-ban]");
   if(!t||t.closest("#cm"))return null;
-  const n=t.dataset.n||t.dataset.g;
+  const n=t.dataset.n||t.dataset.g||t.dataset.addmine||t.dataset.ban;
   return t.dataset.g||!used().has(n)?n:null;
 }
 function menuAction(m){
@@ -963,7 +983,7 @@ function setMode(){
   $("nmig").hidden=!((shared||sb)&&canWrite&&(LOC.syn.length+LOC.weak.length+LOC.strong.length)>0);
 }
 async function addNote(){
-  const k=$("nt").value,A=MS.na.slice(),B=MS.nb.slice(),P=[];
+  const k=ntype,A=MS.na.slice(),B=MS.nb.slice(),P=[];
   if(k==="combo"){const U=[...new Set([...A,...B])];for(let x=0;x<U.length;x++)for(let y=x+1;y<U.length;y++)P.push(["syn",U[x],U[y]])}
   else A.forEach(a=>B.forEach(b=>{if(a!==b)P.push([k,a,b])}));
   if(!P.length){msg(k==="combo"?"Choose at least two champions.":"Choose at least one champion in each field.");return}
@@ -1408,7 +1428,7 @@ async function scImport(){
   const n=PP.length;PP=[];$("pp").value="";ppView();
   await scPersist(t);scmsg("Imported "+n+" champions.");render();
 }
-let nq="",nf="all";
+let nq="",nf="all",ntype="combo";
 function cliques(){
   const adj={};
   REL.syn.forEach(([x,y])=>{(adj[x]=adj[x]||new Set()).add(y);(adj[y]=adj[y]||new Set()).add(x)});
@@ -1420,25 +1440,54 @@ function cliques(){
   })([],Object.keys(adj),[]);
   return res.sort((a,b)=>b.length-a.length);
 }
+const NTYPES=[["combo","Team combo","All of these champions work well together"],["syn","Works well with","Champions that fit well with others"],["strong","Strong against","Champions that beat others"],["weak","Weak against","Champions that struggle against others"]];
+function ntView(){
+  $("ntc").innerHTML=NTYPES.map(([k,t,d])=>`<button class="tc" data-nty="${k}" aria-pressed="${ntype===k}"><b>${t}</b><small>${d}</small></button>`).join("");
+  $("nla").textContent=ntype==="combo"?"Champions (two or more)":"Champions";
+  $("nlb").textContent=ntype==="syn"?"Works well with":ntype==="strong"?"Strong against":"Weak against";
+  $("nbg").hidden=ntype==="combo";
+}
+function ntile(n,cls,k,i){
+  const b=BY[n],role=b?b.r.map(r=>RN[r]).join("/"):"",p=k?REL[k][i]:null;
+  const del=p&&canWrite?`<button data-del="${k}:${i}" aria-label="Delete note: ${esc(TXT(k,p[0],p[1]))}">\u00d7</button>`:"";
+  return`<span class="mem sm ${cls||""}">${icons?icon(n):""}<b>${esc(n)}</b>${role?`<small>${esc(role)}</small>`:""}${del}</span>`;
+}
+async function delCombo(v){
+  const mem=v.split("|"),idx=REL.syn.map((p,i)=>mem.includes(p[0])&&mem.includes(p[1])?i:-1).filter(i=>i>=0).reverse();
+  if(!idx.length||!await ask("Delete this combo?\n"+mem.join(" + ")+"\nThis removes "+idx.length+" synergy notes between these champions.","Delete all"))return;
+  try{for(const i of idx)await delNote("syn",i)}catch(e){msg(errText(e))}
+  render();
+}
 function notes(){
-  const by={},add=(n,ty,o,k,i)=>{(by[n]=by[n]||[]).push({ty,o,k,i})};
-  REL.syn.forEach((p,i)=>{add(p[0],"syn",p[1],"syn",i);add(p[1],"syn",p[0],"syn",i)});
-  REL.weak.forEach((p,i)=>{add(p[0],"weak",p[1],"weak",i);add(p[1],"strong",p[0],"weak",i)});
-  REL.strong.forEach((p,i)=>{add(p[0],"strong",p[1],"strong",i);add(p[1],"weak",p[0],"strong",i)});
+  ntView();
   const ns=REL.syn.length,nc=REL.weak.length+REL.strong.length,total=ns+nc;
   $("nfil").innerHTML=[["all","All ("+total+")"],["syn","Synergies ("+ns+")"],["counter","Counters ("+nc+")"]].map(([k,l])=>`<button data-nf="${k}" aria-pressed="${nf===k}">${l}</button>`).join("");
-  if(!total){$("nlist").innerHTML=`<p class="note">No notes yet. Save your first synergy, weakness or strength above.</p>`;return}
-  const q=nq.trim().toLowerCase(),LBL={syn:"Works well with",strong:"Strong against",weak:"Weak against"},SH={syn:"synergies",strong:"strong",weak:"weak"};
-  const keep=r=>nf==="all"||(nf==="syn"?r.ty==="syn":r.ty!=="syn");
-  const names=Object.keys(by).filter(n=>(!q||n.toLowerCase().includes(q))&&by[n].some(keep)).sort((a,b)=>a.localeCompare(b));
+  if(!total){$("nlist").innerHTML=`<p class="note">No notes yet. Pick a note type above and save your first one.</p>`;return}
+  const q=nq.trim().toLowerCase(),match=n=>!q||n.toLowerCase().includes(q);
   let h="";
-  const cl=nf==="counter"?[]:cliques().filter(c=>!q||c.some(x=>x.toLowerCase().includes(q)));
-  if(cl.length)h+=`<details class="ng" data-k="nc:combos" ${OPEN["nc:combos"]?"open":""}><summary><b>Team combos</b> <span class="note">${cl.length}</span></summary>${cl.map(c=>`<div class="nl" style="margin:4px 0">${c.map(esc).join(" + ")}</div>`).join("")}</details>`;
-  h+=names.map(n=>{
-    const rows=by[n].filter(keep),grp=t=>rows.filter(r=>r.ty===t);
-    const sum=["syn","strong","weak"].filter(t=>grp(t).length).map(t=>grp(t).length+" "+SH[t]).join(", ");
-    return`<details class="ng" data-k="n:${esc(n)}" ${OPEN["n:"+n]?"open":""}><summary><b>${esc(n)}</b> <span class="note">${sum}</span></summary>${["syn","strong","weak"].filter(t=>grp(t).length).map(t=>`<div class="nl">${LBL[t]}</div><div>${grp(t).map(r=>{const p=REL[r.k][r.i];return`<span class="nc ${t}">${esc(r.o)}${canWrite?`<button data-del="${r.k}:${r.i}" aria-label="Delete note: ${esc(TXT(r.k,p[0],p[1]))}">\u00d7</button>`:""}</span>`}).join("")}</div>`).join("")}</details>`;
-  }).join("");
+  if(nf!=="counter"){
+    const adj=synAdj(),cl=maxCl(adj,Object.keys(adj)).filter(c=>c.some(match)).sort((a,b)=>b.length-a.length||a[0].localeCompare(b[0]));
+    if(cl.length){
+      h+=`<h3 class="sec">Team combos <span class="note">${cl.length}</span></h3>`;
+      h+=cl.map(c=>{
+        const mem=c.slice().sort(),pairs=REL.syn.map((p,i)=>({a:p[0],b:p[1],i})).filter(x=>mem.includes(x.a)&&mem.includes(x.b));
+        const tiles=mem.map(n=>{const b=BY[n];return`<span class="mem">${icons?icon(n):""}<b>${esc(n)}</b>${b?`<small>${esc(b.r.map(r=>RN[r]).join("/"))}</small>`:""}</span>`}).join('<span class="cmb-plus">+</span>');
+        return`<div class="cmb"><div class="cmb-h"><b>${mem.length===2?"Pair":"Combo"}</b> <span class="tag">${mem.length} champions</span>${canWrite?` <button class="btn" data-dcb="${esc(mem.join("|"))}">Delete all</button>`:""}</div><div class="cmb-m">${tiles}</div><details style="margin-top:8px"><summary class="note">Single notes (${pairs.length})</summary><div style="margin-top:6px">${pairs.map(x=>`<span class="nc syn">${esc(x.a)} + ${esc(x.b)}${canWrite?`<button data-del="syn:${x.i}" aria-label="Delete note: ${esc(TXT("syn",x.a,x.b))}">\u00d7</button>`:""}</span>`).join("")}</div></details></div>`;
+      }).join("");
+    }
+  }
+  if(nf!=="syn"){
+    const by={},add=(n,ty,o,k,i)=>{(by[n]=by[n]||[]).push({ty,o,k,i})};
+    REL.weak.forEach((p,i)=>{add(p[0],"weak",p[1],"weak",i);add(p[1],"strong",p[0],"weak",i)});
+    REL.strong.forEach((p,i)=>{add(p[0],"strong",p[1],"strong",i);add(p[1],"weak",p[0],"strong",i)});
+    const names=Object.keys(by).filter(n=>match(n)||by[n].some(r=>match(r.o))).sort((a,b)=>a.localeCompare(b));
+    if(names.length){
+      h+=`<h3 class="sec">Matchups <span class="note">${names.length}</span></h3><div class="ngrid">`+names.map(n=>{
+        const st=by[n].filter(r=>r.ty==="strong"),wk=by[n].filter(r=>r.ty==="weak"),b=BY[n];
+        return`<div class="cmb mu"><div class="cmb-h"><b>${esc(n)}</b>${b?` <span class="tag">${esc(b.r.map(r=>RN[r]).join("/"))}</span>`:""}</div>${st.length?`<div class="nl good">Strong against</div><div class="cmb-m">${st.map(r=>ntile(r.o,"strong",r.k,r.i)).join("")}</div>`:""}${wk.length?`<div class="nl bad">Weak against</div><div class="cmb-m">${wk.map(r=>ntile(r.o,"weak",r.k,r.i)).join("")}</div>`:""}</div>`;
+      }).join("")+`</div>`;
+    }
+  }
   $("nlist").innerHTML=h||`<p class="note">No notes match your filter.</p>`;
 }
 function insights(){
