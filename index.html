@@ -72,6 +72,9 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+body .cmb-h{align-items:center}
+.cmb-h .chh .ico{width:30px;height:30px;border-radius:6px}
+.cmb-h .chh b{font-size:15px}
 .chh{display:flex;align-items:center;gap:10px;min-width:0}
 .chh .ico{width:44px;height:44px;margin:0;border-radius:8px;flex:none}
 .chh .cn{font-size:16px}
@@ -1736,10 +1739,11 @@ function notes(){
     REL.weak.forEach((p,i)=>{add(p[0],"weak",p[1],"weak",i);add(p[1],"strong",p[0],"weak",i)});
     REL.strong.forEach((p,i)=>{add(p[0],"strong",p[1],"strong",i);add(p[1],"weak",p[0],"strong",i)});
     const names=Object.keys(by).filter(n=>match(n)||by[n].some(r=>match(r.o))).sort((a,b)=>a.localeCompare(b));
+    if(names.length&&!VER&&!icoAsked){icoAsked=true;loadIcons()}
     if(names.length){
       h+=`<h3 class="sec">Matchups <span class="note">${names.length}</span></h3><div class="ngrid">`+names.map(n=>{
         const st=by[n].filter(r=>r.ty==="strong"),wk=by[n].filter(r=>r.ty==="weak"),b=BY[n];
-        return`<div class="cmb mu"><div class="cmb-h"><b>${esc(n)}</b>${b?` <span class="tag">${esc(b.r.map(r=>RN[r]).join("/"))}</span>`:""}</div>${st.length?`<div class="nl good">Strong against</div><div class="cmb-m">${st.map(r=>ntile(r.o,"strong",r.k,r.i)).join("")}</div>`:""}${wk.length?`<div class="nl bad">Weak against</div><div class="cmb-m">${wk.map(r=>ntile(r.o,"weak",r.k,r.i)).join("")}</div>`:""}</div>`;
+        return`<div class="cmb mu"><div class="cmb-h"><span class="chh">${icon(n)}<b>${esc(n)}</b></span>${b?b.r.map(r=>`<span class="tag">${ri(r)}${rt(r)}</span>`).join(""):""}</div>${st.length?`<div class="nl good">Strong against</div><div class="cmb-m">${st.map(r=>ntile(r.o,"strong",r.k,r.i)).join("")}</div>`:""}${wk.length?`<div class="nl bad">Weak against</div><div class="cmb-m">${wk.map(r=>ntile(r.o,"weak",r.k,r.i)).join("")}</div>`:""}</div>`;
       }).join("")+`</div>`;
     }
   }
