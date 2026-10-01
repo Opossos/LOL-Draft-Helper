@@ -60,7 +60,10 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .sg button{display:flex;justify-content:space-between;gap:8px;text-align:left;padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .sg em{font-style:normal;color:var(--mute);font-size:13px}
 .note{color:var(--mute);font-size:13px;margin:8px 0 0}
-.reset{margin-top:14px;padding:7px 14px;border:1px solid var(--line);border-radius:6px;background:transparent}
+.reset{padding:7px 14px;border:1px solid var(--line);border-radius:999px;background:transparent}
+.dbar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:12px 0 8px}
+.dbar .tg{margin:0}
+.reset:hover{border-color:var(--red);color:var(--red)}
 @media(max-width:420px){.board{gap:6px}.side{padding:8px}}
 .tools{margin-top:14px}
 .tools input,.tools select,.tools textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit;margin:0 0 6px}
@@ -69,6 +72,9 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 @media(min-width:600px){.row{grid-template-columns:1fr 1fr 1fr;gap:6px}}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
 .chip{padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--chip)}
+.pchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.pchips .chip{display:inline-flex;align-items:center;font-size:14px;padding:3px 10px;line-height:1.4}
+.pchips .chip .ico{width:20px;height:20px;margin:0 6px 0 -4px;border-radius:50%}
 .chip.en{border-color:var(--red);color:var(--red)}.chip.al{border-color:var(--blue);color:var(--blue)}
 .nt{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
@@ -173,6 +179,13 @@ body .tchip .tn{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-spa
 body .sg button{flex-wrap:wrap;align-items:baseline}
 body .sg button>span{flex:0 0 auto;font-weight:600}
 body .sg button em{flex:1 1 160px;min-width:0;text-align:right;overflow-wrap:anywhere}
+body .sg.bp button{flex-direction:column;align-items:stretch;gap:4px;padding:8px 10px}
+body .sg.bp button>span{display:flex;align-items:center;gap:8px}
+body .sg.bp .ico{width:24px;height:24px;margin:0;flex:none}
+body .sg.bp em{display:flex;flex-wrap:wrap;gap:4px;text-align:left;flex:none}
+.sg.bp i{font-style:normal;font-size:12px;padding:1px 8px;border-radius:999px;background:var(--chip);color:var(--ok)}
+.sg.bp i:first-child{color:var(--mute)}
+.sg.bp i.neg{color:var(--red)}
 body .ng>summary b,body .ng>summary h2{overflow-wrap:anywhere}
 .actb{border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--mute);padding:1px 10px;font:inherit;font-size:12px;cursor:pointer}
 .actb.on{border-color:var(--ok);color:var(--ok);font-weight:600}
@@ -400,7 +413,7 @@ body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
 <main>
 <p class="sub">Open the Champions panel to pick, and the Suggestions panel for picks, combos and bans.</p>
 <details class="card tools" open><summary><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg><h2>Draft board</h2></summary>
-<div class="tg" id="side" role="group" aria-label="Your side"></div>
+<div class="dbar"><div class="tg" id="side" role="group" aria-label="Your side"></div><button class="reset" id="reset">Clear draft</button></div>
 <div class="board" id="board"></div>
 <div class="tg" id="tg" role="group" aria-label="Add champion to"></div>
 </details>
@@ -419,7 +432,7 @@ body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
 <div class="tcards" id="ntc" role="group" aria-label="Note type"></div>
 <label class="fl" id="nla" for="na">Champions</label>
 <div class="cbw"><div class="mcs" id="na-c"></div><input id="na" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" placeholder="Search champion" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
-<div id="nbg"><label class="fl" id="nlb" for="nb">Works well with</label>
+<div id="nbg"><label class="fl" id="nlb" for="nb">Pairs with</label>
 <div class="cbw"><div class="mcs" id="nb-c"></div><input id="nb" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" placeholder="Search champion" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div></div>
 <button class="btn" id="nadd">Save note</button> <span id="nmsg" class="note" role="status"></span>
 <input type="search" id="nsearch" placeholder="Filter notes by champion" aria-label="Filter notes by champion">
@@ -432,7 +445,6 @@ body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
 <button class="btn" id="nexp">Show my notes</button> <button class="btn" id="nimp">Add notes from this text</button> <button class="btn" id="nmig" hidden>Copy my browser notes to shared notes</button>
 </details>
 </details>
-<button class="reset" id="reset">Clear draft</button>
 <div class="cm" id="cm" role="menu" hidden></div>
 <dialog id="cfm"><form method="dialog"><p id="cfm-t"></p><button class="btn" value="0">Cancel</button> <button class="btn" id="cfm-y" value="1">Delete</button></form></dialog>
 </main>
@@ -770,7 +782,7 @@ function playersCard(mine){
   const bench=myPlayers().filter(x=>!roster.includes(x));
   return`<details class="card" data-k="players" ${op("players")}><summary>${ic("star")}<h2>Your players</h2></summary>${roster.map(x=>{
     const role=x.role||derivedRole(x),src=x.pool||[],av=src.filter(n=>!ub.has(n)).slice(0,6).map(n=>({n}));
-    return`<div class="cc"><div><b>${esc(x.name)}</b> <span class="tag">${ri(role)}${rt(role)}</span>${taken.has(x.id)?' <span class="note">(picked)</span>':""}</div>${av.length?`<div style="margin-top:4px">${av.map(c=>`<button class="chip" data-addmine="${esc(c.n)}">${esc(c.n)}</button>`).join(" ")}</div>`:`<p class="note" style="margin:2px 0 0">${src.length?"All champions in the tier list are taken.":"No champions in the tier list yet."}</p>`}</div>`;
+    return`<div class="cc"><div><b>${esc(x.name)}</b> <span class="tag">${ri(role)}${rt(role)}</span>${taken.has(x.id)?' <span class="note">(picked)</span>':""}</div>${av.length?`<div class="pchips">${av.map(c=>`<button class="chip" data-addmine="${esc(c.n)}">${icon(c.n)}${esc(c.n)}</button>`).join("")}</div>`:`<p class="note" style="margin:2px 0 0">${src.length?"All champions in the tier list are taken.":"No champions in the tier list yet."}</p>`}</div>`;
   }).join("")}<p class="note">The first free champions in each active player's list. Tap one to pick it.${bench.length?" Bench: "+bench.map(x=>esc(pl(x))).join(", ")+".":""}</p></details>`;
 }
 function pickIdeas(cb){
@@ -785,7 +797,13 @@ function pickIdeas(cb){
     if(u.has(c.n))return;
     const fit=c.r.filter(r=>pool.includes(r));if(!fit.length)return;
     let s=1;const w=["fills "+RN[fit[0]].toLowerCase()];
-    if(mine.length>=2){if(sh>.7&&c.d!=="A"){s+=2;w.push("adds AP")}else if(sh<.3&&c.d!=="P"){s+=2;w.push("adds AD")}}
+    // damage mix: reward picks that move the team toward half AD, half AP and penalise picks that push it further away
+    if(mine.length>=2){
+      const na=a.ad+(c.d==="A"?1:c.d==="M"?.5:0),np=a.ap+(c.d==="P"?1:c.d==="M"?.5:0);
+      const v=(Math.abs(.5-sh)-Math.abs(.5-na/(na+np)))*(mine.length>=3?16:10),more=sh<.5?"AP":"AD";
+      if(v>=.5){s+=v;w.push(c.d==="M"?"mixed damage":"adds "+(c.d==="A"?"AD":"AP"))}
+      else if(v<=-.5){s+=v;w.push("even more "+more)}
+    }
     if(!a.tr.has("t")&&c.t.includes("t")){s+=2;w.push("frontline")}
     if(!a.tr.has("c")&&c.t.includes("c")){s+=1.5;w.push("crowd control")}
     if(!a.tr.has("e")&&c.t.includes("e")){s+=1;w.push("engage")}
@@ -807,7 +825,7 @@ function pickIdeas(cb){
         const i=x.pool.indexOf(c.n);
         if(i>=0&&(!best||i<best.i))best={x,i};
       });
-      if(best){s+=Math.max(2,7-.6*best.i);w[0]="fills "+RN[best.x.role||derivedRole(best.x)].toLowerCase();w.push(pl(best.x)+" plays it (#"+(best.i+1)+" in the tier list)")}
+      if(best){s+=Math.max(2,7-.6*best.i);w[0]="fills "+RN[best.x.role||derivedRole(best.x)].toLowerCase();w.push(best.x.name+"'s #"+(best.i+1))}
       else if(elig&&has){s-=2;w.push("not in your players' tier lists")}
       else if(!elig&&blocked.length){s-=9;w.push(blocked.join(", ")+" can't play it")}
     }
@@ -1022,7 +1040,7 @@ function analysis(){
   const turn=cur===k?"It is your turn to pick.":cur===(me==="b"?"bb":"rb")?"It is your turn to ban.":j>=0?`Your next pick is step ${j+1}, after ${j-i} more actions.`:"";
   const now=cur===k||cur===(me==="b"?"bb":"rb");
   let h=`<details class="card tcard" data-k="team" ${op("team")}><summary>${ic("users")}<h2>Your team (${nm})</h2> <span class="tag">${mine.length}/5 picked</span></summary>${turn?`<p class="turn${now?" now":""}">${turn}</p>`:""}${teamSlots(mine,a)}${mine.length?dmgBar(a):""}${traits(a)}${teamWarn(mine,a)}${insights()}${mine.length===5?`<div class="note" style="margin:0">Draft complete.</div>`:""}`;
-  if(mine.length<5)h+=`<h3>Best picks now</h3>`+(sg.length?`<div class="sg">${sg.map(x=>`<button data-addmine="${esc(x.n)}"><span>${esc(x.n)}</span><em>${esc(x.w.join(", "))}</em></button>`).join("")}</div><p class="note">Ranked by your open roles, damage mix, team tools, your notes and your players' tier lists.${sg.ties?" More champions fit just as well. Notes and tier lists narrow the list down.":""}</p>`:`<p class="note" style="margin:0">No clear favourite. Any champion for your open roles fits equally well. Save notes or add your players' tier lists to get real suggestions.</p>`);
+  if(mine.length<5)h+=`<h3>Best picks now</h3>`+(sg.length?`<div class="sg bp">${sg.map(x=>`<button data-addmine="${esc(x.n)}"><span>${icon(x.n)}${esc(x.n)}</span><em>${x.w.map(t=>`<i class="${/^(weak vs|even more|not in|.* can't play)/.test(t)?"neg":""}">${esc(t)}</i>`).join("")}</em></button>`).join("")}</div><p class="note">Ranked by your open roles, damage mix, team tools, your notes and your players' tier lists.${sg.ties?" More champions fit just as well. Notes and tier lists narrow the list down.":""}</p>`:`<p class="note" style="margin:0">No clear favourite. Any champion for your open roles fits equally well. Save notes or add your players' tier lists to get real suggestions.</p>`);
   h+=`</details>`+playersCard(mine)+`<details class="card" data-k="combos" ${op("combos")}><summary>${ic("grid")}<h2>Team combos</h2></summary>`;
   h+=cb.length?cb.map(comboCard).join("")+`<p class="note">Combos use champions you saved as working well together. Only available champions that fit your open roles are shown. Tap a dashed champion to pick it, or a ban to add it to your bans. Right-click a champion (long-press on touch) to prepick it or mark it as a ban candidate.</p>`:`<p class="note">No available combo fits yet. Save a team combo in Your notes to see combos here.</p>`;
   h+=`</details>`+counterCard(mine)+`<details class="card" data-k="bans" ${op("bans")}><summary>${ic("ban")}<h2>Ban ideas for your picks</h2></summary>`;
@@ -1850,11 +1868,11 @@ async function scImport(){
   await scPersist(t);scmsg("Imported "+n+" champions.");render();
 }
 let nq="",nf="all",ntype="combo";
-const NTYPES=[["combo","Team combo","All of these champions work well together"],["syn","Works well with","Champions that fit well with others"],["strong","Strong against","Champions that beat others"],["weak","Weak against","Champions that struggle against others"]];
+const NTYPES=[["combo","Team combo","All of these work together, each with each other"],["syn","Pairs with","Each champion in the first field works with each in the second, but not with each other"],["strong","Strong against","Champions that beat others"],["weak","Weak against","Champions that struggle against others"]];
 function ntView(){
   $("ntc").innerHTML=NTYPES.map(([k,t,d])=>`<button class="tc" data-nty="${k}" aria-pressed="${ntype===k}"><b>${t}</b><small>${d}</small></button>`).join("");
   $("nla").textContent=ntype==="combo"?"Champions (two or more)":"Champions";
-  $("nlb").textContent=ntype==="syn"?"Works well with":ntype==="strong"?"Strong against":"Weak against";
+  $("nlb").textContent=ntype==="syn"?"Pairs with":ntype==="strong"?"Strong against":"Weak against";
   $("nbg").hidden=ntype==="combo";
 }
 function ntile(n,cls,k,i){
