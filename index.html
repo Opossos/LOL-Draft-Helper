@@ -225,9 +225,9 @@ summary{cursor:pointer;color:var(--mute)}
 <details class="card tools" open id="tlc" hidden><summary><h2>Tier lists (what they like to play)</h2></summary>
 <select id="tsel" aria-label="Player"></select>
 <div class="cbw"><input id="tc" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Champion" placeholder="Search a champion to add" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
-<button class="btn" id="tadd">Add to tier list</button> <button class="btn" id="ticons" aria-pressed="false">Icons</button> <span class="note" id="tmsg" role="status"></span>
+<button class="btn" id="tadd">Add to tier list</button> <button class="btn" id="cadd">Add to can't play</button> <button class="btn" id="ticons" aria-pressed="false">Icons</button> <span class="note" id="tmsg" role="status"></span>
 <div id="tll"></div>
-<p class="note">Drag the ☰ handle to put champions in order, best first. With the keyboard, focus the handle and press the up or down arrow key.</p>
+<p class="note">Drag the ☰ handle to put champions in order, best first. With the keyboard, focus the handle and press the up or down arrow key. The can't play list is for champions a player does not play at all. A suggestion drops out when every player who could fill its role can't play it.</p>
 </details>
 <details class="card tools" open><summary><h2 id="acT">Add or update a champion</h2></summary>
 <select id="psel" aria-label="Profile"></select>
@@ -441,8 +441,8 @@ function assign(sets){
   })(0,new Set(),[],0);
   return best.a;
 }
-function analyse(names){
-  const cs=names.map(n=>BY[n]),roles=assign(cs.map(c=>c.r));
+function analyse(names,fixed){
+  const cs=names.map(n=>BY[n]),roles=assign(cs.map((c,i)=>fixed&&fixed.has(names[i])?[fixed.get(names[i])]:c.r));
   let ad=0,ap=0;const tr=new Set();
   cs.forEach(c=>{ad+=c.d==="A"?1:c.d==="M"?.5:0;ap+=c.d==="P"?1:c.d==="M"?.5:0;[...c.t].forEach(x=>tr.add(x))});
   const open=RO.filter(r=>!roles.includes(r));
@@ -486,14 +486,21 @@ function combos(){
   out.forEach(g=>{const k=[...g.C].sort().join("|");if(!keys.has(k)){keys.add(k);uniq.push(g)}});
   return uniq.sort((x,y)=>y.s-x.s).slice(0,4);
 }
-function matchPlayers(mine,roster){
-  const u=new Set(),role=x=>x.role||derivedRole(x),has=(x,n)=>(x.pool||[]).includes(n);
+function matchPicks(mine,roster){
+  const u=new Set(),map=new Map(),role=x=>x.role||derivedRole(x),has=(x,n)=>(x.pool||[]).includes(n);
   mine.forEach(n=>{
     const b=BY[n];if(!b)return;
-    const f=roster.find(x=>!u.has(x.id)&&has(x,n)&&b.r.includes(role(x)))||roster.find(x=>!u.has(x.id)&&has(x,n))||roster.find(x=>!u.has(x.id)&&b.r.includes(role(x)));
-    if(f)u.add(f.id);
+    const ok=x=>!u.has(x.id)&&!(x.cant||[]).includes(n);
+    const f=roster.find(x=>ok(x)&&has(x,n)&&b.r.includes(role(x)))||roster.find(x=>ok(x)&&has(x,n))||roster.find(x=>ok(x)&&b.r.includes(role(x)));
+    if(f){u.add(f.id);map.set(n,f)}
   });
-  return u;
+  return{used:u,map};
+}
+function matchPlayers(mine,roster){return matchPicks(mine,roster).used}
+function roleMap(mine){
+  const m=new Map();
+  matchPicks(mine,myPlayers()).map.forEach((x,n)=>{const r=x.role||derivedRole(x);if(BY[n]&&BY[n].r.includes(r))m.set(n,r)});
+  return m;
 }
 function playersCard(mine){
   const roster=myPlayers();
@@ -506,12 +513,12 @@ function playersCard(mine){
 }
 function pickIdeas(cb){
   const k=me==="b"?"bp":"rp",ek=me==="b"?"rp":"bp",mine=MY(),foe=EN(),u=used();
-  const a=analyse(mine),tot=a.ad+a.ap,sh=tot?a.ad/tot:.5,pool=a.open.length?a.open:RO;
+  const a=analyse(mine,roleMap(mine)),tot=a.ad+a.ap,sh=tot?a.ad/tot:.5,pool=a.open.length?a.open:RO;
   const fo=foe.length?analyse(foe).open:RO,j=nextMine();
   const later=j<0?0:Math.min(ORDER.slice(j+1).filter(x=>x===ek).length,5-foe.length);
   const inC=new Set();cb.forEach(c=>c.need.forEach(x=>inC.add(x)));
   const pre=mk.pre.filter(x=>!mine.includes(x)),out=[];
-  const roster=myPlayers(),taken=matchPlayers(mine,roster),free=roster.filter(x=>!taken.has(x.id)&&x.pool&&x.pool.length);
+  const roster=myPlayers(),taken=matchPlayers(mine,roster),free=roster.filter(x=>!taken.has(x.id)&&((x.pool&&x.pool.length)||(x.cant&&x.cant.length)));
   D.forEach(c=>{
     if(u.has(c.n))return;
     const fit=c.r.filter(r=>pool.includes(r));if(!fit.length)return;
@@ -528,15 +535,19 @@ function pickIdeas(cb){
     if(wk.length){s-=3*wk.length;w.push("weak vs "+wk.join(", "))}
     if(inC.has(c.n)){s+=1.5;w.push("part of a combo")}
     if(free.length){
-      const rr=c.r.filter(r=>pool.includes(r));let best=null,has=false;
+      const rr=c.r.filter(r=>pool.includes(r));let best=null,has=false,elig=0;const blocked=[];
       free.forEach(x=>{
         if(!rr.includes(x.role||derivedRole(x)))return;
+        if((x.cant||[]).includes(c.n)){blocked.push(x.name);return}
+        elig++;
+        if(!(x.pool&&x.pool.length))return;
         has=true;
         const i=x.pool.indexOf(c.n);
         if(i>=0&&(!best||i<best.i))best={x,i};
       });
-      if(best){s+=Math.max(2,7-.6*best.i);w.push(best.x.name+" plays it (#"+(best.i+1)+" in the tier list)")}
-      else if(has){s-=2;w.push("not in your players' tier lists")}
+      if(best){s+=Math.max(2,7-.6*best.i);w[0]="fills "+RN[best.x.role||derivedRole(best.x)].toLowerCase();w.push(best.x.name+" plays it (#"+(best.i+1)+" in the tier list)")}
+      else if(elig&&has){s-=2;w.push("not in your players' tier lists")}
+      else if(!elig&&blocked.length){s-=9;w.push(blocked.join(", ")+" can't play it")}
     }
     out.push({n:c.n,s,w});
   });
@@ -595,7 +606,7 @@ function grid(){
 }
 function analysis(){
   const mine=MY(),foe=EN(),nm=me==="b"?"blue":"red",nf=me==="b"?"red":"blue",k=me==="b"?"bp":"rp";
-  const i=stepNow(),cur=i<20?ORDER[i]:"",j=nextMine(),cb=combos(),sg=pickIdeas(cb),bn=banIdeas(cb),a=analyse(mine);
+  const i=stepNow(),cur=i<20?ORDER[i]:"",j=nextMine(),cb=combos(),sg=pickIdeas(cb),bn=banIdeas(cb),a=analyse(mine,roleMap(mine));
   const turn=cur===k?"It is your turn to pick.":cur===(me==="b"?"bb":"rb")?"It is your turn to ban.":j>=0?`Your next pick is step ${j+1}, after ${j-i} more actions.`:"";
   let h=`<details class="card" data-k="team" ${op("team")}><summary><h2>Your team (${nm})</h2></summary><p class="note" style="margin:0 0 4px">${turn}</p>${dmgBar(a)}${traits(a)}${insights()}<div class="note" style="margin:0">${mine.length<5?(a.open.length?"Open roles: "+a.open.map(r=>RN[r]).join(", "):"Roles are covered by flex picks."):"Draft complete."}</div>`;
   if(sg.length)h+=`<h3>Best picks now</h3><div class="sg">${sg.map(x=>`<button data-addmine="${esc(x.n)}"><span>${esc(x.n)}</span><em>${esc(x.w.join(", "))}</em></button>`).join("")}</div><p class="note">Ranked by your open roles, damage mix, team tools, your notes and the draft order (later enemy picks can counter early picks).</p>`;
@@ -662,6 +673,8 @@ document.addEventListener("click",e=>{
   else if(b.id==="pcadd"){scAddChamp();return}
   else if(b.id==="pimp"){scImport();return}
   else if(b.id==="tadd"){tierAdd();return}
+  else if(b.id==="cadd"){cantAdd();return}
+  else if(b.dataset.ccx){cantRm(b.dataset.ccx);return}
   else if(b.id==="ticons"){icons=!icons;try{localStorage.setItem("lolIcons",icons?"1":"0")}catch(e){}if(icons)loadIcons()}
   else if(b.id==="priot"){riotImport();return}
   else if(b.id==="pstop"){riotStop=true;return}
@@ -1062,7 +1075,7 @@ function tierView(){
   $("tsel").innerHTML=P.length?P.map(x=>`<option value="${esc(x.id)}"${x.id===tSel?" selected":""}>${esc(x.name)}</option>`).join(""):`<option value="">No player yet</option>`;
   $("tll").innerHTML=P.length?P.map(x=>{
     const pool=x.pool||[],role=x.role||derivedRole(x);
-    return`<div class="tp"><div><b>${esc(x.name)}</b> ${role?`<span class="tag">${esc(RN[role]||role)}</span>`:""}</div>${pool.length?`<ol class="tlist">${pool.map((n,i)=>`<li data-pid="${esc(x.id)}" data-tn="${esc(n)}"><span class="dg" data-drag tabindex="0" role="button" aria-label="Drag to reorder ${esc(n)}">\u2630</span><span class="tn">${i+1}</span>${icons?icon(n):""}<span class="tname">${esc(n)}</span><button data-tcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from the tier list">\u00d7</button></li>`).join("")}</ol>`:`<p class="note">No champions yet.</p>`}</div>`;
+    return`<div class="tp"><div><b>${esc(x.name)}</b> ${role?`<span class="tag">${esc(RN[role]||role)}</span>`:""}</div>${pool.length?`<ol class="tlist">${pool.map((n,i)=>`<li data-pid="${esc(x.id)}" data-tn="${esc(n)}"><span class="dg" data-drag tabindex="0" role="button" aria-label="Drag to reorder ${esc(n)}">\u2630</span><span class="tn">${i+1}</span>${icons?icon(n):""}<span class="tname">${esc(n)}</span><button data-tcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from the tier list">\u00d7</button></li>`).join("")}</ol>`:`<p class="note">No champions yet.</p>`}${(x.cant||[]).length?`<div class="nl">Can't play</div><div>${x.cant.map(n=>`<span class="nc weak">${esc(n)}<button data-ccx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from can't play">\u00d7</button></span>`).join("")}</div>`:""}</div>`;
   }).join(""):`<p class="note">Add a player first.</p>`;
 }
 async function tierAdd(){
@@ -1071,8 +1084,26 @@ async function tierAdd(){
   if(!BY[n]){$("tmsg").textContent="Choose a champion from the list.";return}
   p.pool=p.pool||[];
   if(p.pool.includes(n)){$("tmsg").textContent=n+" is already in the list.";return}
+  const moved=(p.cant||[]).includes(n);
+  if(moved)p.cant=p.cant.filter(x=>x!==n);
   p.pool.push(n);
-  await scPersist(t);$("tmsg").textContent="Added.";$("tc").value="";render();
+  await scPersist(t);$("tmsg").textContent=moved?"Moved from the can't play list.":"Added.";$("tc").value="";render();
+}
+async function cantAdd(){
+  const t=curTeam(),p=t&&t.data.find(x=>x.id===tSel),n=canon($("tc").value);
+  if(!p){$("tmsg").textContent="Add a player first and choose them above.";return}
+  if(!BY[n]){$("tmsg").textContent="Choose a champion from the list.";return}
+  p.cant=p.cant||[];
+  if(p.cant.includes(n)){$("tmsg").textContent=n+" is already in the can't play list.";return}
+  const moved=(p.pool||[]).includes(n);
+  p.cant.push(n);
+  if(moved)p.pool=p.pool.filter(x=>x!==n);
+  await scPersist(t);$("tmsg").textContent=moved?"Moved from the tier list to can't play.":"Added to can't play.";$("tc").value="";render();
+}
+async function cantRm(v){
+  const[id,n]=v.split("|"),t=curTeam(),p=t&&t.data.find(x=>x.id===id);
+  if(!p||!p.cant)return;
+  p.cant=p.cant.filter(x=>x!==n);await scPersist(t);render();
 }
 async function tierDrop(pid,n,over){
   const t=curTeam(),p=t&&t.data.find(x=>x.id===pid);
