@@ -72,6 +72,7 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+#rf button[aria-pressed=true]{background:var(--panel);color:inherit;border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
 /* champion boxes in the combo cards: at least 20% of the card width (minus the room of the + signs and gaps, so five still fit in one row) */
 body .cmb-m{gap:6px}
 body .cmb-m .cslot{flex:1 1 calc(20% - 18px);min-width:calc(20% - 18px)}
@@ -808,17 +809,16 @@ function comboSlots(C){
   return{slots:RO.filter(r=>slots[r]).map(r=>slots[r]),extra:C.filter(x=>!BY[x])};
 }
 function comboCard(c,idx){
-  const key=[...c.C,...(c.alt||[])].sort().join("|");
-  const slots=slotsFixed(c.C,c.alt).map(sl=>({role:sl.role,main:sl.main,alts:sl.alts.slice()}));
-  // a click on an alternative swaps it with the main champion of that slot (nothing is picked)
-  slots.forEach(sl=>{
-    const want=SW[key+"|"+sl.role];
-    if(want&&want!==sl.main&&!c.mi.includes(sl.main)&&sl.alts.includes(want)&&!slots.some(o=>o.main===want)){
-      sl.alts=[sl.main,...sl.alts.filter(a=>a!==want)];sl.main=want;
-    }
+  const pool=[...c.C,...(c.alt||[])],key=[...pool].sort().join("|");
+  const slots=slotsFixed(c.C,c.alt).map(sl=>({role:sl.role,main:sl.main,alts:[]}));
+  // the swaps the user made, replayed in the order they were made
+  Object.keys(SW).filter(x=>x.length===key.length+2&&x.startsWith(key+"|")).forEach(x=>{
+    const role=x.slice(-1),want=SW[x],sl=slots.find(o=>o.role===role);
+    if(sl&&want!==sl.main&&!c.mi.includes(sl.main)&&pool.includes(want)&&BY[want]&&BY[want].r.includes(role)&&!slots.some(o=>o.main===want))sl.main=want;
   });
+  // everyone who is not shown as a main champion is an alternative in every slot whose role they can play
   const shown=new Set(slots.map(sl=>sl.main));
-  slots.forEach(sl=>{sl.alts=sl.alts.filter(a=>!shown.has(a))});
+  slots.forEach(sl=>{sl.alts=pool.filter(a=>BY[a]&&!shown.has(a)&&BY[a].r.includes(sl.role))});
   const bb=banFor(slots.map(sl=>sl.main)),needN=slots.filter(sl=>!c.mi.includes(sl.main)).length;
   const tiles=slots.map(sl=>{
     const x=sl.main,yours=c.mi.includes(x),mc=mk.pre.includes(x)?"mp":mk.ban.includes(x)?"mb":"";
@@ -866,7 +866,7 @@ document.addEventListener("click",e=>{
   else if(b.dataset.n){add(b.dataset.n)}
   else if(b.id==="reset"){st={bp:[],rp:[],bb:[],rb:[]};SW={};mk={ban:[],pre:[]};cons=[];target=me==="b"?"bp":"rp";role="";query="";$("q").value=""}
   else if(b.dataset.auto){auto=!auto}
-  else if(b.dataset.swap){const[k,r,a]=b.dataset.swap.split("|").map(decodeURIComponent);SW[k+"|"+r]=a}
+  else if(b.dataset.swap){const[k,r,a]=b.dataset.swap.split("|").map(decodeURIComponent),kk=k+"|"+r;delete SW[kk];SW[kk]=a}
   else if(b.dataset.mrm){const[id,n]=b.dataset.mrm.split("|");MS[id]=MS[id].filter(x=>x!==n);DRAW[id]();if(id==="fz")saveFear()}
   else if(b.dataset.m){menuAction(b.dataset.m)}
   else if(b.dataset.g){add(b.dataset.g,b.dataset.gk==="ban"?(me==="b"?"bb":"rb"):(me==="b"?"bp":"rp"))}
