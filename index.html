@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Draft helper for League of Legends</title>
+<script>
+var SB={url:"https://jddgnigdagyddbriqqaj.supabase.co",key:"sb_publishable__v2Iy4DatUS7aqXQWsAqCQ_Q9w2b9PP"};
+if(SB.url)document.documentElement.className+=" locked";
+</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap">
 <style>
 :root{--bg:#EEF1F5;--panel:#FFFFFF;--ink:#0F1B2D;--mute:#5A6678;--line:#D3D9E2;--gold:#8A6A1F;--blue:#1E5FBF;--red:#B4322A;--ok:#0F7F78;--ad:#C77B1F;--ap:#7B4FD1;--chip:#E6EAF0;
@@ -66,6 +70,16 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+#gate{display:none;position:fixed;inset:0;z-index:100;align-items:center;justify-content:center;background:var(--bg);padding:20px;overflow:auto}
+html.locked #gate{display:flex}
+html.locked body>*:not(#gate){display:none!important}
+#gate form{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px}
+#gate h1{margin:0 0 4px}#gate p{margin:0 0 12px;color:var(--mute)}
+#gate input[type=password]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+#gate label{display:block;margin:10px 0;color:var(--mute);font-size:14px}
+#gate textarea{width:100%;min-height:90px;margin-top:10px;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:12px monospace}
+#gate button{width:100%;margin-top:8px;padding:10px;border:0;border-radius:6px;background:var(--gold);color:var(--bg);font:inherit;font-weight:600;cursor:pointer}
+#gm,#sm{margin:10px 0 0!important;min-height:1.4em;color:var(--red)!important;font-size:14px}
 .tp{margin:12px 0}
 .tlist{list-style:none;margin:6px 0 0;padding:0}
 .tlist li{display:flex;align-items:center;gap:8px;padding:5px 8px;margin:0 0 4px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
@@ -139,6 +153,14 @@ summary{cursor:pointer;color:var(--mute)}
 </style>
 </head>
 <body>
+<div id="gate">
+<p id="gl" style="color:var(--mute)">Loading...</p>
+<form id="gf" hidden><h1>Draft helper</h1><p>Enter the password to continue.</p>
+<input id="gp" type="password" autocomplete="current-password" placeholder="Password" aria-label="Password">
+<label><input id="gr" type="checkbox"> Remember on this device</label>
+<button type="submit">Open</button><p id="gm" role="status"></p></form>
+
+</div>
 <header class="top"><h1>Draft helper</h1><div class="tb"><button id="lo" aria-expanded="false">Suggestions</button><button id="ro" aria-expanded="false">Champions</button><button id="mt" aria-expanded="false">My team</button><button id="so" aria-expanded="false">Scout</button></div></header>
 <main>
 <p class="sub">Open the Champions panel to pick, and the Suggestions panel for picks, combos and bans.</p>
@@ -224,6 +246,7 @@ summary{cursor:pointer;color:var(--mute)}
 <div id="scp"></div>
 <div id="sca"></div></aside>
 <script>
+function __start(){
 const RN={T:"Top",J:"Jungle",M:"Mid",B:"Bot",S:"Support"},RO=["T","J","M","B","S"];
 // name|roles|damage (A=AD,P=AP,M=mixed)|tags: t=frontline e=engage c=crowd control s=sustain
 const D=`Aatrox|T|A|t
@@ -757,9 +780,9 @@ window.addEventListener("scroll",closeMenu,true);
 
 // Your notes: syn = pairs that work well together, weak = [a, b] means a is weak against b, ban = [pick, ban]
 // Team sync for GitHub Pages: paste your Supabase project URL and anon key here (see setup steps).
-const SB={url:"https://jddgnigdagyddbriqqaj.supabase.co",key:"sb_publishable__v2Iy4DatUS7aqXQWsAqCQ_Q9w2b9PP"};
+// SB (Supabase URL and key) is set at the top of the page.
 let sb=!!(SB.url&&SB.key);
-const sbf=(p,o={})=>fetch(SB.url+"/rest/v1/"+p,{...o,headers:{apikey:SB.key,...(SB.key.startsWith("sb_")?{}:{Authorization:"Bearer "+SB.key}),"Content-Type":"application/json",...(o.headers||{})}});
+const sbf=(p,o={})=>fetch(SB.url+"/rest/v1/"+p,{...o,headers:{apikey:SB.key,...(window.APPPW?{"x-app-password":window.APPPW}:{}),...(SB.key.startsWith("sb_")?{}:{Authorization:"Bearer "+SB.key}),"Content-Type":"application/json",...(o.headers||{})}});
 let LOC={syn:[],weak:[],strong:[]},REL,RID={syn:[],weak:[],strong:[]},shared=null,canWrite=true;
 try{const s=JSON.parse(localStorage.getItem("lolRel")||"null");if(s)LOC={syn:s.syn||[],weak:s.weak||[],strong:s.strong||[]}}catch(e){}
 REL=LOC;
@@ -1254,7 +1277,7 @@ async function riotImport(){
   scmsg("Reading Riot data...");
   try{
     while(start<cap&&!riotStop){
-      const r=await fetch(SB.url+"/functions/v1/riot-stats",{method:"POST",headers:{apikey:SB.key,"Content-Type":"application/json",...(SB.key.startsWith("sb_")?{}:{Authorization:"Bearer "+SB.key})},body:JSON.stringify({riotId:rid,region:p.region||"euw",start,count:Math.min(40,cap-start),puuid})});
+      const r=await fetch(SB.url+"/functions/v1/riot-stats",{method:"POST",headers:{apikey:SB.key,...(window.APPPW?{"x-app-password":window.APPPW}:{}),"Content-Type":"application/json",...(SB.key.startsWith("sb_")?{}:{Authorization:"Bearer "+SB.key})},body:JSON.stringify({riotId:rid,region:p.region||"euw",start,count:Math.min(40,cap-start),puuid})});
       const d=await r.json().catch(()=>({}));
       if(!r.ok){
         err=r.status===401||r.status===403?"The function or Riot rejected the request. Check that Verify JWT is off for the function and that the Riot key has not expired (development keys last 24 hours).":(d.error||"Import failed ("+r.status+")");
@@ -1473,6 +1496,51 @@ setMode();
   setMode();render();
 })();
 render();
+
+}
+</script>
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  function done(){var g=$("gate");if(g)g.remove();document.documentElement.classList.remove("locked");__start()}
+  async function status(pw){
+    var hd={"Content-Type":"application/json",apikey:SB.key};
+    if(SB.key.indexOf("sb_")!==0)hd.Authorization="Bearer "+SB.key;
+    if(pw)hd["x-app-password"]=pw;
+    var r=await fetch(SB.url+"/rest/v1/rpc/pw_status",{method:"POST",headers:hd,body:"{}"});
+    if(!r.ok)throw new Error("status "+r.status);
+    return await r.json();
+  }
+  async function check(pw,auto){
+    var m=$("gm"),st;
+    m.textContent="Checking...";
+    try{st=await status(pw)}catch(e){m.textContent="Could not check the password. Try again.";return}
+    if(st==="bad"){
+      m.textContent=auto?"The saved or linked password is wrong.":"Wrong password.";
+      try{sessionStorage.removeItem("gatepw");localStorage.removeItem("gatepw")}catch(e){}
+      return;
+    }
+    window.APPPW=st==="ok"?pw:"";
+    try{sessionStorage.setItem("gatepw",pw);if($("gr").checked)localStorage.setItem("gatepw",pw)}catch(e){}
+    try{history.replaceState(null,"",location.pathname)}catch(e){}
+    done();
+  }
+  function ask(){
+    $("gl").hidden=true;$("gf").hidden=false;$("gp").focus();
+    var q=new URLSearchParams(location.search).get("pw"),h=new URLSearchParams(location.hash.replace(/^#/,"")).get("pw"),saved=null;
+    try{saved=sessionStorage.getItem("gatepw")||localStorage.getItem("gatepw")}catch(e){}
+    var pw=h||q||saved;
+    if(pw)check(pw,true);
+  }
+  $("gf").addEventListener("submit",function(e){e.preventDefault();if($("gp").value)check($("gp").value,false)});
+  (async function(){
+    if(!(SB.url&&SB.key)){done();return}
+    var st=null;
+    try{st=await status("")}catch(e){}
+    if(st===null||st==="open"){done();return}
+    ask();
+  })();
+})();
 </script>
 </body>
 </html>
