@@ -72,6 +72,11 @@ input[type=search]{width:100%;padding:9px 11px;border:1px solid var(--line);bord
 .btn,.nt button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:transparent}
 .good{color:var(--ok);margin:4px 0}.bad{color:var(--red);margin:4px 0}
 .ins{margin:8px 0}
+.epl{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.epl .lu b{font-weight:600}
+.epl .lu.got{border-color:var(--red)}
+.epr{margin:10px 0}
+.epr .eph{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
 body .cmb-h{align-items:center}
 .cmb-h .chh .ico{width:30px;height:30px;border-radius:6px}
 .cmb-h .chh b{font-size:15px}
@@ -337,7 +342,7 @@ summary{cursor:pointer;color:var(--mute)}
 <button type="submit">Open</button><p id="gm" role="status"></p></form>
 
 </div>
-<header class="top" id="hh"><h1>Draft helper</h1><div class="tb"><button id="lo" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-bulb"/></svg>Suggestions</button><button id="ro" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Champions</button><button id="stl" aria-pressed="false" title="Switch between the default look and the GG look"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg>GG style</button><button id="so" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>Teams</button></div></header>
+<header class="top" id="hh"><h1>Draft helper</h1><div class="tb"><button id="lo" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-bulb"/></svg>Suggestions</button><button id="ro" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Champions</button><button id="stl" aria-pressed="false" title="Switch between the default look and the GG look"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg>GG style</button><button id="so" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>Teams</button><button id="eb" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg>Enemy draft</button></div></header>
 <main>
 <p class="sub">Open the Champions panel to pick, and the Suggestions panel for picks, combos and bans.</p>
 <details class="card tools" open><summary><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg><h2>Draft board</h2></summary>
@@ -378,6 +383,7 @@ summary{cursor:pointer;color:var(--mute)}
 <dialog id="cfm"><form method="dialog"><p id="cfm-t"></p><button class="btn" value="0">Cancel</button> <button class="btn" id="cfm-y" value="1">Delete</button></form></dialog>
 </main>
 <aside class="dr dl" id="dl" aria-label="Suggestions"><div class="dh"><h2><svg class="ic" aria-hidden="true"><use href="#i-bulb"/></svg>Suggestions</h2><button data-close="dl">Close</button></div><div class="an" id="an"></div></aside>
+<aside class="dr drs" id="de" aria-label="Enemy draft"><div class="dh"><h2><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg>Enemy draft</h2><button data-close="de">Close</button></div><div class="an" id="en"></div></aside>
 <aside class="dr drr" id="dr" aria-label="Champions"><div class="dh"><h2><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Champions</h2><span><button id="icons" aria-pressed="false">Icons</button> <button id="hide" aria-pressed="false">Hide taken</button> <button data-close="dr">Close</button></span></div>
 <input type="search" id="q" placeholder="Search champions" aria-label="Search champions">
 <div class="rf" id="rf" role="group" aria-label="Filter by role"></div>
@@ -870,6 +876,64 @@ function counterCard(mine){
   }).join("");
   return h+`<p class="note">Tap a champion to pick it. Right-click for more options.</p></details>`;
 }
+function enTeam(){
+  const list=SC.filter(t=>t.id!==MYID);
+  if(!list.find(t=>t.id===enId))enId=list[0]?list[0].id:"";
+  return list.find(t=>t.id===enId)||null;
+}
+function enemyView(){
+  if(!VER&&!icoAsked){icoAsked=true;loadIcons()}
+  const list=SC.filter(t=>t.id!==MYID),t=enTeam();
+  let h=`<div class="tbar" role="group" aria-label="Scouted team">${list.map(x=>`<span class="tchip${x.id===enId?" on":""}"><button class="tn" data-esel="${esc(x.id)}" aria-pressed="${x.id===enId}" title="${esc(x.name)}">${esc(x.name)}</button></span>`).join("")}</div>`;
+  if(!t){$("en").innerHTML=h+`<p class="note">Add a scouted team in Teams, then Scout. Their players and champions drive this view.</p>`;return}
+  const roster=sortP(actOf(t.data));
+  if(!roster.length){$("en").innerHTML=h+`<p class="note">This team has no profiles yet. Add the enemy players in Teams, then Scout.</p>`;return}
+  const foe=EN(),mine=MY(),u=used(),role=x=>x.role||derivedRole(x);
+  // which enemy picks belong to which scouted player
+  const usedP=new Set(),pm=new Map();
+  foe.forEach(n=>{
+    const b=BY[n];if(!b)return;
+    const ok=x=>!usedP.has(x.id),has=x=>x.champs.some(c=>c.n===n);
+    const f=roster.find(x=>ok(x)&&has(x)&&b.r.includes(role(x)))||roster.find(x=>ok(x)&&has(x))||roster.find(x=>ok(x)&&b.r.includes(role(x)));
+    if(f){usedP.add(f.id);pm.set(f.id,n)}
+  });
+  const free=roster.filter(x=>!usedP.has(x.id));
+  const ek=me==="b"?"rp":"bp",i=stepNow(),cur=i<20?ORDER[i]:"",j=ORDER.findIndex((x,ix)=>ix>=i&&x===ek);
+  const turn=cur===ek?"The enemy is picking now.":j>=0?`The enemy picks next at step ${j+1}, after ${j-i} more actions.`:"The enemy has no picks left.";
+  const sc=(x)=>`<span class="lu${pm.has(x.id)?" got":""}"><small>${ri(role(x))}${rt(role(x))}</small><b>${esc(x.name)}</b>${pm.has(x.id)?`<small>${esc(pm.get(x.id))}</small>`:`<small>?</small>`}</span>`;
+  h+=`<details class="card" data-k="en-line" ${op("en-line")}><summary>${ic("users")}<h2>Enemy lineup</h2></summary><p class="note" style="margin:0 0 4px">${turn}</p><div class="epl">${roster.map(sc).join("")}</div></details>`;
+  const pill=c=>`${c.g?c.g+" games":""}${c.wr?(c.g?" \u00b7 ":"")+c.wr+"% WR":""}`;
+  // what each free player might pick
+  const likely=free.map(x=>({x,top:x.champs.filter(c=>BY[c.n]&&!u.has(c.n)).sort((a,b)=>b.g-a.g||b.wr-a.wr).slice(0,5)}));
+  h+=`<details class="card" data-k="en-pick" ${op("en-pick")}><summary>${ic("eye")}<h2>What they might pick</h2></summary>`;
+  h+=likely.length?likely.map(o=>`<div class="epr"><div class="eph"><b>${esc(o.x.name)}</b><span class="tag">${ri(role(o.x))}${rt(role(o.x))}</span></div>${o.top.length?`<div class="cptiles">${o.top.map(c=>`<button class="mem sm weak" data-ban="${esc(c.n)}" title="Ban ${esc(c.n)}">${icon(c.n)}<span><b>${esc(c.n)}</b><small>${pill(c)}</small></span></button>`).join("")}</div>`:`<p class="note" style="margin:0">No available champions saved for this player. Import their stats in Teams, then Scout.</p>`}</div>`).join("")+`<p class="note">Their most played champions that are still available. Tap one to ban it, or right-click for more options.</p>`:`<p class="note">All enemy players have picked a champion.</p>`;
+  h+=`</details>`;
+  // what we should ban
+  const cand=new Map();
+  free.forEach(x=>x.champs.forEach(c=>{
+    if(!BY[c.n]||u.has(c.n))return;
+    let s2=Math.min(4,Math.max(0,c.g)/15)+(c.wr>=55?1:c.wr&&c.wr<45?-.5:0);
+    const why=[`${x.name} (${RN[role(x)]}) plays it${c.g||c.wr?" ("+pill(c)+")":""}`];
+    const hit=[...mine,...mk.pre.filter(m=>!mine.includes(m))].filter(m=>strongOf(c.n).includes(m));
+    if(hit.length){s2+=3*hit.length;why.push("counters your "+hit.join(", "))}
+    const syn=synOf(c.n).filter(y=>foe.includes(y));
+    if(syn.length){s2+=2*syn.length;why.push("works with their "+syn.join(", "))}
+    const o=cand.get(c.n);if(!o||s2>o.s)cand.set(c.n,{n:c.n,s:s2,why});
+  }));
+  const bans=[...cand.values()].sort((a,b)=>b.s-a.s||a.n.localeCompare(b.n)).slice(0,8);
+  h+=`<details class="card" data-k="en-ban" ${op("en-ban")}><summary>${ic("ban")}<h2>Bans against them</h2></summary>`;
+  h+=bans.length?`<div class="sg">${bans.map(o=>`<button data-ban="${esc(o.n)}"><span>${esc(o.n)}</span><em>${esc(o.why.join(", "))}</em></button>`).join("")}</div><p class="note">Ranked by how much they play it, whether it counters your picks, and whether it fits their picks. Tap to add it to your bans.</p>`:`<p class="note">Nothing to ban yet. Add champions to their profiles.</p>`;
+  h+=`</details>`;
+  // combos they could build from their pools
+  const th=threats(roster).map(x=>({t:x,picked:x.C.filter(y=>foe.includes(y)),open:x.C.filter(y=>!foe.includes(y)&&!u.has(y))})).filter(o=>o.open.length).sort((a,b)=>b.picked.length-a.picked.length||b.t.s-a.t.s).slice(0,4);
+  h+=`<details class="card" data-k="en-combo" ${op("en-combo")}><summary>${ic("target")}<h2>Combos they might go for</h2></summary>`;
+  h+=th.length?th.map((o,idx)=>{
+    const tiles=o.t.C.map((c,k)=>{const m=o.t.mt[k],got=o.picked.includes(c);return`<span class="mem"><b>${esc(c)}</b><small>${esc(m.pn)}${m.pr?" \u00b7 "+rt(m.pr):""}</small><span class="st">${got?"picked":m.g?m.g+" games":""}</span></span>`}).join('<span class="cmb-plus">+</span>');
+    return`<div class="cmb"><div class="cmb-h"><b>Combo ${idx+1}</b> <span class="tag">${o.t.C.length} champions</span> <span class="${o.picked.length?"bad":"note"}">${o.picked.length?o.picked.length+" already picked":"none picked yet"}</span></div><div class="cmb-m">${tiles}</div><div class="cmb-b"><div class="nl bad" style="margin:0 0 4px">Ban to break it</div><div class="sg">${o.open.map(y=>`<button data-ban="${esc(y)}"><span>${esc(y)}</span><em>part of their combo</em></button>`).join("")}</div></div></div>`;
+  }).join("")+`<p class="note">Combos come from your saved team combos that their active players can play.</p>`:`<p class="note">No combo found. Save team combos in Your notes and add champions to their profiles.</p>`;
+  h+=`</details>`;
+  $("en").innerHTML=h;
+}
 function analysis(){
   const mine=MY(),foe=EN(),nm=me==="b"?"blue":"red",nf=me==="b"?"red":"blue",k=me==="b"?"bp":"rp";
   const i=stepNow(),cur=i<20?ORDER[i]:"",j=nextMine(),cb=combos(),sg=pickIdeas(cb),bn=banIdeas(cb),a=analyse(mine,roleMap(mine));
@@ -888,7 +952,7 @@ function analysis(){
   }
   $("an").innerHTML=h;
 }
-function render(){document.body.dataset.me=me;$("icons").setAttribute("aria-pressed",icons);$("ticons").setAttribute("aria-pressed",icons);$("hide").setAttribute("aria-pressed",hide);board();controls();grid();analysis();consider();notes();histView();scView()}
+function render(){document.body.dataset.me=me;$("icons").setAttribute("aria-pressed",icons);$("ticons").setAttribute("aria-pressed",icons);$("hide").setAttribute("aria-pressed",hide);board();controls();grid();analysis();consider();notes();histView();scView();if(DS.eo)enemyView()}
 function add(n,k){
   k=k||(auto&&stepNow()<20?ORDER[stepNow()]:target);
   if(used().has(n)||st[k].length>=5)return false;
@@ -930,10 +994,12 @@ document.addEventListener("click",e=>{
   else if(b.id==="hide"){hide=!hide;try{localStorage.setItem("lolHide",hide?"1":"0")}catch(e){}}
   else if(b.id==="lo"){DS.lo=!DS.lo;drawers()}
   else if(b.id==="ro"){DS.ro=!DS.ro;drawers()}
-  else if(b.dataset.close){DS[{dl:"lo",dr:"ro",ds:"so"}[b.dataset.close]]=false;drawers()}
+  else if(b.dataset.close){DS[{dl:"lo",dr:"ro",ds:"so",de:"eo"}[b.dataset.close]]=false;drawers()}
   else if(b.id==="stl"){toggleStyle();return}
-  else if(b.id==="so"){DS.so=!DS.so;drawers()}
+  else if(b.id==="so"){DS.so=!DS.so;if(DS.so)DS.eo=false;drawers()}
+  else if(b.id==="eb"){DS.eo=!DS.eo;if(DS.eo)DS.so=false;drawers()}
   else if(b.dataset.stab){scMode=b.dataset.stab;fixSel()}
+  else if(b.dataset.esel){enId=b.dataset.esel}
   else if(b.dataset.itab){itab=b.dataset.itab}
   else if(b.dataset.tsel){scId=b.dataset.tsel;tform=""}
   else if(b.dataset.tnew){tform="new";$("scn").value="";setTimeout(()=>$("scn").focus(),0)}
@@ -1356,7 +1422,7 @@ async function scAddChamp(){
   if(c)Object.assign(c,{g,wr,kda});else p.champs.push({n,g,wr,kda});
   await scPersist(t);scmsg("Saved.");$("sc").value="";render();
 }
-let tSel="",DR=null,itab="manual",tform="";
+let tSel="",DR=null,itab="manual",tform="",enId="";
 function tierView(){
   const my=scMode==="my";
   $("tlc").hidden=!my;
@@ -1820,7 +1886,7 @@ function consider(){
   $("cres").innerHTML=list.length?planCard()+list.map(champBlock).join(""):`<p class="note">Search a champion above to add it here. Prepicked champions appear here automatically.</p>`;
 }
 Object.values(DRAW).forEach(f=>f());
-let DS={lo:innerWidth>=1800,ro:false,so:false},icons=false,hide=false,VER="",IDS={},icoAsked=false;
+let DS={lo:innerWidth>=1800,ro:false,so:false,eo:false},icons=false,hide=false,VER="",IDS={},icoAsked=false;
 try{Object.assign(DS,JSON.parse(localStorage.getItem("lolDr")||"{}"));icons=localStorage.getItem("lolIcons")==="1";hide=localStorage.getItem("lolHide")==="1"}catch(e){}
 function styleBtn(){try{$("stl").setAttribute("aria-pressed",document.documentElement.getAttribute("data-style")==="gg")}catch(e){}}
 function toggleStyle(){
@@ -1833,7 +1899,7 @@ function toggleStyle(){
 }
 function setHH(){try{document.documentElement.style.setProperty("--hh",$("hh").offsetHeight+"px")}catch(e){}}
 function drawers(){
-  $("dl").classList.toggle("open",!!DS.lo);$("dr").classList.toggle("open",!!DS.ro);$("ds").classList.toggle("open",!!DS.so);$("so").setAttribute("aria-expanded",!!DS.so);
+  $("dl").classList.toggle("open",!!DS.lo);$("dr").classList.toggle("open",!!DS.ro);$("ds").classList.toggle("open",!!DS.so);$("so").setAttribute("aria-expanded",!!DS.so);$("de").classList.toggle("open",!!DS.eo);$("eb").setAttribute("aria-expanded",!!DS.eo);
   $("lo").setAttribute("aria-expanded",!!DS.lo);$("ro").setAttribute("aria-expanded",!!DS.ro);
   document.body.classList.toggle("lo",!!DS.lo);document.body.classList.toggle("ro",!!DS.ro);
   try{localStorage.setItem("lolDr",JSON.stringify(DS))}catch(e){}
