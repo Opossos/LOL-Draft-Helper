@@ -1863,7 +1863,8 @@ function plTeamMs(d){
   const out=new Map();
   d.querySelectorAll('a[href*="/leagues/matches/"]').forEach(a=>{
     const h=a.getAttribute("href"),m=/\/matches\/(\d+)/.exec(h);if(!m)return;
-    const tr=a.closest("tr"),played=!!tr&&[...tr.querySelectorAll("td")].some(td=>/^\s*\d+\s*:\s*\d+\s*$/.test(td.textContent));
+    const tr=a.closest("tr"),li=tr&&tr.closest("li"),t=li&&li.querySelector(".tztime[data-time]");
+    const played=!!tr&&(/(^|\D)\d\s*:\s*\d(\D|$)/.test(tr.textContent.replace(/\s+/g," "))||!!t&&+t.dataset.time>0&&+t.dataset.time<Date.now()/1000-3*3600);
     const o=out.get(m[1]);if(!o)out.set(m[1],{id:m[1],url:plLink(new URL(h,"https://www.primeleague.gg/").href),played});else if(played)o.played=true;
   });
   return[...out.values()];
@@ -2038,6 +2039,12 @@ function plBm(){
     try{var r=await fetch(u,{credentials:"include"});if(r.ok){d=P.parseFromString(await r.text(),"text/html");keep(d,u)}}catch(e){}
     seen.set(u,d);await new Promise(function(r){setTimeout(r,300)});return d;
   };
+  var played=function(a){
+    var tr=a.closest("tr");if(!tr)return false;
+    if(/(^|\D)\d\s*:\s*\d(\D|$)/.test(tr.textContent.replace(/\s+/g," ")))return true;
+    var li=tr.closest("li"),t=li&&li.querySelector(".tztime[data-time]");
+    return!!t&&+t.getAttribute("data-time")>0&&+t.getAttribute("data-time")<Date.now()/1000-3*3600;
+  };
   var splits=function(d,o){
     d.querySelectorAll('a[href*="/teams/'+tid+'"]').forEach(function(a){
       var m=/^(.*\/leagues\/prm\/(\d+)-[^/?#]+)\/teams\/\d+[^/?#]*/.exec(abs(a.getAttribute("href")));
@@ -2056,13 +2063,13 @@ function plBm(){
     for(var i=0;i<top.length;i++){
       var d=await get(top[i].team);if(!d)continue;top[i].ok=1;
       if(i===0)d.querySelectorAll('.content-portrait-grid-l a[href*="/users/"]').forEach(function(a){var m=/\/users\/(\d+-[^/?#]+)/.exec(a.getAttribute("href"));if(m)users.add(m[1])});
-      if(withMs<2){var n0=ms.size;d.querySelectorAll('a[href*="/leagues/matches/"]').forEach(function(a){var tr=a.closest("tr");if(tr&&Array.from(tr.querySelectorAll("td")).some(function(td){return/^\s*\d+\s*:\s*\d+\s*$/.test(td.textContent)}))ms.add(abs(a.getAttribute("href")))});if(ms.size>n0)withMs++}
+      if(withMs<2){var n0=ms.size;d.querySelectorAll('a[href*="/leagues/matches/"]').forEach(function(a){if(played(a))ms.add(abs(a.getAttribute("href")))});if(ms.size>n0)withMs++}
     }
     for(var s of top)if(s.ok)for(var u of users)await get(s.base+"/users/"+u);
     for(var m of ms)await get(m);
     var data=JSON.stringify({plbundle:1,team:here,pages:out});
     box.textContent="";
-    var p=document.createElement("div");p.textContent="Loaded "+out.length+" pages. Click Copy, then paste it into the Prime League box of the draft helper.";
+    var p=document.createElement("div");p.textContent="Loaded "+out.length+" pages ("+ms.size+" played matches). Click Copy, then paste it into the Prime League box of the draft helper.";
     var b=document.createElement("button");b.textContent="Copy";b.style.cssText="margin:10px 8px 0 0;padding:6px 14px;font:inherit;cursor:pointer";
     var x=b.cloneNode();x.textContent="Close";
     b.onclick=async function(){
