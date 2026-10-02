@@ -2415,6 +2415,11 @@ async function scAddChamp(){
 let tSel="",DR=null,itab="manual",tform="",enId="";
 let tMode="pool",tAll=false;
 const tIco=n=>`<b class="tic"><i>${esc(n.replace(/[^A-Za-z]/g,"").slice(0,3))}</i>${icon(n)}</b>`;
+// in the tier lists, flex means more than one player has the champion in their tier list
+function tfx(n){
+  const t=curTeam(),who=t?t.data.filter(x=>(x.pool||[]).includes(n)):[];
+  return who.length>1?`<span class="fx" title="Flex: in the tier list of ${who.map(x=>esc(x.name)+((x.role||derivedRole(x))?" ("+RN[x.role||derivedRole(x)]+")":"")).join(", ")}">Flex</span>`:"";
+}
 function tierP(){const t=curTeam();return t?t.data.find(x=>x.id===tSel):null}
 function tierView(){
   const my=scMode==="my";
@@ -2438,7 +2443,7 @@ function tierView(){
 }
 function tierPanel(x,on){
   const pool=x.pool||[],r=x.role||derivedRole(x);
-  return`<div class="tp${on?"":" bench"}"><div class="tph"><b>${esc(x.name)}</b> ${r?`<span class="tag">${ri(r)}${rt(r)}</span>`:""} <button class="actb${on?" on":""}" data-pact="${esc(x.id)}" aria-pressed="${on}" title="${on?"Playing. Click to move to the bench":"On the bench. Click to make this player active"}">${on?"★ Active":"Bench"}</button></div>${pool.length?`<ol class="tlist">${pool.map((n,i)=>`<li data-pid="${esc(x.id)}" data-tn="${esc(n)}"><span class="dg" data-drag tabindex="0" role="button" aria-label="Drag to reorder ${esc(n)}">☰</span><span class="tn">${i+1}</span>${icon(n)}<span class="tname">${esc(n)}${fx(n)}</span><button data-tcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from the tier list">×</button></li>`).join("")}</ol>`:`<p class="note" style="margin:6px 0">No champions yet. Tap champions below to add them.</p>`}${(x.learn||[]).length?`<div class="nl">Learning (practiced, not ready yet)</div><div>${x.learn.map(n=>`<span class="nc learn">${icon(n)}${esc(n)}<button data-lcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from learning">\u00d7</button></span>`).join("")}</div>`:""}${(x.cant||[]).length?`<div class="nl">Can't play</div><div>${x.cant.map(n=>`<span class="nc weak">${icon(n)}${esc(n)}<button data-ccx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from can't play">×</button></span>`).join("")}</div>`:""}</div>`;
+  return`<div class="tp${on?"":" bench"}"><div class="tph"><b>${esc(x.name)}</b> ${r?`<span class="tag">${ri(r)}${rt(r)}</span>`:""} <button class="actb${on?" on":""}" data-pact="${esc(x.id)}" aria-pressed="${on}" title="${on?"Playing. Click to move to the bench":"On the bench. Click to make this player active"}">${on?"★ Active":"Bench"}</button></div>${pool.length?`<ol class="tlist">${pool.map((n,i)=>`<li data-pid="${esc(x.id)}" data-tn="${esc(n)}"><span class="dg" data-drag tabindex="0" role="button" aria-label="Drag to reorder ${esc(n)}">☰</span><span class="tn">${i+1}</span>${icon(n)}<span class="tname">${esc(n)}${tfx(n)}</span><button data-tcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from the tier list">×</button></li>`).join("")}</ol>`:`<p class="note" style="margin:6px 0">No champions yet. Tap champions below to add them.</p>`}${(x.learn||[]).length?`<div class="nl">Learning (practiced, not ready yet)</div><div>${x.learn.map(n=>`<span class="nc learn">${icon(n)}${esc(n)}<button data-lcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from learning">\u00d7</button></span>`).join("")}</div>`:""}${(x.cant||[]).length?`<div class="nl">Can't play</div><div>${x.cant.map(n=>`<span class="nc weak">${icon(n)}${esc(n)}<button data-ccx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from can't play">×</button></span>`).join("")}</div>`:""}</div>`;
 }
 function tierGrid(){
   const x=tierP(),g=$("tgrid");
@@ -2446,7 +2451,7 @@ function tierGrid(){
   const r=x.role||derivedRole(x),q=$("tq").value.trim().toLowerCase(),pool=x.pool||[],cant=x.cant||[],learn=x.learn||[];
   const list=D.filter(c=>(tAll||!r||c.r.includes(r))&&(!q||c.n.toLowerCase().includes(q))).map(c=>c.n).sort((a,b)=>{const ia=pool.indexOf(a),ib=pool.indexOf(b);return(ia<0)-(ib<0)||ia-ib||(!learn.includes(a))-(!learn.includes(b))||a.localeCompare(b)});
   $("tchint").innerHTML=r?`${tAll?"All champions":"Only "+RN[r]+" champions"} are shown for ${esc(x.name)}. <button class="lnk" id="tall" type="button">${tAll?"Show "+RN[r]+" only":"Show all"}</button>`:"";
-  g.innerHTML=list.length?list.map(n=>{const i=pool.indexOf(n),no=cant.includes(n),lr=learn.includes(n);return`<button class="tgc${i>=0?" in":""}${no?" no":""}${lr?" lr":""}" data-tpk="${esc(n)}" aria-pressed="${i>=0||no||lr}" title="${esc(n)}${i>=0?" · #"+(i+1)+" in the tier list":no?" · can't play":lr?" · learning":""}">${fx(n)}${tIco(n)}<span>${esc(n)}</span>${i>=0?`<em>${i+1}</em>`:no?`<em>✕</em>`:lr?`<em>L</em>`:""}</button>`}).join(""):`<p class="note">No champion matches.</p>`;
+  g.innerHTML=list.length?list.map(n=>{const i=pool.indexOf(n),no=cant.includes(n),lr=learn.includes(n);return`<button class="tgc${i>=0?" in":""}${no?" no":""}${lr?" lr":""}" data-tpk="${esc(n)}" aria-pressed="${i>=0||no||lr}" title="${esc(n)}${i>=0?" · #"+(i+1)+" in the tier list":no?" · can't play":lr?" · learning":""}">${tfx(n)}${tIco(n)}<span>${esc(n)}</span>${i>=0?`<em>${i+1}</em>`:no?`<em>✕</em>`:lr?`<em>L</em>`:""}</button>`}).join(""):`<p class="note">No champion matches.</p>`;
 }
 const TL={pool:["the tier list","added as #"],learn:["learning","marked as learning"],cant:["can't play","added to can't play"]};
 async function tierTap(n){
