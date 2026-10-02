@@ -370,6 +370,12 @@ summary{cursor:pointer;color:var(--mute)}
 .plm b{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .plm .x{border:0;background:none;color:var(--mute);font-size:16px;padding:0 4px;cursor:pointer}
 .plm a{font-size:12px}
+.plc{padding:6px 0;border-top:1px solid var(--line)}
+.plc:first-of-type{border-top:0}
+.plch{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 6px;font-size:13px;margin-bottom:4px}
+.plch .good,.plch .bad{margin:0;font-weight:600}.plch small{color:var(--mute)}
+.plc .chips{margin:0}
+.plc .chip.sc .rico{width:14px;height:14px;margin:0 4px 0 -2px}
 .plchoose{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .pt.plt{padding-right:8px}
 .pc .pn b{color:var(--ink)}
@@ -1085,7 +1091,7 @@ function enemyView(){
   const turn=cur===ek?"The enemy is picking now.":j>=0?`The enemy picks next at step ${j+1}, after ${j-i} more actions.`:"The enemy has no picks left.";
   const sc=(x)=>`<span class="lu${pm.has(x.id)?" got":""}"><small>${ri(role(x))}${rt(role(x))}</small><b>${esc(x.name)}</b>${pm.has(x.id)?`<small>${esc(pm.get(x.id))}</small>`:`<small>?</small>`}</span>`;
   const PB=plBans(t);
-  h+=`<details class="card" data-k="en-line" ${op("en-line")}><summary>${ic("users")}<h2>Enemy lineup</h2></summary>${t.pl?`<p style="margin:0 0 6px"><a class="btn" href="${esc(t.pl)}" target="_blank" rel="noopener">Open ${esc(t.name)} on Prime League</a></p>`:""}<p class="note" style="margin:0 0 4px">${turn}</p><div class="epl">${roster.map(sc).join("")}</div>${PB.n?`<div class="nl" style="margin:8px 0 2px">They usually ban (${PB.n} Prime League game${PB.n>1?"s":""})</div>${plBanChips(PB.own.slice(0,5))}`:""}</details>`;
+  h+=`<details class="card" data-k="en-line" ${op("en-line")}><summary>${ic("users")}<h2>Enemy lineup</h2></summary>${t.pl?`<p style="margin:0 0 6px"><a class="btn" href="${esc(t.pl)}" target="_blank" rel="noopener">Open ${esc(t.name)} on Prime League</a></p>`:""}<p class="note" style="margin:0 0 4px">${turn}</p><div class="epl">${roster.map(sc).join("")}</div>${PB.n?`<div class="nl" style="margin:8px 0 2px">They usually ban (${PB.n} Prime League game${PB.n>1?"s":""})</div>${plBanChips(PB.own.slice(0,5))}<div class="nl" style="margin:8px 0 2px">Team comps they played${PB.n>4?" (last 4 games)":""}</div>${plComps(t,4)}`:""}</details>`;
   const pill=c=>[c.plg?c.plg+" PL game"+(c.plg>1?"s":""):"",c.g?c.g+" games":"",c.wr?c.wr+"% WR":""].filter(Boolean).join(" \u00b7 ");
   // what each free player might pick
   // champions played in Prime League come first, then ranked by games
@@ -1960,6 +1966,15 @@ function plBans(t){
   const top=o=>Object.entries(o).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,8);
   return{n,own:top(own),vs:top(vs)};
 }
+// the five champions they played per game, in lane order, newest first
+function plComps(t,max){
+  const out=[];
+  (t.matches||[]).forEach(m=>(m.games||[]).forEach((g,i)=>out.push({m,i,g})));
+  return out.reverse().slice(0,max||99).map(({m,i,g})=>{
+    const ps=g.ps.slice().sort((a,b)=>a.row-b.row);
+    return`<div class="plc"><div class="plch"><span class="${g.w?"good":"bad"}">${g.w?"Win":"Loss"}</span> <span>vs ${esc(m.opp||"?")}</span>${m.day?` <small>${esc(m.day)}${m.games.length>1?", game "+(i+1):""}</small>`:""}</div><div class="chips">${ps.map(q=>`<span class="chip sc" title="${esc(q.r)} \u00b7 ${q.k}/${q.d}/${q.a}">${RO[q.row-1]?ri(RO[q.row-1]):""}${icon(q.c)}${esc(q.c)}</span>`).join("")}</div></div>`;
+  }).join("");
+}
 const plBanChips=L=>`<div class="chips">${L.map(([c,k])=>`<span class="chip sc">${icon(c)}${esc(c)} ${k}×</span>`).join("")}</div>`;
 function plCard(t){
   const ms=t.matches||[];
@@ -1977,6 +1992,7 @@ function plCard(t){
   if(B.n){
     h+=`<div class="nl" style="margin:6px 0 2px">Their bans (${B.n} game${B.n>1?"s":""})</div>${plBanChips(B.own)}`;
     h+=`<div class="nl" style="margin:6px 0 2px">Banned against them</div>${plBanChips(B.vs)}`;
+    h+=`<div class="nl" style="margin:8px 0 2px">Team comps they played</div>${plComps(t)}`;
   }
   return h+`</details>`;
 }
