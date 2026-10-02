@@ -368,6 +368,23 @@ summary{cursor:pointer;color:var(--mute)}
 .plm .mi{flex:1;min-width:0;display:flex;flex-direction:column}
 .plm .mi small{color:var(--mute);font-size:12px}
 .plm b{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plm>.plmi{display:block;padding:0;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-size:13px}
+.plm>.plmi.miss{display:flex;padding:5px 8px;border-style:dashed}
+.plmi>summary{display:flex;align-items:center;gap:8px;padding:5px 8px;cursor:pointer;list-style:none}
+.plmi>summary::-webkit-details-marker{display:none}
+.plmi>summary::before{content:"\25B8";color:var(--mute);font-size:11px}
+.plmi[open]>summary::before{content:"\25BE"}
+.plsp{margin:8px 0 4px}
+.plg{display:grid;grid-template-columns:auto repeat(var(--n),minmax(0,1fr));gap:4px 6px;padding:6px 8px 8px;border-top:1px solid var(--line);align-items:center}
+.plgl{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mute);white-space:nowrap}
+.plgl .rico{width:14px;height:14px}
+.plgh{font-size:12px;font-weight:600;margin:0}
+.pll{display:flex;flex-direction:column;min-width:0;padding:3px 6px;border-radius:6px;background:var(--chip)}
+.pll b{display:flex;align-items:center;justify-content:flex-start;text-align:left;gap:4px;font-size:13px;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pll .ico{width:18px;height:18px;margin:0;flex:none;border-radius:4px}
+.pll{text-align:left}
+.pll small{font-size:11px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pll.plb{background:none;padding:0 6px}.pll.plb small{white-space:normal}
 .plm .x{border:0;background:none;color:var(--mute);font-size:16px;padding:0 4px;cursor:pointer}
 .plm a{font-size:12px}
 .plc{padding:6px 0;border-top:1px solid var(--line)}
@@ -377,10 +394,14 @@ summary{cursor:pointer;color:var(--mute)}
 .plc .chips{margin:0}
 .plc .chip.sc .rico{width:14px;height:14px;margin:0 4px 0 -2px}
 .plbm{margin:6px 0;padding-left:20px}.plbm li{margin:0 0 6px}
+.psec{margin:4px 0}
+.psec>summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--mute);padding:2px 0}
+.psec>summary .note{font-weight:400}
 .plchoose{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .pt.plt{padding-right:8px}
 .pc .pn b{color:var(--ink)}
-.pc>summary .pn{flex:1 1 0;min-width:0}
+.pc>summary{flex-wrap:wrap;row-gap:6px}
+.pc>summary .pn{flex:1 1 180px;min-width:0}
 .pacts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
 .pacts .prole{width:auto;margin:0;padding:5px 8px;font-size:14px}
 .pacts .btn{display:inline-flex;align-items:center;padding:5px 12px;font-size:14px}
@@ -1898,7 +1919,7 @@ function plParseGroup(d){
     });
   });
   const h1=d.querySelector("h1");
-  return{kind:"group",title:h1?h1.textContent.trim():"",teams,ms};
+  return{kind:"group",title:h1?h1.textContent.trim():"",teams,ms,season:plSeason(d)};
 }
 // which side of a match page is the scouted team: saved link, then known players, then name
 function plSide(t,M){
@@ -1965,7 +1986,7 @@ async function plMatchImport(k){
 function plApply(t,M,k){
   const o=1-k,sc=M.score.split(":");
   const rec={id:M.id,url:M.url,date:M.date,day:M.day,score:k?sc.reverse().join(":"):M.score,opp:M.sides[o].name,oppUrl:M.sides[o].link,...(M.season?{season:M.season.id,sname:M.season.name}:{}),
-    games:M.games.map(g=>({w:g[k].w,bans:g[k].bans,obans:g[o].bans,ps:g[k].ps}))};
+    games:M.games.map(g=>({w:g[k].w,bans:g[k].bans,obans:g[o].bans,ps:g[k].ps,ops:g[o].ps}))};
   t.matches=(t.matches||[]).filter(x=>x.id!==rec.id);t.matches.push(rec);
   t.matches.sort((a,b)=>(a.date||0)-(b.date||0)||String(a.day).localeCompare(String(b.day),void 0,{numeric:true}));
   // players: unknown ones join the bench (as former players if the roster was already there), roles from the row they played
@@ -2113,7 +2134,7 @@ async function plRun(t,start,get){
       p.pls=p.pls||{};p.pls[S.id]={name:U.season&&U.season.name||S.name,c:U.champs};pages++;
     }
     // played matches that are not imported yet: bans, comps, roles
-    const have=new Set((t.matches||[]).filter(x=>!x.stub&&x.season).map(x=>x.id));
+    const have=new Set((t.matches||[]).filter(x=>!x.stub&&x.season&&(x.games||[]).every(g=>g.ops)).map(x=>x.id));
     for(const m of ms.values()){
       if(have.has(m.id))continue;
       const d=await get(m.url);if(!d)continue;
@@ -2139,7 +2160,8 @@ async function plGroupImport(tid){
   const gt=G.teams.find(x=>x.tid===tid);if(!gt)return;
   const t=plTeamFor(gt.tid,gt.name,gt.link),ms=plGroupMs(G,gt);
   const have=new Map((t.matches||[]).map(x=>[x.id,x]));
-  ms.forEach(m=>{const x=have.get(m.id);if(!x||x.stub)have.set(m.id,{id:m.id,url:m.url,day:m.day,title:m.title,score:m.score,stub:1})});
+  const se=G.season?{season:G.season.id,sname:G.season.name}:{};
+  ms.forEach(m=>{const x=have.get(m.id);if(!x||x.stub)have.set(m.id,{id:m.id,url:m.url,day:m.day,title:m.title,score:m.score,stub:1,...se});else if(se.season&&!x.season)Object.assign(x,se)});
   t.matches=[...have.values()].sort((a,b)=>(a.date||0)&&(b.date||0)?a.date-b.date:String(a.day).localeCompare(String(b.day),void 0,{numeric:true}));
   PLR=null;$("plsrc").value="";$("plprev").innerHTML="";
   await scPersist(t);
@@ -2212,23 +2234,30 @@ function plComps(t,max){
   }).join("");
 }
 const plBanChips=L=>`<div class="chips">${L.map(([c,k])=>`<span class="chip sc">${icon(c)}${esc(c)} ${k}×</span>`).join("")}</div>`;
+// one match in the list; imported ones open to show every lane per game, theirs vs the enemy's
+function plMatchRow(m){
+  const open=m.url?`<a href="${esc(m.url)}" target="_blank" rel="noopener">Open</a>`:"";
+  const x=`${open}<button class="x" data-plrm="${esc(m.id)}" aria-label="Remove match">\u00d7</button>`;
+  if(m.stub)return`<div class="plmi miss"><span class="mi"><small>${esc(m.day)} \u00b7 not imported</small><b>${esc(m.title)} ${esc(m.score)}</b></span>${x}</div>`;
+  const G=m.games||[],w=G.filter(g=>g.w).length,l=G.length-w,noOps=G.some(g=>!g.ops);
+  const cell=(q,o)=>q?`<span class="pll" title="${esc(q.r)} \u00b7 ${q.k}/${q.d}/${q.a}${o?" vs "+esc(o.r)+" \u00b7 "+o.k+"/"+o.d+"/"+o.a:""}"><b>${icon(q.c)}${esc(q.c)}</b>${o?`<small>vs ${esc(o.c)}</small>`:""}</span>`:`<span class="pll"><small>\u2013</small></span>`;
+  const row=(lab,cells)=>`<span class="plgl">${lab}</span>${cells.join("")}`;
+  const grid=`<div class="plg" style="--n:${G.length}">${row("",G.map((g,i)=>`<span class="plgh ${g.w?"good":"bad"}">Game ${i+1} \u00b7 ${g.w?"Win":"Loss"}</span>`))}${RO.map((r,ri_)=>row(ri(r)+`<span>${RN[r]}</span>`,G.map(g=>cell((g.ps||[]).find(q=>q.row===ri_+1),(g.ops||[]).find(q=>q.row===ri_+1))))).join("")}${row("<span>Bans</span>",G.map(g=>`<span class="pll plb"><small>${esc((g.bans||[]).join(", "))||"\u2013"}</small></span>`))}${row("<span>Banned vs</span>",G.map(g=>`<span class="pll plb"><small>${esc((g.obans||[]).join(", "))||"\u2013"}</small></span>`))}</div>`;
+  return`<details class="plmi" data-k="plm:${esc(m.id)}" ${OPEN["plm:"+m.id]?"open":""}><summary><span class="mi"><small>${esc(m.day)} \u00b7 <span class="${w>l?"good":w<l?"bad":""}">${w>l?"won":w<l?"lost":"draw"} ${w}:${l}</span></small><b>vs ${esc(m.opp)}</b></span>${x}</summary>${grid}${noOps?`<p class="note" style="margin:6px 0 0">Enemy picks are missing for this match. Import it again (paste the match page or run the bookmark) to see them.</p>`:""}</details>`;
+}
 function plCard(t){
   const ms=t.matches||[];
   if(!ms.length)return"";
   const got=ms.filter(x=>!x.stub),miss=ms.length-got.length,B=plBans(t);
   let h=`<details class="card" data-k="sc-pl" ${op("sc-pl")}><summary>${ic("grid")}<h2>Prime League matches</h2> <span class="tag">${got.length}/${ms.length}</span></summary>`;
-  h+=`<div class="plm">${ms.map(m=>{
-    const open=m.url?`<a href="${esc(m.url)}" target="_blank" rel="noopener">Open</a>`:"";
-    const x=`${open}<button class="x" data-plrm="${esc(m.id)}" aria-label="Remove match">×</button>`;
-    if(m.stub)return`<div class="miss"><span class="mi"><small>${esc(m.day)} · not imported</small><b>${esc(m.title)} ${esc(m.score)}</b></span>${x}</div>`;
-    const w=m.games.filter(g=>g.w).length,l=m.games.length-w;
-    return`<div><span class="mi"><small>${esc(m.day)} · <span class="${w>l?"good":w<l?"bad":""}">${w>l?"won":w<l?"lost":"draw"} ${w}:${l}</span></small><b>vs ${esc(m.opp)}</b></span>${x}</div>`;
-  }).join("")}</div>`;
+  const groups=[];
+  ms.forEach(m=>{const k=m.sname||"";let g=groups.find(x=>x.k===k);if(!g)groups.push(g={k,ms:[],s:+m.season||0});g.ms.push(m)});
+  groups.sort((a,b)=>b.s-a.s);
+  h+=groups.map(G=>`${groups.length>1||G.k?`<div class="nl plsp">${esc(G.k||"Other matches")}</div>`:""}<div class="plm">${G.ms.slice().sort((a,b)=>String(a.day).localeCompare(String(b.day),void 0,{numeric:true})).map(plMatchRow).join("")}</div>`).join("");
   if(miss)h+=`<p class="note" style="margin:0 0 6px">${miss} match${miss>1?"es":""} not imported yet. Open ${miss>1?"each one":"it"}, copy the page source and paste it above.</p>`;
   if(B.n){
     h+=`<div class="nl" style="margin:6px 0 2px">Their bans (${B.n} game${B.n>1?"s":""})</div>${plBanChips(B.own)}`;
     h+=`<div class="nl" style="margin:6px 0 2px">Banned against them</div>${plBanChips(B.vs)}`;
-    h+=`<div class="nl" style="margin:8px 0 2px">Team comps they played</div>${plComps(t)}`;
   }
   return h+`</details>`;
 }
@@ -2432,8 +2461,11 @@ function profCard(p){
   const pills=tg?`<span class="pill">${tg} games</span><span class="pill w ${wc(wr)}">${wr.toFixed(1)}% WR</span><span class="pill">${kda.toFixed(2)} KDA</span>`:"";
   const tiles=rows.map(c=>`<div class="pt"><button class="lnk" data-ped="${key}|${esc(c.n)}">${icon(c.n)}${esc(c.n)}</button><div class="pts"><span class="w ${wc(c.wr)}">${c.wr}%</span><span>${c.g} games</span><span>${c.kda} KDA</span></div><button class="x" data-pcx="${key}|${esc(c.n)}" aria-label="Remove ${esc(c.n)}">\u00d7</button></div>`).join("");
   const PLs=my?[]:plOf(p);
-  const body=(my||PLs.length&&rows.length?`<div class="nl">${my?"Imported stats":"Ranked"}</div>`:"")+(rows.length?`<div class="pgrid">${tiles}</div>`:PLs.length?"":`<p class="note">${my?"No imported stats yet. Use the paste or Riot import above.":"No champions yet. Add the champions this player plays."}</p>`)
-    +(PLs.length?`<div class="nl"${rows.length?' style="margin-top:6px"':""}>Prime League${tm?` <small class="note">${esc(plSplits(tm).filter(x=>x.w).map(x=>x.name+(x.w<1?" ("+x.w*100+"%)":"")).join(", "))}</small>`:""}</div><div class="pgrid">${PLs.map(c=>`<div class="pt plt" title="${esc(plSpTxt(c))}"><span class="lnk">${icon(c.n)}${esc(c.n)}</span><div class="pts"><span>${c.g} game${c.g>1?"s":""}</span><span class="w ${c.w>c.g-c.w?"hi":c.w<c.g-c.w?"lo":""}">${c.w}W ${c.g-c.w}L</span><span>${plKda(c)}</span></div></div>`).join("")}</div>`:"");
+  // scouted players: Prime League first, then ranked; both sections fold away
+  const sec=(k,title,extra,inner)=>`<details class="psec" data-k="${k}:${key}" ${op(k+":"+p.id)}><summary>${title}${extra?` <small class="note">${extra}</small>`:""}</summary>${inner}</details>`;
+  const plBody=PLs.length?sec("ppl","Prime League",tm?esc(plSplits(tm).filter(x=>x.w).map(x=>x.name+(x.w<1?" ("+x.w*100+"%)":"")).join(", ")):"",`<div class="pgrid">${PLs.map(c=>`<div class="pt plt" title="${esc(plSpTxt(c))}"><span class="lnk">${icon(c.n)}${esc(c.n)}</span><div class="pts"><span>${c.g} game${c.g>1?"s":""}</span><span class="w ${c.w>c.g-c.w?"hi":c.w<c.g-c.w?"lo":""}">${c.w}W ${c.g-c.w}L</span><span>${plKda(c)}</span></div></div>`).join("")}</div>`):"";
+  const rkInner=rows.length?`<div class="pgrid">${tiles}</div>`:`<p class="note">${my?"No imported stats yet. Use the paste or Riot import above.":"No ranked champions yet. Use the Riot import or add them above."}</p>`;
+  const body=my?`<div class="nl">Imported stats</div>`+rkInner:plBody+(rows.length||!PLs.length?sec("prk","Ranked",tg?tg+" games":"",rkInner):"");
   return`<details class="ng pc" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><span class="pn"><b>${esc(p.name)}</b> ${role?`<span class="tag">${ri(role)}${rt(role)}</span>`:""} <span class="tag">${isAct?"Active":"Bench"}</span>${p.former?` <span class="tag" title="Played in an imported Prime League match but is not in the team's current roster">Former player</span>`:""}</span><span class="pills">${pills}</span></summary>${body}<div class="pacts"><select class="prole" data-prole="${key}" aria-label="Role of ${esc(p.name)}"><option value="">${!p.role&&role?"Auto ("+RN[role]+")":"Role: auto"}</option>${RO.map(r=>`<option value="${r}"${p.role===r?" selected":""}>${RN[r]}</option>`).join("")}</select><button class="actb${isAct?" on":""}" data-pact="${key}" aria-pressed="${isAct}">${isAct?"\u2605 Active":"Bench"}</button>${link?`<a class="btn" href="${link}" target="_blank" rel="noopener">op.gg</a>`:""}<button class="btn rm" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></div></details>`;
 }
 const synAdj=(L=A().syn)=>{const a={};L.forEach(([x,y])=>{(a[x]=a[x]||new Set()).add(y);(a[y]=a[y]||new Set()).add(x)});return a};
