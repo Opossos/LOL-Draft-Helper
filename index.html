@@ -278,6 +278,42 @@ html.locked body>*:not(#gate){display:none!important}
 #gm,#sm{margin:10px 0 0!important;min-height:1.4em;color:var(--red)!important;font-size:14px}
 .tp{margin:12px 0}
 .tlist{list-style:none;margin:6px 0 0;padding:0}
+.tpt{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.tpb{display:flex;align-items:center;gap:5px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--ink);font:inherit;font-size:13px;cursor:pointer;max-width:100%}
+.tpb span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tpb small{color:var(--mute);font-size:11px;background:var(--chip);border-radius:999px;padding:0 6px}
+.tpb[aria-pressed="true"]{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold);font-weight:600}
+.tpb.bench{opacity:.7}
+.tph{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.tpk{margin:10px 0 0;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.tpkh{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tpkh .rf{margin:0}
+.tpkh input{flex:1 1 160px;min-width:0;margin:0}
+.lnk{border:0;background:none;padding:0;color:var(--gold);font:inherit;text-decoration:underline;cursor:pointer}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;max-height:340px;overflow-y:auto;padding:2px;overscroll-behavior:contain}
+.tgc{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px 4px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);font:inherit;cursor:pointer;min-width:0}
+.tic{position:relative;display:block;flex:none;width:40px;height:40px;border-radius:6px;overflow:hidden;background:var(--chip)}
+.tic i{position:absolute;inset:0;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:400;color:var(--mute)}
+.tic .ico{position:absolute;inset:0;width:100%;height:100%;margin:0;border-radius:0}
+.tgc span{font-size:11px;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tgc em{position:absolute;top:2px;right:2px;min-width:18px;height:18px;padding:0 4px;border-radius:999px;font-style:normal;font-size:11px;font-weight:700;line-height:18px;text-align:center;color:#fff;background:var(--gold)}
+.tgc.in{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+.tgc.no{border-color:#d04545;opacity:.75}
+.tgc.no em{background:#d04545}
+.tgc.no .tic{filter:grayscale(1)}
+#tll{display:flex;flex-direction:column;gap:6px}
+.tov{display:flex;flex-direction:column;gap:4px;width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.tov.on{border-color:var(--gold)}
+.tov.bench{opacity:.75}
+.tovh{display:flex;align-items:center;gap:6px;min-width:0}
+.tovh b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tovh small{color:var(--mute);font-size:12px;margin-left:auto;white-space:nowrap}
+.tovc{display:flex;flex-wrap:wrap;gap:3px}
+.tovi{position:relative;display:inline-flex}
+.tovi .tic{width:28px;height:28px;border-radius:5px}.tovi .tic i{font-size:10px}
+.tovi em{position:absolute;right:-2px;bottom:-2px;font-style:normal;font-size:9px;font-weight:700;line-height:12px;min-width:12px;text-align:center;border-radius:6px;color:#fff;background:var(--gold)}
+.tovi.no .tic{filter:grayscale(1);opacity:.55;box-shadow:inset 0 0 0 2px #d04545}
+@media (max-width:520px){.tgrid{grid-template-columns:repeat(auto-fill,minmax(64px,1fr));max-height:300px}.tgc .tic{width:36px;height:36px}.tlist li{padding:3px 6px;margin-bottom:3px}.tpkh .rf{width:100%}.tpkh .rf button{flex:1}}
 .tlist li{display:flex;align-items:center;gap:8px;padding:5px 8px;margin:0 0 4px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
 .tlist li.drag{opacity:.45}
 .tlist li.over{border-color:var(--gold);box-shadow:inset 0 3px 0 var(--gold)}
@@ -590,13 +626,18 @@ body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
 <button class="btn" id="padd">Add profile</button>
 </details>
 <details class="card tools" open id="tlc" hidden><summary><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><h2>Tier lists (what they like to play)</h2></summary>
-<select id="tsel" aria-label="Player"></select>
-<div class="cbw"><input id="tc" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Champion" placeholder="Search a champion to add" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
-<p class="note" id="tchint" style="margin:4px 0 6px"></p>
-<button class="btn" id="tadd">Add to tier list</button> <button class="btn" id="cadd">Add to can't play</button> <button class="btn" id="ticons" aria-pressed="false">Icons</button> <span class="note" id="tmsg" role="status"></span>
+<div class="tpt" id="tpt" role="group" aria-label="Player"></div>
+<div id="tpe"></div>
+<div class="tpk">
+<div class="tpkh"><div class="rf" id="tmode" role="group" aria-label="Tap a champion to"></div><input id="tq" type="search" placeholder="Filter champions" aria-label="Filter champions" autocomplete="off"></div>
+<p class="note" id="tchint" style="margin:4px 0"></p>
+<div class="tgrid" id="tgrid"></div>
+<span class="note" id="tmsg" role="status"></span>
+</div>
 <div id="tlu"></div>
+<div class="nl" style="margin-top:10px">All players</div>
 <div id="tll"></div>
-<p class="note">Drag the ☰ handle to put champions in order, best first. With the keyboard, focus the handle and press the up or down arrow key. The can't play list is for champions a player does not play at all. A suggestion drops out when every player who could fill its role can't play it.</p>
+<p class="note">Tap a champion in the grid to add it, tap it again to take it out. Numbers show the place in the tier list; drag the ☰ handle to change the order, best first (or focus the handle and press the up or down arrow key). The can't play list is for champions a player does not play at all. A suggestion drops out when every player who could fill its role can't play it.</p>
 </details>
 <details class="card tools" open id="cdc"><summary><svg class="ic" aria-hidden="true"><use href="#i-db"/></svg><h2 id="acT">Champion data</h2></summary>
 <select id="psel" aria-label="Profile"></select>
@@ -1185,7 +1226,7 @@ function analysis(){
   }
   $("an").innerHTML=h;
 }
-function render(){EFF=null;PLC=null;saveDraft();defView();document.body.dataset.me=me;$("icons").setAttribute("aria-pressed",icons);$("ticons").setAttribute("aria-pressed",icons);$("hide").setAttribute("aria-pressed",hide);board();controls();grid();analysis();consider();notes();histView();scView();if(DS.eo)enemyView()}
+function render(){EFF=null;PLC=null;saveDraft();defView();document.body.dataset.me=me;$("icons").setAttribute("aria-pressed",icons);$("hide").setAttribute("aria-pressed",hide);board();controls();grid();analysis();consider();notes();histView();scView();if(DS.eo)enemyView()}
 function add(n,k){
   k=k||(auto&&stepNow()<20?ORDER[stepNow()]:target);
   if(used().has(n)||st[k].length>=5)return false;
@@ -1252,13 +1293,14 @@ document.addEventListener("click",e=>{
   else if(b.id==="padd"){scAddProfile();return}
   else if(b.id==="pcadd"){scAddChamp();return}
   else if(b.id==="pimp"){scImport();return}
-  else if(b.id==="tadd"){tierAdd();return}
-  else if(b.id==="cadd"){cantAdd();return}
+  else if(b.dataset.tpk){tierTap(b.dataset.tpk);return}
+  else if(b.dataset.tps){tSel=b.dataset.tps;$("tq").value="";$("tmsg").textContent="";tierView();return}
+  else if(b.dataset.tmode){tMode=b.dataset.tmode;tierView();return}
+  else if(b.id==="tall"){tAll=!tAll;tierGrid();return}
   else if(b.dataset.pact){playerActive(b.dataset.pact);return}
   else if(b.dataset.nty){ntype=b.dataset.nty;if(ntype==="combo"){MS.nb=[];DRAW.nb()}}
   else if(b.dataset.dcb){delCombo(b.dataset.dcb);return}
   else if(b.dataset.ccx){cantRm(b.dataset.ccx);return}
-  else if(b.id==="ticons"){icons=!icons;try{localStorage.setItem("lolIcons",icons?"1":"0")}catch(e){}if(icons)loadIcons()}
   else if(b.id==="priot"){riotImport();return}
   else if(b.id==="pstop"){riotStop=true;return}
   else if(b.dataset.ppx){PP.splice(+b.dataset.ppx,1);ppView();return}
@@ -1332,8 +1374,8 @@ document.addEventListener("change",e=>{const s=e.target.closest&&e.target.closes
 $("plbm").href=plBmHref();
 $("plbm").addEventListener("click",e=>{e.preventDefault();scmsg("Drag the PL scout button to your bookmarks bar, then use it on primeleague.gg.")});
 $("plsrc").addEventListener("input",()=>{const v=$("plsrc").value.trim();PLR=v?plParse(v):null;plPrev()});
-combo("sc");combo("tc",0,tierOk);
-$("tsel").addEventListener("change",()=>{tSel=$("tsel").value;$("tc").value="";$("tmsg").textContent="";tierView()});
+combo("sc");
+$("tq").addEventListener("input",()=>tierGrid());
 $("pp").addEventListener("input",()=>{PP=parsePaste($("pp").value);PPROLE="";ppView()});
 $("tf").addEventListener("submit",e=>{e.preventDefault();const m=tform;tform="";if(m==="rename")scRename();else scNew()});
 $("psel").addEventListener("change",()=>{scSel=$("psel").value});
@@ -2356,47 +2398,54 @@ async function scAddChamp(){
   await scPersist(t);scmsg("Saved.");$("sc").value="";render();
 }
 let tSel="",DR=null,itab="manual",tform="",enId="";
+let tMode="pool",tAll=false;
+const tIco=n=>`<b class="tic"><i>${esc(n.replace(/[^A-Za-z]/g,"").slice(0,3))}</i>${icon(n)}</b>`;
+function tierP(){const t=curTeam();return t?t.data.find(x=>x.id===tSel):null}
 function tierView(){
   const my=scMode==="my";
   $("tlc").hidden=!my;
   if(!my)return;
   const t=curTeam(),P=t?sortP(t.data):[];
   if(!P.find(x=>x.id===tSel))tSel=P[0]?P[0].id:"";
-  $("tsel").innerHTML=P.length?P.map(x=>`<option value="${esc(x.id)}"${x.id===tSel?" selected":""}>${esc(pl(x))}</option>`).join(""):`<option value="">No player yet</option>`;
-  { const tp=P.find(x=>x.id===tSel),tr=tp?(tp.role||derivedRole(tp)):"";$("tchint").textContent=tr?"Only "+RN[tr]+" champions are offered for "+tp.name+".":""; }
-  if(P.some(x=>(x.cant||[]).length)&&!VER&&!icoAsked){icoAsked=true;loadIcons()}
+  if(P.length&&!VER&&!icoAsked){icoAsked=true;loadIcons()}
+  const act=actOf(P);
+  $("tpt").innerHTML=P.length?P.map(x=>{const r=x.role||derivedRole(x),n=(x.pool||[]).length;return`<button class="tpb${act.includes(x)?"":" bench"}" data-tps="${esc(x.id)}" aria-pressed="${x.id===tSel}">${r?ri(r):""}<span>${esc(x.name)}</span><small>${n}</small></button>`}).join(""):`<p class="note">Add a player first.</p>`;
+  const x=P.find(y=>y.id===tSel);
+  $("tpe").innerHTML=x?tierPanel(x,act.includes(x)):"";
+  $("tmode").innerHTML=[["pool","Add to tier list"],["cant","Add to can't play"]].map(([k,l])=>`<button data-tmode="${k}" aria-pressed="${tMode===k}">${l}</button>`).join("");
+  document.querySelector(".tpk").hidden=!x;
+  tierGrid();
   $("tlu").innerHTML=lineupHtml(P);
-  $("tll").innerHTML=P.length?P.map(x=>{
-    const pool=x.pool||[],role=x.role||derivedRole(x);
-    const on=actOf(P).includes(x);
-    return`<div class="tp${on?"":" bench"}"><div><b>${esc(x.name)}</b> ${role?`<span class="tag">${ri(role)}${rt(role)}</span>`:""} <button class="actb${on?" on":""}" data-pact="${esc(x.id)}" aria-pressed="${on}" title="${on?"Playing. Click to move to the bench":"On the bench. Click to make this player active"}">${on?"\u2605 Active":"Bench"}</button></div>${pool.length?`<ol class="tlist">${pool.map((n,i)=>`<li data-pid="${esc(x.id)}" data-tn="${esc(n)}"><span class="dg" data-drag tabindex="0" role="button" aria-label="Drag to reorder ${esc(n)}">\u2630</span><span class="tn">${i+1}</span>${icons?icon(n):""}<span class="tname">${esc(n)}</span><button data-tcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from the tier list">\u00d7</button></li>`).join("")}</ol>`:`<p class="note">No champions yet.</p>`}${(x.cant||[]).length?`<div class="nl">Can't play</div><div>${x.cant.map(n=>`<span class="nc weak">${icon(n)}${esc(n)}<button data-ccx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from can't play">\u00d7</button></span>`).join("")}</div>`:""}</div>`;
-  }).join(""):`<p class="note">Add a player first.</p>`;
+  $("tll").innerHTML=P.map(y=>{
+    const r=y.role||derivedRole(y),pool=y.pool||[],cant=y.cant||[];
+    return`<button class="tov${y.id===tSel?" on":""}${act.includes(y)?"":" bench"}" data-tps="${esc(y.id)}"><span class="tovh">${r?ri(r):""}<b>${esc(y.name)}</b><small>${pool.length} in list${cant.length?` · ${cant.length} can't play`:""}</small></span><span class="tovc">${pool.length?pool.map((n,i)=>`<span class="tovi" title="${i+1}. ${esc(n)}">${tIco(n)}<em>${i+1}</em></span>`).join(""):`<small class="note">Nothing yet</small>`}${cant.map(n=>`<span class="tovi no" title="Can't play ${esc(n)}">${tIco(n)}</span>`).join("")}</span></button>`;
+  }).join("");
 }
-function tierRole(){const t=curTeam(),p=t&&t.data.find(x=>x.id===tSel);return p?(p.role||derivedRole(p)):""}
-function tierOk(c){const r=tierRole();return !r||c.r.includes(r)}
-async function tierAdd(){
-  const t=curTeam(),p=t&&t.data.find(x=>x.id===tSel),n=canon($("tc").value);
-  if(!p){$("tmsg").textContent="Add a player first and choose them above.";return}
-  if(!BY[n]){$("tmsg").textContent="Choose a champion from the list.";return}
-  {const r=p.role||derivedRole(p);if(r&&!BY[n].r.includes(r)){$("tmsg").textContent=n+" is not a "+RN[r]+" champion.";return}}
-  p.pool=p.pool||[];
-  if(p.pool.includes(n)){$("tmsg").textContent=n+" is already in the list.";return}
-  const moved=(p.cant||[]).includes(n);
-  if(moved)p.cant=p.cant.filter(x=>x!==n);
-  p.pool.push(n);
-  await scPersist(t);$("tmsg").textContent=moved?"Moved from the can't play list.":"Added.";$("tc").value="";render();
+function tierPanel(x,on){
+  const pool=x.pool||[],r=x.role||derivedRole(x);
+  return`<div class="tp${on?"":" bench"}"><div class="tph"><b>${esc(x.name)}</b> ${r?`<span class="tag">${ri(r)}${rt(r)}</span>`:""} <button class="actb${on?" on":""}" data-pact="${esc(x.id)}" aria-pressed="${on}" title="${on?"Playing. Click to move to the bench":"On the bench. Click to make this player active"}">${on?"★ Active":"Bench"}</button></div>${pool.length?`<ol class="tlist">${pool.map((n,i)=>`<li data-pid="${esc(x.id)}" data-tn="${esc(n)}"><span class="dg" data-drag tabindex="0" role="button" aria-label="Drag to reorder ${esc(n)}">☰</span><span class="tn">${i+1}</span>${icon(n)}<span class="tname">${esc(n)}</span><button data-tcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from the tier list">×</button></li>`).join("")}</ol>`:`<p class="note" style="margin:6px 0">No champions yet. Tap champions below to add them.</p>`}${(x.cant||[]).length?`<div class="nl">Can't play</div><div>${x.cant.map(n=>`<span class="nc weak">${icon(n)}${esc(n)}<button data-ccx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from can't play">×</button></span>`).join("")}</div>`:""}</div>`;
 }
-async function cantAdd(){
-  const t=curTeam(),p=t&&t.data.find(x=>x.id===tSel),n=canon($("tc").value);
-  if(!p){$("tmsg").textContent="Add a player first and choose them above.";return}
-  if(!BY[n]){$("tmsg").textContent="Choose a champion from the list.";return}
-  {const r=p.role||derivedRole(p);if(r&&!BY[n].r.includes(r)){$("tmsg").textContent=n+" is not a "+RN[r]+" champion.";return}}
-  p.cant=p.cant||[];
-  if(p.cant.includes(n)){$("tmsg").textContent=n+" is already in the can't play list.";return}
-  const moved=(p.pool||[]).includes(n);
-  p.cant.push(n);
-  if(moved)p.pool=p.pool.filter(x=>x!==n);
-  await scPersist(t);$("tmsg").textContent=moved?"Moved from the tier list to can't play.":"Added to can't play.";$("tc").value="";render();
+function tierGrid(){
+  const x=tierP(),g=$("tgrid");
+  if(!x){g.innerHTML="";return}
+  const r=x.role||derivedRole(x),q=$("tq").value.trim().toLowerCase(),pool=x.pool||[],cant=x.cant||[];
+  const list=D.filter(c=>(tAll||!r||c.r.includes(r))&&(!q||c.n.toLowerCase().includes(q))).map(c=>c.n).sort((a,b)=>{const ia=pool.indexOf(a),ib=pool.indexOf(b);return(ia<0)-(ib<0)||ia-ib||a.localeCompare(b)});
+  $("tchint").innerHTML=r?`${tAll?"All champions":"Only "+RN[r]+" champions"} are shown for ${esc(x.name)}. <button class="lnk" id="tall" type="button">${tAll?"Show "+RN[r]+" only":"Show all"}</button>`:"";
+  g.innerHTML=list.length?list.map(n=>{const i=pool.indexOf(n),no=cant.includes(n);return`<button class="tgc${i>=0?" in":""}${no?" no":""}" data-tpk="${esc(n)}" aria-pressed="${i>=0||no}" title="${esc(n)}${i>=0?" · #"+(i+1)+" in the tier list":no?" · can't play":""}">${tIco(n)}<span>${esc(n)}</span>${i>=0?`<em>${i+1}</em>`:no?`<em>✕</em>`:""}</button>`}).join(""):`<p class="note">No champion matches.</p>`;
+}
+async function tierTap(n){
+  const t=curTeam(),p=tierP();
+  if(!p||!BY[n])return;
+  p.pool=p.pool||[];p.cant=p.cant||[];
+  const inP=p.pool.includes(n),inC=p.cant.includes(n);let m;
+  if(tMode==="pool"){
+    if(inP){p.pool=p.pool.filter(x=>x!==n);m=n+" taken out of the tier list."}
+    else{p.pool.push(n);p.cant=p.cant.filter(x=>x!==n);m=inC?n+" moved from can't play to the tier list.":n+" added as #"+p.pool.length+"."}
+  }else{
+    if(inC){p.cant=p.cant.filter(x=>x!==n);m=n+" taken out of can't play."}
+    else{p.cant.push(n);p.pool=p.pool.filter(x=>x!==n);m=inP?n+" moved from the tier list to can't play.":n+" added to can't play."}
+  }
+  await scPersist(t);render();$("tmsg").textContent=m;
 }
 async function cantRm(v){
   const[id,n]=v.split("|"),t=curTeam(),p=t&&t.data.find(x=>x.id===id);
