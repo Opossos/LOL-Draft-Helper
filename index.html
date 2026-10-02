@@ -892,8 +892,19 @@ function analyse(names,fixed){
 }
 const ORDER=["bb","rb","bb","rb","bb","rb","bp","rp","rp","bp","bp","rp","rb","bb","rb","bb","rp","bp","bp","rp"];
 const SN={bb:"Blue ban",rb:"Red ban",bp:"Blue pick",rp:"Red pick"};
-const OPEN={},op=k=>OPEN[k]===false?"":"open";
-document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.k)OPEN[d.dataset.k]=d.open},true);
+// open or closed state of every card and section, kept in this browser across reloads
+const OPEN=(()=>{try{const o=JSON.parse(localStorage.getItem("lolOpen")||"{}");return o&&typeof o==="object"?o:{}}catch(e){return{}}})(),op=k=>OPEN[k]===false?"":"open";
+let openT=0;
+document.addEventListener("toggle",e=>{
+  const d=e.target;if(!d||!d.dataset||!d.dataset.k||OPEN[d.dataset.k]===d.open)return;
+  OPEN[d.dataset.k]=d.open;clearTimeout(openT);
+  openT=setTimeout(()=>{try{localStorage.setItem("lolOpen",JSON.stringify(OPEN))}catch(e){}},300);
+},true);
+// fixed sections in the page get a key from their id or heading and start as they were left
+document.querySelectorAll("details:not([data-k])").forEach(d=>{
+  const h=d.querySelector(":scope>summary"),k=d.id||(h?"s:"+h.textContent.trim().slice(0,40):"");
+  if(!k)return;d.dataset.k=k;if(typeof OPEN[k]==="boolean")d.open=OPEN[k];
+});
 function stepNow(){
   const c={bb:st.bb.length,rb:st.rb.length,bp:st.bp.length,rp:st.rp.length};
   for(let i=0;i<ORDER.length;i++){const k=ORDER[i];if(c[k]>0)c[k]--;else return i}
