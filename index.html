@@ -346,7 +346,9 @@ summary{cursor:pointer;color:var(--mute)}
 .plp .chip{font-size:13px}
 .plp .chip.dim{opacity:.55;text-decoration:line-through}
 .pc .pn b{color:var(--ink)}
+.pc>summary .pn{flex:1 1 0;min-width:0}
 .pacts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.pacts .prole{width:auto;margin:0;padding:5px 8px;font-size:14px}
 .pacts .btn{display:inline-flex;align-items:center;padding:5px 12px;font-size:14px}
 .pacts .rm:hover{border-color:var(--red);color:var(--red)}
 .chip.sc{display:inline-flex;align-items:center;font-size:14px;padding:3px 10px;line-height:1.4}
@@ -1240,6 +1242,7 @@ combo("cq");combo("na",1);combo("nb",1);combo("fz",1);combo("ec");
 $("ec").addEventListener("change",()=>{$("emsg").textContent="";editForm()});
 $("nsearch").addEventListener("input",e=>{nq=e.target.value;notes()});
 $("dnq").addEventListener("input",defView);
+document.addEventListener("change",e=>{const s=e.target.closest&&e.target.closest("select[data-prole]");if(s)playerRole(s.dataset.prole,s.value)});
 $("plsrc").addEventListener("input",()=>{const v=$("plsrc").value.trim();PLR=v?plParse(v):null;plPrev()});
 combo("sc");combo("tc",0,tierOk);
 $("tsel").addEventListener("change",()=>{tSel=$("tsel").value;$("tc").value="";$("tmsg").textContent="";tierView()});
@@ -1730,10 +1733,10 @@ async function plImport(){
   let t=curTeam();
   if(!t||t.id===MYID){t={id:uid(),name:PLR.team||"Team "+(SC.length+1),data:[]};SC.push(t);scId=t.id}
   const known=plKnown(),add=PLR.players.filter(x=>x.ok&&!known.has(x.riot.toLowerCase()));
-  add.forEach(x=>t.data.push({id:uid(),name:x.riot,region:x.region,role:"",champs:[],active:true}));
+  add.forEach(x=>t.data.push({id:uid(),name:x.riot,region:x.region,role:"",champs:[],active:false}));
   if(!t.pl&&PLR.link&&(plOK||!SB.url))t.pl=PLR.link;
   PLR=null;$("plsrc").value="";$("plprev").innerHTML="";
-  await scPersist(t);scmsg("Added "+add.length+" player"+(add.length===1?"":"s")+" to "+t.name+". Use the Riot import to read their champions.");render();
+  await scPersist(t);scmsg("Added "+add.length+" player"+(add.length===1?"":"s")+" to "+t.name+" on the bench. Set their roles, mark who plays, and use the Riot import to read their champions.");render();
 }
 async function scNew(){
   const t={id:uid(),name:$("scn").value.trim()||"Team "+(SC.length+1),data:[]};
@@ -1767,6 +1770,14 @@ async function scAddProfile(){
 function lineupHtml(P){
   const act=actOf(P);
   return P.length?`<div class="nl" style="margin:6px 0 2px">Active lineup</div><div class="lineup">${RO.map(r=>{const a=act.filter(x=>(x.role||derivedRole(x))===r);return`<span class="lu${a.length?"":" none"}"><small>${ri(r)}${rt(r)}</small><b>${a.length?esc(a.map(x=>x.name).join(", ")):"\u2013"}</b></span>`}).join("")}</div>`:"";
+}
+async function playerRole(id,r){
+  const t=curTeam(),p=t&&t.data.find(x=>x.id===id);
+  if(!p)return;
+  p.role=RO.includes(r)?r:"";
+  // only one active player per role; a newly set role moves an active duplicate to the bench
+  if(p.active&&p.role)t.data.forEach(x=>{if(x.id!==id&&x.active&&(x.role||derivedRole(x))===p.role)x.active=false});
+  await scPersist(t);render();
 }
 async function playerActive(id){
   const t=curTeam(),p=t&&t.data.find(x=>x.id===id);
@@ -1927,7 +1938,7 @@ function profCard(p){
   const pills=tg?`<span class="pill">${tg} games</span><span class="pill w ${wc(wr)}">${wr.toFixed(1)}% WR</span><span class="pill">${kda.toFixed(2)} KDA</span>`:"";
   const tiles=rows.map(c=>`<div class="pt"><button class="lnk" data-ped="${key}|${esc(c.n)}">${icon(c.n)}${esc(c.n)}</button><div class="pts"><span class="w ${wc(c.wr)}">${c.wr}%</span><span>${c.g} games</span><span>${c.kda} KDA</span></div><button class="x" data-pcx="${key}|${esc(c.n)}" aria-label="Remove ${esc(c.n)}">\u00d7</button></div>`).join("");
   const body=(my?`<div class="nl">Imported stats</div>`:"")+(rows.length?`<div class="pgrid">${tiles}</div>`:`<p class="note">${my?"No imported stats yet. Use the paste or Riot import above.":"No champions yet. Add the champions this player plays."}</p>`);
-  return`<details class="ng pc" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><span class="pn"><b>${esc(p.name)}</b> ${role?`<span class="tag">${ri(role)}${rt(role)}</span>`:""} <span class="tag">${isAct?"Active":"Bench"}</span></span><span class="pills">${pills}</span></summary>${body}<div class="pacts"><button class="actb${isAct?" on":""}" data-pact="${key}" aria-pressed="${isAct}">${isAct?"\u2605 Active":"Bench"}</button>${link?`<a class="btn" href="${link}" target="_blank" rel="noopener">op.gg</a>`:""}<button class="btn rm" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></div></details>`;
+  return`<details class="ng pc" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><span class="pn"><b>${esc(p.name)}</b> ${role?`<span class="tag">${ri(role)}${rt(role)}</span>`:""} <span class="tag">${isAct?"Active":"Bench"}</span></span><span class="pills">${pills}</span></summary>${body}<div class="pacts"><select class="prole" data-prole="${key}" aria-label="Role of ${esc(p.name)}"><option value="">${!p.role&&role?"Auto ("+RN[role]+")":"Role: auto"}</option>${RO.map(r=>`<option value="${r}"${p.role===r?" selected":""}>${RN[r]}</option>`).join("")}</select><button class="actb${isAct?" on":""}" data-pact="${key}" aria-pressed="${isAct}">${isAct?"\u2605 Active":"Bench"}</button>${link?`<a class="btn" href="${link}" target="_blank" rel="noopener">op.gg</a>`:""}<button class="btn rm" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></div></details>`;
 }
 const synAdj=(L=A().syn)=>{const a={};L.forEach(([x,y])=>{(a[x]=a[x]||new Set()).add(y);(a[y]=a[y]||new Set()).add(x)});return a};
 function maxCl(adj,nodes){
