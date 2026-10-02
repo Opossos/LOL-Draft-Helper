@@ -1922,9 +1922,9 @@ function plParseGroup(d){
   return{kind:"group",title:h1?h1.textContent.trim():"",teams,ms,season:plSeason(d)};
 }
 // which side of a match page is the scouted team: saved link, then known players, then name
-function plSide(t,M){
+function plSide(t,M,xt){
   if(!t||t.id===MYID)return -1;
-  const tid=plTid(t.pl),ids=new Set(t.data.map(plKey)),n=t.name.toLowerCase();
+  const tid=plTid(t.pl)||xt,ids=new Set(t.data.map(plKey)),n=t.name.toLowerCase();
   const v=M.sides.map((s,k)=>(tid&&s.tid===tid?1000:0)+(s.name.toLowerCase()===n||s.short.toLowerCase()===n?100:0)+M.games.reduce((a,g)=>a+g[k].ps.filter(p=>ids.has(p.r.toLowerCase())).length,0));
   return v[0]===v[1]?-1:v[0]>v[1]?0:1;
 }
@@ -2040,7 +2040,7 @@ function plBm(){
   };
   var splits=function(d,o){
     d.querySelectorAll('a[href*="/teams/'+tid+'"]').forEach(function(a){
-      var m=/^(.*\/leagues\/[a-z0-9-]+\/(\d+)-[^/?#]+)\/teams\/\d+[^/?#]*/.exec(abs(a.getAttribute("href")));
+      var m=/^(.*\/leagues\/prm\/(\d+)-[^/?#]+)\/teams\/\d+[^/?#]*/.exec(abs(a.getAttribute("href")));
       if(m&&!o.has(m[2]))o.set(m[2],{id:m[2],base:m[1],team:m[0]});
     });
   };
@@ -2052,11 +2052,11 @@ function plBm(){
     if(gu){var dg=await get(gu);if(dg)splits(dg,S)}
     var top=Array.from(S.values()).sort(function(a,b){return b.id-a.id}).slice(0,3);
     if(!top.length)throw new Error("No split found. Open the team's page of the current split.");
-    var users=new Set(),ms=new Set();
+    var users=new Set(),ms=new Set(),withMs=0;
     for(var i=0;i<top.length;i++){
       var d=await get(top[i].team);if(!d)continue;top[i].ok=1;
       if(i===0)d.querySelectorAll('.content-portrait-grid-l a[href*="/users/"]').forEach(function(a){var m=/\/users\/(\d+-[^/?#]+)/.exec(a.getAttribute("href"));if(m)users.add(m[1])});
-      if(i<2)d.querySelectorAll('a[href*="/leagues/matches/"]').forEach(function(a){var tr=a.closest("tr");if(tr&&Array.from(tr.querySelectorAll("td")).some(function(td){return/^\s*\d+\s*:\s*\d+\s*$/.test(td.textContent)}))ms.add(abs(a.getAttribute("href")))});
+      if(withMs<2){var n0=ms.size;d.querySelectorAll('a[href*="/leagues/matches/"]').forEach(function(a){var tr=a.closest("tr");if(tr&&Array.from(tr.querySelectorAll("td")).some(function(td){return/^\s*\d+\s*:\s*\d+\s*$/.test(td.textContent)}))ms.add(abs(a.getAttribute("href")))});if(ms.size>n0)withMs++}
     }
     for(var s of top)if(s.ok)for(var u of users)await get(s.base+"/users/"+u);
     for(var m of ms)await get(m);
@@ -2098,7 +2098,7 @@ async function plRun(t,start,get){
   const splitLinks=d=>{
     const o=new Map();if(!d||!tid)return o;
     d.querySelectorAll('a[href*="/teams/'+tid+'"]').forEach(a=>{
-      const m=/^(.*\/leagues\/[a-z0-9-]+\/(\d+)-[^/?#]+)\/teams\/\d+[^/?#]*/.exec(a.getAttribute("href"));
+      const m=/^(.*\/leagues\/prm\/(\d+)-[^/?#]+)\/teams\/\d+[^/?#]*/.exec(a.getAttribute("href"));
       if(m&&!o.has(m[2]))o.set(m[2],{id:m[2],base:m[1],team:m[0]});
     });
     return o;
@@ -2123,7 +2123,7 @@ async function plRun(t,start,get){
         if(p){if(x.u&&!p.plu)p.plu=x.u}
         else if(i===0&&x.ok){t.data.push({id:uid(),name:x.riot,region:x.region,role:"",champs:[],active:false,...(x.u?{plu:x.u}:{})});added++}
       });
-      if(i<2)T.ms.filter(m=>m.played).forEach(m=>{if(!ms.has(m.id))ms.set(m.id,m)});
+      T.ms.filter(m=>m.played).forEach(m=>{if(!ms.has(m.id))ms.set(m.id,m)});
     }
     const got=top.filter(S=>S.ok);
     if(!got.length)throw new Error("The team pages are missing.");
@@ -2135,15 +2135,16 @@ async function plRun(t,start,get){
     }
     // played matches that are not imported yet: bans, comps, roles
     const have=new Set((t.matches||[]).filter(x=>!x.stub&&x.season&&(x.games||[]).every(g=>g.ops)).map(x=>x.id));
+    let miss=0;
     for(const m of ms.values()){
       if(have.has(m.id))continue;
-      const d=await get(m.url);if(!d)continue;
+      const d=await get(m.url);if(!d){miss++;continue}
       const M=plParseDoc(d);if(M.kind!=="match"||!M.games.length)continue;
-      const k=plSide(t,M);if(k<0)continue;
+      const k=plSide(t,M,tid);if(k<0)continue;
       const r=plApply(t,M,k);newM++;roled+=r.roled;former+=r.added;
     }
     PLC=null;await scPersist(t);
-    scmsg(`Updated ${t.name} from ${got.map(x=>x.name).join(", ")}: ${pages} player split${pages===1?"":"s"}, ${newM} new match${newM===1?"":"es"}`+(added?`, ${added} new player${added>1?"s":""} on the bench`:"")+(former?`, ${former} former player${former>1?"s":""}`:"")+(roled?`, ${roled} role${roled>1?"s":""} set`:"")+".");
+    scmsg(`Updated ${t.name} from ${got.map(x=>x.name).join(", ")}: ${pages} player split${pages===1?"":"s"}, ${newM} new match${newM===1?"":"es"}`+(added?`, ${added} new player${added>1?"s":""} on the bench`:"")+(former?`, ${former} former player${former>1?"s":""}`:"")+(roled?`, ${roled} role${roled>1?"s":""} set`:"")+"."+(miss?` ${miss} played match${miss>1?"es were":" was"} not in the paste. Drag the new "PL scout" link to your bookmarks again and run it once more.`:""));
   }catch(e){scmsg("Prime League import stopped: "+(e&&e.message||e))}
   render();
 }
