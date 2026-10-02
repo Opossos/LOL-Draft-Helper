@@ -20,6 +20,7 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 :root[data-theme="dark"]{--bg:#091322;--panel:#0F1D33;--ink:#EAE6DA;--mute:#8C9AB0;--line:#24344F;--gold:#D2B26C;--blue:#5A9BFF;--red:#F0685E;--ok:#2FD1C4;--ad:#E8993A;--ap:#9C78EE;--chip:#182843}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 Barlow,system-ui,-apple-system,"Segoe UI",sans-serif}
 main{max-width:1440px;margin:0 auto;padding:14px 12px 40px}
 h1{font:700 26px/1.1 "Barlow Condensed","Arial Narrow",sans-serif;margin:4px 0 2px;color:var(--gold);letter-spacing:.3px}
@@ -475,6 +476,7 @@ body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
 <div class="rf" id="stabs" role="group" aria-label="Team view"></div>
 <details class="card tools" open id="sctc"><summary><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg><h2 id="tth">Team</h2></summary>
 <div class="tbar" id="tbar" role="group" aria-label="Scouted teams"></div>
+<div class="bar" id="plrow" hidden><input id="plu" type="url" inputmode="url" placeholder="Prime League team link" aria-label="Prime League team link"><button class="btn" id="plsave" type="button">Save link</button><a class="btn" id="plopen" target="_blank" rel="noopener" hidden>Open on Prime League</a></div>
 <form class="bar" id="tf" hidden><input id="scn" type="text" placeholder="Team name" aria-label="Team name"><button class="btn" id="tok" type="submit">Create</button><button class="btn" id="tcancel" type="button">Cancel</button></form>
 <p class="note" id="scmode" style="margin:0"></p>
 </details>
@@ -1025,7 +1027,7 @@ function enemyView(){
   const ek=me==="b"?"rp":"bp",i=stepNow(),cur=i<20?ORDER[i]:"",j=ORDER.findIndex((x,ix)=>ix>=i&&x===ek);
   const turn=cur===ek?"The enemy is picking now.":j>=0?`The enemy picks next at step ${j+1}, after ${j-i} more actions.`:"The enemy has no picks left.";
   const sc=(x)=>`<span class="lu${pm.has(x.id)?" got":""}"><small>${ri(role(x))}${rt(role(x))}</small><b>${esc(x.name)}</b>${pm.has(x.id)?`<small>${esc(pm.get(x.id))}</small>`:`<small>?</small>`}</span>`;
-  h+=`<details class="card" data-k="en-line" ${op("en-line")}><summary>${ic("users")}<h2>Enemy lineup</h2></summary><p class="note" style="margin:0 0 4px">${turn}</p><div class="epl">${roster.map(sc).join("")}</div></details>`;
+  h+=`<details class="card" data-k="en-line" ${op("en-line")}><summary>${ic("users")}<h2>Enemy lineup</h2></summary>${t.pl?`<p style="margin:0 0 6px"><a class="btn" href="${esc(t.pl)}" target="_blank" rel="noopener">Open ${esc(t.name)} on Prime League</a></p>`:""}<p class="note" style="margin:0 0 4px">${turn}</p><div class="epl">${roster.map(sc).join("")}</div></details>`;
   const pill=c=>`${c.g?c.g+" games":""}${c.wr?(c.g?" \u00b7 ":"")+c.wr+"% WR":""}`;
   // what each free player might pick
   const likely=free.map(x=>({x,top:x.champs.filter(c=>BY[c.n]&&!u.has(c.n)).sort((a,b)=>b.g-a.g||b.wr-a.wr).slice(0,5)}));
@@ -1133,6 +1135,7 @@ document.addEventListener("click",e=>{
   else if(b.dataset.tren){const t=curTeam();tform="rename";$("scn").value=t?t.name:"";setTimeout(()=>$("scn").focus(),0)}
   else if(b.dataset.tdel){scDel();return}
   else if(b.id==="tcancel"){tform=""}
+  else if(b.id==="plsave"){plSave();return}
   else if(b.id==="padd"){scAddProfile();return}
   else if(b.id==="pcadd"){scAddChamp();return}
   else if(b.id==="pimp"){scImport();return}
@@ -1321,7 +1324,44 @@ const DEFSRC=[
 ["counter","Teemo,Nasus","Range and blind stop Nasus from stacking"],
 ["counter","Darius,Nasus","Early pressure before Nasus scales"],
 ["counter","Malzahar,Kassadin","Suppression against a slippery mage"],
-["counter","Malzahar,Katarina","Suppression stops her ult"]
+["counter","Malzahar,Katarina","Suppression stops her ult"],
+["combo","Jarvan IV,Orianna,Miss Fortune","Cage, then Shockwave and Bullet Time on a trapped team"],
+["combo","Amumu,Orianna,Kennen","Overlapping area ults in one teamfight"],
+["combo","Nocturne,Shen,Galio","Long-range dive: Nocturne's ult, then Shen and Galio follow"],
+["pair","Lee Sin,Yasuo","Lee Sin's kick knocks up for Yasuo's ult"],
+["pair","Zac,Orianna","Ball on Zac's jump"],
+["pair","Galio,Nocturne","Galio flies in after Nocturne's dive"],
+["pair","Shen,Nocturne","Shen's ult follows Nocturne's dive"],
+["pair","Caitlyn,Lux","Traps on rooted targets for easy headshots"],
+["pair","Caitlyn,Morgana","Traps on rooted targets for easy headshots"],
+["pair","Karma,Ezreal","Long-range poke lane"],
+["pair","Milio,Jinx","Milio's range and cleanse keep Jinx shooting"],
+["pair","Draven,Leona","Hard engage for an early lane bully"],
+["pair","Kai'Sa,Rell","Rell's crowd control sets up Kai'Sa's ult"],
+["pair","Jinx,Lulu","Lulu protects and speeds up Jinx"],
+["counter","Morgana,Leona","Black Shield blocks her engage"],
+["counter","Morgana,Rell","Black Shield blocks her engage"],
+["counter","Morgana,Alistar","Black Shield blocks his combo"],
+["counter","Poppy,Irelia","Poppy's W stops dashes"],
+["counter","Vex,Irelia","Vex punishes dashes"],
+["counter","Galio,Akali","Galio shrugs off magic damage and stops her with his taunt"],
+["counter","Galio,Katarina","Galio shrugs off magic damage and stops her ult"],
+["counter","Galio,LeBlanc","Galio shrugs off magic damage from burst mages"],
+["counter","Galio,Fizz","Galio shrugs off magic damage from burst mages"],
+["counter","Lissandra,Katarina","Hard crowd control stops her ult"],
+["counter","Lissandra,Akali","Self-ult and root against the assassin"],
+["counter","Annie,Katarina","Point-click stun stops her ult"],
+["counter","Malzahar,Master Yi","Suppression stops him mid-fight"],
+["counter","Vayne,Cho'Gath","Silver Bolts shred tanks"],
+["counter","Vayne,Sion","Silver Bolts shred tanks"],
+["counter","Vayne,Ornn","Silver Bolts shred tanks"],
+["counter","Teemo,Garen","Range and blind beat a melee bruiser in lane"],
+["counter","Quinn,Garen","Range beats a melee bruiser in lane"],
+["counter","Darius,Kayle","Early pressure before Kayle scales"],
+["counter","Renekton,Kayle","Early pressure before Kayle scales"],
+["counter","Zed,Xerath","Assassin against an immobile mage"],
+["counter","Zed,Vel'Koz","Assassin against an immobile mage"],
+["counter","Fizz,Xerath","Fizz dodges the skillshots and dives the immobile mage"]
 ];
 const dslug=x=>x.replace(/[^A-Za-z0-9]+/g,"");
 const DEF=DEFSRC.map(([t,c,why])=>{const C=c.split(",");return{t,C,why,id:{combo:"t",pair:"p",counter:"k"}[t]+"-"+C.map(dslug).join("-")}}).filter(d=>d.C.every(n=>BY[n]));
@@ -1569,7 +1609,7 @@ function watchShared(){
     REL=R;RID=I;OFF=O;render();
   },()=>{shared=null;REL=LOC;RID={syn:[],weak:[],strong:[]};setMode();render()});
 }
-let SC=[],scId="",scSel="",scOK=false,scMode="my";
+let SC=[],scId="",scSel="",scOK=false,plOK=false,scMode="my";
 try{const a=JSON.parse(localStorage.getItem("lolScouts")||"[]");if(Array.isArray(a))SC=a.filter(t=>t&&typeof t.id==="string"&&Array.isArray(t.data))}catch(e){}
 const MYID="my-team";
 function ensureMy(){
@@ -1592,18 +1632,32 @@ function scLocal(){try{localStorage.setItem("lolScouts",JSON.stringify(SC))}catc
 function scmsg(t){$("scmsg").textContent=t}
 async function loadScouts(){
   try{
-    const r=await sbf("scouts?select=id,name,data&order=name");
+    // the pl column (Prime League link) is optional; without it everything else still loads
+    let r=await sbf("scouts?select=id,name,data,pl&order=name");
+    if(r.ok)plOK=true;else{plOK=false;r=await sbf("scouts?select=id,name,data&order=name")}
     if(!r.ok){scOK=false;return}
     scOK=true;
-    SC=(await r.json()).filter(x=>x&&typeof x.id==="string"&&Array.isArray(x.data)).map(x=>({id:x.id,name:String(x.name||"Team"),data:x.data}));
+    SC=(await r.json()).filter(x=>x&&typeof x.id==="string"&&Array.isArray(x.data)).map(x=>({id:x.id,name:String(x.name||"Team"),data:x.data,pl:typeof x.pl==="string"?x.pl:""}));
     ensureMy();SC.sort((a,b)=>(b.id===MYID)-(a.id===MYID));fixSel();
   }catch(e){scOK=false}
 }
 async function scSave(t){
-  if(sb&&scOK){await sbx("scouts",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({id:t.id,name:t.name,data:t.data})});return}
+  if(sb&&scOK){await sbx("scouts",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({id:t.id,name:t.name,data:t.data,...(plOK?{pl:t.pl||""}:{})})});return}
   scLocal();
 }
 async function scPersist(t){try{await scSave(t)}catch(e){scmsg(errText(e))}}
+const plLink=v=>{try{const u=new URL(v);return u.protocol==="https:"&&/(^|\.)primeleague\.gg$/.test(u.hostname)?u.href:""}catch(e){return""}};
+async function plSave(){
+  const t=curTeam(),v=$("plu").value.trim();
+  if(!t||t.id===MYID)return;
+  const link=v?plLink(v):"";
+  if(v&&!link){scmsg("Paste a link to a team page on primeleague.gg.");return}
+  if(SB.url&&!(sb&&scOK)){scmsg("Could not reach the shared teams, so the link was not saved. Try again later.");return}
+  if(sb&&!plOK){scmsg("The link was not saved. The scouts table in Supabase needs a column for it. Run this in the Supabase SQL editor: alter table scouts add column pl text;");return}
+  const old=t.pl;t.pl=link;
+  try{await scSave(t);scmsg(link?"Link saved.":"Link removed.")}catch(e){t.pl=old;scmsg("Could not save the link. Please try again.")}
+  render();
+}
 async function scNew(){
   const t={id:uid(),name:$("scn").value.trim()||"Team "+(SC.length+1),data:[]};
   SC.push(t);scId=t.id;await scPersist(t);render();
@@ -1898,6 +1952,8 @@ function scView(){
   if(!P.length)$("apc").open=true;$("sctc").hidden=my;
   $("tbar").innerHTML=list.map(x=>{const on=x.id===scId;return`<span class="tchip${on?" on":""}"><button class="tn" data-tsel="${esc(x.id)}" aria-pressed="${on}" title="${esc(x.name)}">${esc(x.name)}</button>${on?`<button class="ti" data-tren="1" aria-label="Rename team">\u270E</button><button class="ti" data-tdel="1" aria-label="Delete team">\u00d7</button>`:""}</span>`}).join("")+`<button class="tchip add" data-tnew="1">+ New team</button>`;
   $("tth").textContent=!my&&t?"Team: "+t.name:"Team";
+  $("plrow").hidden=my||!t;
+  if(t&&!my){if(document.activeElement!==$("plu"))$("plu").value=t.pl||"";$("plopen").hidden=!t.pl;if(t.pl)$("plopen").href=t.pl}
   $("tf").hidden=!tform;$("tok").textContent=tform==="rename"?"Save":"Create";
   $("scmode").textContent=sb&&scOK?"Teams are saved in the shared database.":"Teams are saved in this browser only. Create the scouts table in Supabase to share them.";
   if(!P.find(p=>p.id===scSel))scSel=P[0]?P[0].id:"";
