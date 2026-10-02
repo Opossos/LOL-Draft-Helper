@@ -351,6 +351,16 @@ summary{cursor:pointer;color:var(--mute)}
 .plp{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .plp .chip{font-size:13px}
 .plp .chip.dim{opacity:.55;text-decoration:line-through}
+.plm{display:flex;flex-direction:column;gap:4px;margin:4px 0 8px}
+.plm>div{display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-size:13px}
+.plm>div.miss{border-style:dashed;color:var(--mute)}
+.plm .mi{flex:1;min-width:0;display:flex;flex-direction:column}
+.plm .mi small{color:var(--mute);font-size:12px}
+.plm b{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plm .x{border:0;background:none;color:var(--mute);font-size:16px;padding:0 4px;cursor:pointer}
+.plm a{font-size:12px}
+.plchoose{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.pt.plt{padding-right:8px}
 .pc .pn b{color:var(--ink)}
 .pc>summary .pn{flex:1 1 0;min-width:0}
 .pacts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
@@ -507,8 +517,8 @@ body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
 <p class="note" id="tempty" hidden>No scouted team yet. Create one with "+ New team" or import it from Prime League below.</p>
 <div class="plsec"><div class="nl">Prime League</div>
 <div class="bar" id="plrow"><input id="plu" type="url" inputmode="url" placeholder="Prime League team link" aria-label="Prime League team link"><button class="btn" id="plsave" type="button">Save link</button><a class="btn" id="plopen" target="_blank" rel="noopener" hidden>Open on Prime League</a></div>
-<details id="plimp"><summary>Import players from the team page</summary>
-<p class="note" style="margin:6px 0">Open the team's page on primeleague.gg, show the page source (Ctrl+U), select all (Ctrl+A), copy (Ctrl+C) and paste it here. Only confirmed players are added.</p>
+<details id="plimp"><summary>Import from a Prime League page</summary>
+<p class="note" style="margin:6px 0">Open a page on primeleague.gg, show the page source (Ctrl+U), select all (Ctrl+A), copy (Ctrl+C) and paste it here. The team page adds confirmed players, a match page adds the champions and bans they played, and the group page lists the team's matches so you can see which are still missing.</p>
 <textarea id="plsrc" aria-label="Prime League page source" placeholder="Paste the page source here"></textarea>
 <div id="plprev"></div>
 </details>
@@ -553,6 +563,7 @@ body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
 </details>
 <div id="msrow" style="margin:6px 0"></div>
 <div id="sclu"></div>
+<div id="scpl"></div>
 <div id="scp"></div>
 <div id="sca"></div></aside>
 <script>
@@ -1054,7 +1065,7 @@ function enemyView(){
   const usedP=new Set(),pm=new Map();
   foe.forEach(n=>{
     const b=BY[n];if(!b)return;
-    const ok=x=>!usedP.has(x.id),has=x=>x.champs.some(c=>c.n===n);
+    const ok=x=>!usedP.has(x.id),has=x=>enC(x).some(c=>c.n===n);
     const f=roster.find(x=>ok(x)&&has(x)&&b.r.includes(role(x)))||roster.find(x=>ok(x)&&has(x))||roster.find(x=>ok(x)&&b.r.includes(role(x)));
     if(f){usedP.add(f.id);pm.set(f.id,n)}
   });
@@ -1062,19 +1073,21 @@ function enemyView(){
   const ek=me==="b"?"rp":"bp",i=stepNow(),cur=i<20?ORDER[i]:"",j=ORDER.findIndex((x,ix)=>ix>=i&&x===ek);
   const turn=cur===ek?"The enemy is picking now.":j>=0?`The enemy picks next at step ${j+1}, after ${j-i} more actions.`:"The enemy has no picks left.";
   const sc=(x)=>`<span class="lu${pm.has(x.id)?" got":""}"><small>${ri(role(x))}${rt(role(x))}</small><b>${esc(x.name)}</b>${pm.has(x.id)?`<small>${esc(pm.get(x.id))}</small>`:`<small>?</small>`}</span>`;
-  h+=`<details class="card" data-k="en-line" ${op("en-line")}><summary>${ic("users")}<h2>Enemy lineup</h2></summary>${t.pl?`<p style="margin:0 0 6px"><a class="btn" href="${esc(t.pl)}" target="_blank" rel="noopener">Open ${esc(t.name)} on Prime League</a></p>`:""}<p class="note" style="margin:0 0 4px">${turn}</p><div class="epl">${roster.map(sc).join("")}</div></details>`;
-  const pill=c=>`${c.g?c.g+" games":""}${c.wr?(c.g?" \u00b7 ":"")+c.wr+"% WR":""}`;
+  const PB=plBans(t);
+  h+=`<details class="card" data-k="en-line" ${op("en-line")}><summary>${ic("users")}<h2>Enemy lineup</h2></summary>${t.pl?`<p style="margin:0 0 6px"><a class="btn" href="${esc(t.pl)}" target="_blank" rel="noopener">Open ${esc(t.name)} on Prime League</a></p>`:""}<p class="note" style="margin:0 0 4px">${turn}</p><div class="epl">${roster.map(sc).join("")}</div>${PB.n?`<div class="nl" style="margin:8px 0 2px">They usually ban (${PB.n} Prime League game${PB.n>1?"s":""})</div>${plBanChips(PB.own.slice(0,5))}`:""}</details>`;
+  const pill=c=>[c.plg?c.plg+" PL game"+(c.plg>1?"s":""):"",c.g?c.g+" games":"",c.wr?c.wr+"% WR":""].filter(Boolean).join(" \u00b7 ");
   // what each free player might pick
-  const likely=free.map(x=>({x,top:x.champs.filter(c=>BY[c.n]&&!u.has(c.n)).sort((a,b)=>b.g-a.g||b.wr-a.wr).slice(0,5)}));
+  // Prime League games weigh more than ranked games
+  const likely=free.map(x=>({x,top:enC(x).filter(c=>BY[c.n]&&!u.has(c.n)).sort((a,b)=>(b.plg*20+b.g)-(a.plg*20+a.g)||b.wr-a.wr).slice(0,5)}));
   h+=`<details class="card" data-k="en-pick" ${op("en-pick")}><summary>${ic("eye")}<h2>What they might pick</h2></summary>`;
   h+=likely.length?likely.map(o=>`<div class="epr"><div class="eph"><b>${esc(o.x.name)}</b><span class="tag">${ri(role(o.x))}${rt(role(o.x))}</span></div>${o.top.length?`<div class="cptiles">${o.top.map(c=>`<button class="mem sm weak" data-ban="${esc(c.n)}" title="Ban ${esc(c.n)}">${icon(c.n)}<span><b>${esc(c.n)}</b><small>${pill(c)}</small></span></button>`).join("")}</div>`:`<p class="note" style="margin:0">No available champions saved for this player. Import their stats in Teams, then Scout.</p>`}</div>`).join("")+`<p class="note">Their most played champions that are still available. Tap one to ban it, or right-click for more options.</p>`:`<p class="note">All enemy players have picked a champion.</p>`;
   h+=`</details>`;
   // what we should ban
   const cand=new Map();
-  free.forEach(x=>x.champs.forEach(c=>{
+  free.forEach(x=>enC(x).forEach(c=>{
     if(!BY[c.n]||u.has(c.n))return;
-    let s2=Math.min(4,Math.max(0,c.g)/15)+(c.wr>=55?1:c.wr&&c.wr<45?-.5:0);
-    const why=[`${x.name} (${RN[role(x)]}) plays it${c.g||c.wr?" ("+pill(c)+")":""}`];
+    let s2=Math.min(4,Math.max(0,c.g)/15)+(c.wr>=55?1:c.wr&&c.wr<45?-.5:0)+Math.min(4,c.plg*1.5);
+    const why=[`${x.name} (${RN[role(x)]}) plays it${c.g||c.wr||c.plg?" ("+pill(c)+")":""}`];
     const hit=[...mine,...mk.pre.filter(m=>!mine.includes(m))].filter(m=>strongOf(c.n).includes(m));
     if(hit.length){s2+=3*hit.length;why.push("counters your "+hit.join(", "))}
     const syn=synOf(c.n).filter(y=>foe.includes(y));
@@ -1083,7 +1096,7 @@ function enemyView(){
   }));
   const bans=[...cand.values()].sort((a,b)=>b.s-a.s||a.n.localeCompare(b.n)).slice(0,8);
   h+=`<details class="card" data-k="en-ban" ${op("en-ban")}><summary>${ic("ban")}<h2>Bans against them</h2></summary>`;
-  h+=bans.length?`<div class="sg">${bans.map(o=>`<button data-ban="${esc(o.n)}"><span>${esc(o.n)}</span><em>${esc(o.why.join(", "))}</em></button>`).join("")}</div><p class="note">Ranked by how much they play it, whether it counters your picks, and whether it fits their picks. Tap to add it to your bans.</p>`:`<p class="note">Nothing to ban yet. Add champions to their profiles.</p>`;
+  h+=bans.length?`<div class="sg">${bans.map(o=>`<button data-ban="${esc(o.n)}"><span>${esc(o.n)}</span><em>${esc(o.why.join(", "))}</em></button>`).join("")}</div><p class="note">Ranked by how much they play it (Prime League games count more), whether it counters your picks, and whether it fits their picks. Tap to add it to your bans.</p>`:`<p class="note">Nothing to ban yet. Add champions to their profiles.</p>`;
   h+=`</details>`;
   // combos they could build from their pools
   const th=threats(roster).map(x=>({t:x,picked:x.C.filter(y=>foe.includes(y)),open:x.C.filter(y=>!foe.includes(y)&&!u.has(y))})).filter(o=>o.open.length).sort((a,b)=>b.picked.length-a.picked.length||b.t.s-a.t.s).slice(0,4);
@@ -1114,7 +1127,7 @@ function analysis(){
   }
   $("an").innerHTML=h;
 }
-function render(){EFF=null;saveDraft();defView();document.body.dataset.me=me;$("icons").setAttribute("aria-pressed",icons);$("ticons").setAttribute("aria-pressed",icons);$("hide").setAttribute("aria-pressed",hide);board();controls();grid();analysis();consider();notes();histView();scView();if(DS.eo)enemyView()}
+function render(){EFF=null;PLC=null;saveDraft();defView();document.body.dataset.me=me;$("icons").setAttribute("aria-pressed",icons);$("ticons").setAttribute("aria-pressed",icons);$("hide").setAttribute("aria-pressed",hide);board();controls();grid();analysis();consider();notes();histView();scView();if(DS.eo)enemyView()}
 function add(n,k){
   k=k||(auto&&stepNow()<20?ORDER[stepNow()]:target);
   if(used().has(n)||st[k].length>=5)return false;
@@ -1172,6 +1185,9 @@ document.addEventListener("click",e=>{
   else if(b.id==="tcancel"){tform=""}
   else if(b.id==="plsave"){plSave();return}
   else if(b.id==="plgo"){plImport();return}
+  else if(b.dataset.plside){plMatchImport(+b.dataset.plside);return}
+  else if(b.dataset.plgt){plGroupImport(b.dataset.plgt);return}
+  else if(b.dataset.plrm){plMatchRm(b.dataset.plrm);return}
   else if(b.id==="padd"){scAddProfile();return}
   else if(b.id==="pcadd"){scAddChamp();return}
   else if(b.id==="pimp"){scImport();return}
@@ -1668,7 +1684,8 @@ function watchShared(){
     REL=R;RID=I;OFF=O;render();
   },()=>{shared=null;REL=LOC;RID={syn:[],weak:[],strong:[]};setMode();render()});
 }
-let SC=[],scId="",scSel="",scOK=false,plOK=false,scMode="my";
+let SC=[],scId="",scSel="",scOK=false,plOK=false,mOK=false,scMode="my";
+let PLC=null;
 try{const a=JSON.parse(localStorage.getItem("lolScouts")||"[]");if(Array.isArray(a))SC=a.filter(t=>t&&typeof t.id==="string"&&Array.isArray(t.data))}catch(e){}
 const MYID="my-team";
 function ensureMy(){
@@ -1692,16 +1709,18 @@ function scmsg(t){$("scmsg").textContent=t}
 async function loadScouts(){
   try{
     // the pl column (Prime League link) is optional; without it everything else still loads
-    let r=await sbf("scouts?select=id,name,data,pl&order=name");
-    if(r.ok)plOK=true;else{plOK=false;r=await sbf("scouts?select=id,name,data&order=name")}
+    // pl (link) and matches (Prime League games) are optional columns; without them everything else still loads
+    let r=await sbf("scouts?select=id,name,data,pl,matches&order=name");
+    if(r.ok){plOK=true;mOK=true}
+    else{mOK=false;r=await sbf("scouts?select=id,name,data,pl&order=name");if(r.ok)plOK=true;else{plOK=false;r=await sbf("scouts?select=id,name,data&order=name")}}
     if(!r.ok){scOK=false;return}
     scOK=true;
-    SC=(await r.json()).filter(x=>x&&typeof x.id==="string"&&Array.isArray(x.data)).map(x=>({id:x.id,name:String(x.name||"Team"),data:x.data,pl:typeof x.pl==="string"?x.pl:""}));
+    SC=(await r.json()).filter(x=>x&&typeof x.id==="string"&&Array.isArray(x.data)).map(x=>({id:x.id,name:String(x.name||"Team"),data:x.data,pl:typeof x.pl==="string"?x.pl:"",matches:Array.isArray(x.matches)?x.matches:[]}));PLC=null;
     ensureMy();SC.sort((a,b)=>(b.id===MYID)-(a.id===MYID));fixSel();
   }catch(e){scOK=false}
 }
 async function scSave(t){
-  if(sb&&scOK){await sbx("scouts",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({id:t.id,name:t.name,data:t.data,...(plOK?{pl:t.pl||""}:{})})});return}
+  if(sb&&scOK){await sbx("scouts",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({id:t.id,name:t.name,data:t.data,...(plOK?{pl:t.pl||""}:{}),...(mOK?{matches:t.matches||[]}:{})})});return}
   scLocal();
 }
 async function scPersist(t){try{await scSave(t)}catch(e){scmsg(errText(e))}}
@@ -1721,17 +1740,21 @@ async function plSave(){
 let PLR=null;
 function plParse(src){
   const d=new DOMParser().parseFromString(src,"text/html");
+  if(d.querySelector(".league-match-sub-lol,.content-match-head"))return plParseMatch(d);
+  if(d.querySelector(".league-group-matches"))return plParseGroup(d);
   const players=[...d.querySelectorAll(".content-portrait-grid-l > li")].map(li=>{
     const acc=li.querySelector(".gameaccount-name"),box=li.querySelector(".gameaccount"),h=li.querySelector("h3");
     return{nick:h?h.textContent.trim():"",riot:acc?acc.textContent.trim():"",region:box&&/Nordic|EUNE/i.test(box.title)?"eune":"euw",ok:!!li.querySelector(".txt-status-positive")};
   }).filter(x=>x.riot.includes("#"));
   const a=d.querySelector('.content-portrait-head-info a[href*="/leagues/teams/"]');
-  return{team:a?a.textContent.trim():"",link:a?plLink(a.getAttribute("href")):"",players};
+  return{kind:"team",team:a?a.textContent.trim():"",link:a?plLink(a.getAttribute("href")):"",players};
 }
 function plKnown(){const t=curTeam();return new Set((t&&t.id!==MYID?t.data:[]).map(p=>(p.riot||p.name).toLowerCase()))}
 function plPrev(){
   const el=$("plprev");
   if(!PLR){el.innerHTML="";return}
+  if(PLR.kind==="match"){el.innerHTML=plMatchPrev();return}
+  if(PLR.kind==="group"){el.innerHTML=plGroupPrev();return}
   if(!PLR.players.length){el.innerHTML=`<p class="note">No players found. Make sure you copied the whole page source of a Prime League team page.</p>`;return}
   const known=plKnown(),add=PLR.players.filter(x=>x.ok&&!known.has(x.riot.toLowerCase())),skip=PLR.players.filter(x=>!x.ok);
   const t=curTeam(),target=t&&t.id!==MYID?t.name:(PLR.team||"a new team");
@@ -1746,6 +1769,204 @@ async function plImport(){
   if(!t.pl&&PLR.link&&(plOK||!SB.url))t.pl=PLR.link;
   PLR=null;$("plsrc").value="";$("plprev").innerHTML="";
   await scPersist(t);scmsg("Added "+add.length+" player"+(add.length===1?"":"s")+" to "+t.name+" on the bench. Set their roles, mark who plays, and use the Riot import to read their champions.");render();
+}
+// Prime League matches: champions, bans and roles from pasted match pages, match list from the group page
+const plTid=u=>{const m=/\/teams\/(\d+)/.exec(u||"");return m?m[1]:""};
+const plKey=x=>(x.riot||x.name).toLowerCase();
+let PLN=null;
+function plChamp(n){
+  if(!PLN)PLN=Object.fromEntries(D.map(c=>[c.n.toLowerCase().replace(/[^a-z0-9]/g,""),c.n]));
+  const k=n.toLowerCase().replace(/[^a-z0-9]/g,"");
+  return PLN[k]||idToName(k)||D.map(c=>c.n).find(c=>c.toLowerCase().replace(/[^a-z0-9]/g,"").startsWith(k))||n.trim();
+}
+function plParseMatch(d){
+  const hs=[...d.querySelectorAll('link[rel="alternate"]')].map(x=>x.getAttribute("href")||"").filter(h=>/\/leagues\/matches\/\d+/.test(h));
+  const url=plLink(hs.find(h=>h.includes("/de/"))||hs[0]||""),id=(/\/matches\/(\d+)/.exec(url)||[])[1]||"";
+  const side=k=>{
+    const el=d.querySelector(".content-match-head-team.side-"+k),a=el&&el.querySelector('a[href*="/teams/"]'),img=el&&el.querySelector("img[alt]"),h=el&&el.querySelector("h2");
+    const short=h?h.textContent.trim():"";
+    return{link:a?plLink(a.getAttribute("href")):"",tid:plTid(a&&a.getAttribute("href")),name:img&&img.alt.trim()||short,short};
+  };
+  const games=[...d.querySelectorAll("section.league-match-sub-lol")].map(s=>[1,2].map(k=>{
+    const res=s.querySelector(`.submatch-lol-head-side.side-${k} .submatch-lol-team-result`);
+    return{w:!!res&&res.classList.contains("win"),
+      bans:[...s.querySelectorAll(`.submatch-lol-base-side.side-${k} .submatch-lol-bans img[alt]`)].map(i=>plChamp(i.alt)),
+      ps:[...s.querySelectorAll(`.submatch-lol-player.side-${k}`)].map(el=>{
+        const nm=el.querySelector(".submatch-lol-player-name"),ch=el.querySelector(".submatch-lol-player-champion img[alt]"),kd=el.querySelector(".submatch-lol-player-kda");
+        const[k1,d1,a1]=(kd?kd.textContent:"").trim().split("/").map(Number);
+        return{r:nm?nm.textContent.trim():"",c:ch?plChamp(ch.alt):"",row:+((/row-(\d)/.exec(el.className)||[])[1]||0),k:k1||0,d:d1||0,a:a1||0};
+      }).filter(x=>x.r&&x.c)};
+  })).filter(g=>g.every(x=>x.ps.length));
+  const tz=d.querySelector(".tztime[data-time]"),day=[...d.querySelectorAll(".txt-subtitle")].map(x=>x.textContent.trim()).find(x=>/^(Spieltag|Matchday|Round|Runde)/i.test(x))||"";
+  const sc=d.querySelector(".content-match-head .txt-score");
+  return{kind:"match",id,url,date:tz?+tz.dataset.time||0:0,day,score:sc?sc.textContent.trim():"",sides:[side(1),side(2)],games};
+}
+function plParseGroup(d){
+  const teams=[],seen=new Set();
+  d.querySelectorAll('.league-group-scores td.main a[href*="/teams/"]').forEach(a=>{
+    const h=a.getAttribute("href"),tid=plTid(h),nm=a.querySelector(".name span");
+    if(!tid||seen.has(tid))return;seen.add(tid);
+    teams.push({tid,name:nm?nm.textContent.trim():a.textContent.trim(),link:plLink(h),slug:(/\/teams\/\d+-([^/?#]+)/.exec(h)||[])[1]||""});
+  });
+  const ms=[];
+  d.querySelectorAll(".league-group-matches .widget").forEach(w=>{
+    const h3=w.querySelector("h3"),day=h3?h3.textContent.trim():"";
+    w.querySelectorAll("tr").forEach(tr=>{
+      const a=tr.querySelector('a[href*="/leagues/matches/"]'),m=a&&/\/matches\/(\d+)-([^/?#]+)/.exec(a.getAttribute("href"));
+      if(!m)return;
+      const td=[...tr.querySelectorAll("td")].map(x=>x.textContent.trim().replace(/\s+/g," "));
+      ms.push({id:m[1],slug:m[2],url:plLink(a.getAttribute("href")),day,title:td[0]+" vs "+td[2],score:td[1]||""});
+    });
+  });
+  const h1=d.querySelector("h1");
+  return{kind:"group",title:h1?h1.textContent.trim():"",teams,ms};
+}
+// which side of a match page is the scouted team: saved link, then known players, then name
+function plSide(t,M){
+  if(!t||t.id===MYID)return -1;
+  const tid=plTid(t.pl),ids=new Set(t.data.map(plKey)),n=t.name.toLowerCase();
+  const v=M.sides.map((s,k)=>(tid&&s.tid===tid?1000:0)+(s.name.toLowerCase()===n||s.short.toLowerCase()===n?100:0)+M.games.reduce((a,g)=>a+g[k].ps.filter(p=>ids.has(p.r.toLowerCase())).length,0));
+  return v[0]===v[1]?-1:v[0]>v[1]?0:1;
+}
+function plMatchPrev(){
+  const M=PLR,t=curTeam(),k=plSide(t,M);
+  if(!M.id||!M.games.length)return`<p class="note">No game data found. Make sure you copied the whole page source of a played Prime League match.</p>`;
+  const nm=i=>esc(M.sides[i].name||"Team "+(i+1));
+  const done=t&&(t.matches||[]).some(x=>x.id===M.id&&!x.stub);
+  let h=`<p class="note" style="margin:0">${nm(0)} ${esc(M.score)} ${nm(1)}${M.day?" · "+esc(M.day):""} · ${M.games.length} game${M.games.length>1?"s":""}.</p>`;
+  if(k>=0){
+    const P=[...new Set(M.games.flatMap(g=>g[k].ps.map(p=>p.r)))];
+    h+=`<div class="plp">${P.map(r=>`<span class="chip">${esc(r)}</span>`).join("")}</div>`;
+    h+=`<button class="btn" data-plside="${k}" type="button">${done?"Import again for":"Import for"} ${esc(t.name)}${t.name===M.sides[k].name?"":" ("+nm(k)+")"}</button>`;
+  }else{
+    h+=`<p class="note" style="margin:4px 0">${t&&t.id!==MYID?"Which side is "+esc(t.name)+"?":"Which team do you want to scout?"}</p><div class="plchoose">${[0,1].map(i=>`<button class="btn" data-plside="${i}" type="button">${nm(i)}</button>`).join("")}</div>`;
+  }
+  return h;
+}
+function plGroupTeam(t,G){
+  if(!t||t.id===MYID)return null;
+  const tid=plTid(t.pl),n=t.name.toLowerCase();
+  return G.teams.find(x=>tid&&x.tid===tid)||G.teams.find(x=>x.name.toLowerCase()===n)||null;
+}
+const plGroupMs=(G,gt)=>G.ms.filter(m=>m.slug.startsWith(gt.slug+"-vs-")||m.slug.endsWith("-vs-"+gt.slug));
+function plGroupPrev(){
+  const G=PLR,t=curTeam(),gt=plGroupTeam(t,G);
+  if(!G.ms.length)return`<p class="note">No matches found. Make sure you copied the whole page source of a Prime League group page.</p>`;
+  if(gt){
+    const ms=plGroupMs(G,gt),have=new Set((t.matches||[]).filter(x=>!x.stub).map(x=>x.id));
+    return`<p class="note" style="margin:0">${esc(G.title)}: ${ms.length} matches of ${esc(gt.name)}, ${ms.filter(m=>have.has(m.id)).length} already imported.</p><button class="btn" data-plgt="${esc(gt.tid)}" type="button">Add the match list to ${esc(t.name)}</button>`;
+  }
+  return`<p class="note" style="margin:0">${esc(G.title)}: which team do you want the match list for?</p><div class="plchoose">${G.teams.map(x=>`<button class="btn" data-plgt="${esc(x.tid)}" type="button">${esc(x.name)}</button>`).join("")}</div>`;
+}
+// find or create the scouted team that belongs to a Prime League team
+function plTeamFor(tid,name,link){
+  const t=curTeam(),n=(name||"").toLowerCase();
+  if(t&&t.id!==MYID)return t;
+  let f=SC.find(x=>x.id!==MYID&&tid&&plTid(x.pl)===tid)||SC.find(x=>x.id!==MYID&&x.name.toLowerCase()===n);
+  if(!f){f={id:uid(),name:name||"Team "+SC.length,data:[],pl:"",matches:[]};SC.push(f)}
+  if(!f.pl&&link&&(plOK||!SB.url))f.pl=link;
+  scId=f.id;return f;
+}
+function plMissingCol(){
+  if(sb&&scOK&&!mOK){scmsg("Prime League matches can't be saved yet. The scouts table in Supabase needs a column for them. Run this in the Supabase SQL editor: alter table scouts add column matches jsonb;");return true}
+  return false;
+}
+async function plMatchImport(k){
+  const M=PLR;
+  if(!M||M.kind!=="match"||plMissingCol())return;
+  const cur=curTeam(),t=cur&&cur.id!==MYID?cur:plTeamFor(M.sides[k].tid,M.sides[k].name,M.sides[k].link);
+  if(!t.pl&&M.sides[k].link&&(plOK||!SB.url))t.pl=M.sides[k].link;
+  const o=1-k,sc=M.score.split(":");
+  const rec={id:M.id,url:M.url,date:M.date,day:M.day,score:k?sc.reverse().join(":"):M.score,opp:M.sides[o].name,oppUrl:M.sides[o].link,
+    games:M.games.map(g=>({w:g[k].w,bans:g[k].bans,obans:g[o].bans,ps:g[k].ps}))};
+  t.matches=(t.matches||[]).filter(x=>x.id!==rec.id);t.matches.push(rec);
+  t.matches.sort((a,b)=>(a.date||0)-(b.date||0)||String(a.day).localeCompare(String(b.day),void 0,{numeric:true}));
+  // players: unknown ones join the bench (as former players if the roster was already there), roles from the row they played
+  const had=t.data.length,by=new Map(t.data.map(x=>[plKey(x),x])),rows={};
+  rec.games.forEach(g=>g.ps.forEach(q=>{(rows[q.r]=rows[q.r]||[]).push(q.row)}));
+  let added=0,roled=0;
+  Object.entries(rows).forEach(([r,rs])=>{
+    let p=by.get(r.toLowerCase());
+    if(!p){p={id:uid(),name:r,region:"euw",role:"",champs:[],active:false,...(had?{former:true}:{})};t.data.push(p);by.set(r.toLowerCase(),p);added++}
+    if(!p.role){
+      const cnt={};rs.forEach(x=>{cnt[x]=(cnt[x]||0)+1});
+      const row=+Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0],role=RO[row-1];
+      if(role){p.role=role;roled++;if(p.active)t.data.forEach(x=>{if(x!==p&&x.active&&(x.role||derivedRole(x))===role)x.active=false})}
+    }
+  });
+  PLR=null;$("plsrc").value="";$("plprev").innerHTML="";PLC=null;
+  await scPersist(t);
+  scmsg(`Imported ${rec.games.length} game${rec.games.length>1?"s":""} vs ${rec.opp} for ${t.name}.`+(roled?` Set the role of ${roled} player${roled>1?"s":""} from the match.`:"")+(added?` Added ${added} player${added>1?"s":""} to the bench${had?(added>1?" as former players":" as a former player"):""}.`:""));
+  render();
+}
+async function plGroupImport(tid){
+  const G=PLR;
+  if(!G||G.kind!=="group"||plMissingCol())return;
+  const gt=G.teams.find(x=>x.tid===tid);if(!gt)return;
+  const t=plTeamFor(gt.tid,gt.name,gt.link),ms=plGroupMs(G,gt);
+  const have=new Map((t.matches||[]).map(x=>[x.id,x]));
+  ms.forEach(m=>{const x=have.get(m.id);if(!x||x.stub)have.set(m.id,{id:m.id,url:m.url,day:m.day,title:m.title,score:m.score,stub:1})});
+  t.matches=[...have.values()].sort((a,b)=>(a.date||0)&&(b.date||0)?a.date-b.date:String(a.day).localeCompare(String(b.day),void 0,{numeric:true}));
+  PLR=null;$("plsrc").value="";$("plprev").innerHTML="";
+  await scPersist(t);
+  const miss=t.matches.filter(x=>x.stub).length;
+  scmsg(`Saved ${ms.length} matches for ${t.name}. ${miss?miss+" still need their match page.":"All are imported."}`);
+  render();
+}
+async function plMatchRm(id){
+  const t=curTeam(),m=t&&(t.matches||[]).find(x=>x.id===id);
+  if(!m||!await ask(m.stub?"Remove this match from the list?":"Remove the imported games vs "+m.opp+"?","Remove"))return;
+  t.matches=t.matches.filter(x=>x.id!==id);PLC=null;await scPersist(t);render();
+}
+// Prime League champion stats per scouted player, cached until the next render (PLC is declared with SC)
+function plOf(p){
+  if(!PLC){
+    PLC=new Map();
+    SC.forEach(t=>{
+      if(t.id===MYID)return;
+      const by=new Map(t.data.map(x=>[plKey(x),x]));
+      (t.matches||[]).forEach(m=>(m.games||[]).forEach(g=>(g.ps||[]).forEach(q=>{
+        const x=by.get(String(q.r).toLowerCase());if(!x)return;
+        let a=PLC.get(x);if(!a)PLC.set(x,a={});
+        const s=a[q.c]||(a[q.c]={n:q.c,g:0,w:0,k:0,d:0,a:0});
+        s.g++;if(g.w)s.w++;s.k+=q.k;s.d+=q.d;s.a+=q.a;
+      })));
+    });
+  }
+  return Object.values(PLC.get(p)||{}).sort((a,b)=>b.g-a.g||b.w-a.w||a.n.localeCompare(b.n));
+}
+const plKda=s=>[s.k,s.d,s.a].map(v=>{v/=s.g;return Number.isInteger(v)?v:v.toFixed(1)}).join("/");
+// ranked champions plus Prime League champions, one entry per champion (plg = Prime League games)
+function enC(x){
+  const m=new Map(x.champs.map(c=>[c.n,{...c,plg:0}]));
+  plOf(x).forEach(s=>{const c=m.get(s.n);if(c)c.plg=s.g;else m.set(s.n,{n:s.n,g:0,wr:0,kda:0,plg:s.g})});
+  return[...m.values()];
+}
+function plBans(t){
+  const own={},vs={};let n=0;
+  (t.matches||[]).forEach(m=>(m.games||[]).forEach(g=>{n++;g.bans.forEach(b=>{own[b]=(own[b]||0)+1});g.obans.forEach(b=>{vs[b]=(vs[b]||0)+1})}));
+  const top=o=>Object.entries(o).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,8);
+  return{n,own:top(own),vs:top(vs)};
+}
+const plBanChips=L=>`<div class="chips">${L.map(([c,k])=>`<span class="chip sc">${icon(c)}${esc(c)} ${k}×</span>`).join("")}</div>`;
+function plCard(t){
+  const ms=t.matches||[];
+  if(!ms.length)return"";
+  const got=ms.filter(x=>!x.stub),miss=ms.length-got.length,B=plBans(t);
+  let h=`<details class="card" data-k="sc-pl" ${op("sc-pl")}><summary>${ic("grid")}<h2>Prime League matches</h2> <span class="tag">${got.length}/${ms.length}</span></summary>`;
+  h+=`<div class="plm">${ms.map(m=>{
+    const open=m.url?`<a href="${esc(m.url)}" target="_blank" rel="noopener">Open</a>`:"";
+    const x=`${open}<button class="x" data-plrm="${esc(m.id)}" aria-label="Remove match">×</button>`;
+    if(m.stub)return`<div class="miss"><span class="mi"><small>${esc(m.day)} · not imported</small><b>${esc(m.title)} ${esc(m.score)}</b></span>${x}</div>`;
+    const w=m.games.filter(g=>g.w).length,l=m.games.length-w;
+    return`<div><span class="mi"><small>${esc(m.day)} · <span class="${w>l?"good":w<l?"bad":""}">${w>l?"won":w<l?"lost":"draw"} ${w}:${l}</span></small><b>vs ${esc(m.opp)}</b></span>${x}</div>`;
+  }).join("")}</div>`;
+  if(miss)h+=`<p class="note" style="margin:0 0 6px">${miss} match${miss>1?"es":""} not imported yet. Open ${miss>1?"each one":"it"}, copy the page source and paste it above.</p>`;
+  if(B.n){
+    h+=`<div class="nl" style="margin:6px 0 2px">Their bans (${B.n} game${B.n>1?"s":""})</div>${plBanChips(B.own)}`;
+    h+=`<div class="nl" style="margin:6px 0 2px">Banned against them</div>${plBanChips(B.vs)}`;
+  }
+  return h+`</details>`;
 }
 async function scNew(){
   const t={id:uid(),name:$("scn").value.trim()||"Team "+(SC.length+1),data:[]};
@@ -1932,7 +2153,7 @@ async function scRmProfile(id){
   if(!p||!await ask('Remove profile "'+p.name+'"?',"Remove"))return;
   t.data=t.data.filter(x=>x.id!==id);await scPersist(t);render();
 }
-const pcs=p=>Array.isArray(p.pool)?p.pool.map(n=>({n,g:0,wr:0})):p.champs.map(c=>({n:c.n,g:c.g,wr:c.wr}));
+const pcs=p=>Array.isArray(p.pool)?p.pool.map(n=>({n,g:0,wr:0})):enC(p).map(c=>({n:c.n,g:c.g+c.plg,wr:c.wr,plg:c.plg}));
 function derivedRole(p){
   const w={};
   pcs(p).forEach(c=>{const b=BY[c.n];if(b)b.r.forEach(r=>{w[r]=(w[r]||0)+Math.max(1,c.g)/b.r.length})});
@@ -1946,8 +2167,10 @@ function profCard(p){
   const wc=v=>v>=55?"hi":v&&v<48?"lo":"";
   const pills=tg?`<span class="pill">${tg} games</span><span class="pill w ${wc(wr)}">${wr.toFixed(1)}% WR</span><span class="pill">${kda.toFixed(2)} KDA</span>`:"";
   const tiles=rows.map(c=>`<div class="pt"><button class="lnk" data-ped="${key}|${esc(c.n)}">${icon(c.n)}${esc(c.n)}</button><div class="pts"><span class="w ${wc(c.wr)}">${c.wr}%</span><span>${c.g} games</span><span>${c.kda} KDA</span></div><button class="x" data-pcx="${key}|${esc(c.n)}" aria-label="Remove ${esc(c.n)}">\u00d7</button></div>`).join("");
-  const body=(my?`<div class="nl">Imported stats</div>`:"")+(rows.length?`<div class="pgrid">${tiles}</div>`:`<p class="note">${my?"No imported stats yet. Use the paste or Riot import above.":"No champions yet. Add the champions this player plays."}</p>`);
-  return`<details class="ng pc" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><span class="pn"><b>${esc(p.name)}</b> ${role?`<span class="tag">${ri(role)}${rt(role)}</span>`:""} <span class="tag">${isAct?"Active":"Bench"}</span></span><span class="pills">${pills}</span></summary>${body}<div class="pacts"><select class="prole" data-prole="${key}" aria-label="Role of ${esc(p.name)}"><option value="">${!p.role&&role?"Auto ("+RN[role]+")":"Role: auto"}</option>${RO.map(r=>`<option value="${r}"${p.role===r?" selected":""}>${RN[r]}</option>`).join("")}</select><button class="actb${isAct?" on":""}" data-pact="${key}" aria-pressed="${isAct}">${isAct?"\u2605 Active":"Bench"}</button>${link?`<a class="btn" href="${link}" target="_blank" rel="noopener">op.gg</a>`:""}<button class="btn rm" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></div></details>`;
+  const PLs=my?[]:plOf(p);
+  const body=(my||PLs.length&&rows.length?`<div class="nl">${my?"Imported stats":"Ranked"}</div>`:"")+(rows.length?`<div class="pgrid">${tiles}</div>`:PLs.length?"":`<p class="note">${my?"No imported stats yet. Use the paste or Riot import above.":"No champions yet. Add the champions this player plays."}</p>`)
+    +(PLs.length?`<div class="nl"${rows.length?' style="margin-top:6px"':""}>Prime League</div><div class="pgrid">${PLs.map(c=>`<div class="pt plt"><span class="lnk">${icon(c.n)}${esc(c.n)}</span><div class="pts"><span>${c.g} game${c.g>1?"s":""}</span><span class="w ${c.w>c.g-c.w?"hi":c.w<c.g-c.w?"lo":""}">${c.w}W ${c.g-c.w}L</span><span>${plKda(c)}</span></div></div>`).join("")}</div>`:"");
+  return`<details class="ng pc" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><span class="pn"><b>${esc(p.name)}</b> ${role?`<span class="tag">${ri(role)}${rt(role)}</span>`:""} <span class="tag">${isAct?"Active":"Bench"}</span>${p.former?` <span class="tag" title="Played in an imported Prime League match but is not in the team's current roster">Former player</span>`:""}</span><span class="pills">${pills}</span></summary>${body}<div class="pacts"><select class="prole" data-prole="${key}" aria-label="Role of ${esc(p.name)}"><option value="">${!p.role&&role?"Auto ("+RN[role]+")":"Role: auto"}</option>${RO.map(r=>`<option value="${r}"${p.role===r?" selected":""}>${RN[r]}</option>`).join("")}</select><button class="actb${isAct?" on":""}" data-pact="${key}" aria-pressed="${isAct}">${isAct?"\u2605 Active":"Bench"}</button>${link?`<a class="btn" href="${link}" target="_blank" rel="noopener">op.gg</a>`:""}<button class="btn rm" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></div></details>`;
 }
 const synAdj=(L=A().syn)=>{const a={};L.forEach(([x,y])=>{(a[x]=a[x]||new Set()).add(y);(a[y]=a[y]||new Set()).add(x)});return a};
 function maxCl(adj,nodes){
@@ -1984,7 +2207,7 @@ function uniqBest(list,key){
 }
 function threats(P){
   const pool={};
-  P.forEach(p=>pcs(p).forEach(c=>{if(BY[c.n])(pool[c.n]=pool[c.n]||[]).push({id:p.id,pn:p.name,pr:p.role||derivedRole(p),g:c.g,wr:c.wr})}));
+  P.forEach(p=>pcs(p).forEach(c=>{if(BY[c.n])(pool[c.n]=pool[c.n]||[]).push({id:p.id,pn:p.name,pr:p.role||derivedRole(p),g:c.g,wr:c.wr,plg:c.plg||0})}));
   const out=[];
   maxCl(synAdj(),Object.keys(pool)).forEach(full=>{
     let best=null;
@@ -2029,7 +2252,7 @@ function scAnalysis(P,mine,benchN){
   if(benchN>0)h+=`<p class="note" style="margin:0 0 6px">Based on the active lineup. ${benchN} bench player${benchN>1?"s are":" is"} not included.</p>`;
   h+=th.map((t,idx)=>{
     const cc=mine?[]:counterCombos(t.C),sg=mine?[]:singleCounters(t.C);
-    const tiles=t.C.map((c,i)=>{const m=t.mt[i];return`<div class="cslot"><span class="mem">${icon(c)}<b>${esc(c)}</b><small>${ri(m.pr)}${esc(m.pn)}</small><span class="st">${m.g?`<span>${m.g} games</span>`:""}${m.wr?` <span>${m.wr}%</span>`:""}</span></span></div>`}).join('<span class="cmb-plus">+</span>');
+    const tiles=t.C.map((c,i)=>{const m=t.mt[i];return`<div class="cslot"><span class="mem">${icon(c)}<b>${esc(c)}</b><small>${ri(m.pr)}${esc(m.pn)}</small><span class="st">${m.plg?`<span>${m.plg} PL</span> `:""}${m.g-m.plg?`<span>${m.g-m.plg} games</span>`:""}${m.wr?` <span>${m.wr}%</span>`:""}</span></span></div>`}).join('<span class="cmb-plus">+</span>');
     const good=mine?"":`<div class="cmb-b"><div class="nl good" style="margin:0 0 4px">Good against this</div>${cc.length?cc.map(c=>`<div class="cmb-m" style="margin:0 0 6px">${c.C.map(x=>`<span class="mem sm strong">${icon(x)}<b>${esc(x)}</b></span>`).join('<span class="cmb-plus">+</span>')}<span class="note" style="align-self:center">counters ${c.hit.map(esc).join(", ")}</span></div>`).join(""):`<p class="note" style="margin:0 0 4px">No combo found. Save "strong against" or "weak against" notes for these champions.</p>`}${sg.length?`<div class="nl" style="margin:6px 0 3px">Single counters</div><div class="chips">${sg.map(x=>`<span class="chip sc">${icon(x.n)}${esc(x.n)}</span>`).join("")}</div>`:""}</div>`;
     return`<div class="cmb"><div class="cmb-h"><b>${mine?"Combo":"Threat"} ${idx+1}</b> <span class="tag">${t.C.length} champions</span></div><div class="cmb-m">${tiles}</div>${good}</div>`;
   }).join("");
@@ -2062,6 +2285,8 @@ function scView(){
   $("scp").innerHTML=P.length?P.map(profCard).join(""):`<p class="note">${my?"Add your players to see their pools and get pick suggestions that fit them.":"Add a profile to start scouting."}</p>`;
   $("sca").innerHTML=P.length?scAnalysis(actOf(P),my,P.length-actOf(P).length):"";
   $("sclu").innerHTML=!my?lineupHtml(P):"";
+  $("scpl").innerHTML=!my&&t?plCard(t):"";
+  if(PLR&&PLR.kind!=="team")plPrev();
   const mr=actOf(P).map(x=>({r:x.riot||x.name,g:x.region||"euw"})).filter(x=>x.r.includes("#"));
   if(mr.length){
     const cn={};mr.forEach(x=>{cn[x.g]=(cn[x.g]||0)+1});
