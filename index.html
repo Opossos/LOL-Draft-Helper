@@ -339,6 +339,20 @@ details{margin-top:10px}
 .cbl li.on,.cbl li:hover{background:var(--chip)}
 .cbl li.none{color:var(--mute);cursor:default}
 summary{cursor:pointer;color:var(--mute)}
+/* Scouting */
+.pc .pn b{color:var(--ink)}
+.pacts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.pacts .btn{display:inline-flex;align-items:center;padding:5px 12px;font-size:14px}
+.pacts .rm:hover{border-color:var(--red);color:var(--red)}
+.chip.sc{display:inline-flex;align-items:center;font-size:14px;padding:3px 10px;line-height:1.4}
+.chip.sc .ico{width:20px;height:20px;margin:0 6px 0 -4px;border-radius:50%}
+/* combo tiles: names stay whole (hyphenated when needed), player names cut with an ellipsis */
+body .cslot .mem{padding:8px 4px}
+body .cmb-m .cslot{max-width:200px}
+body .cslot .mem b{overflow-wrap:normal;hyphens:auto;max-width:100%}
+body .cslot .mem small{display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body .cslot .mem .st span{white-space:nowrap}
+.cmb .mem small .rico{width:1.2em;height:1.2em;margin-right:3px;vertical-align:-.3em}
 /* Default notes */
 .dn{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
 .dn:last-child{border-bottom:0}
@@ -1054,7 +1068,7 @@ function enemyView(){
   const th=threats(roster).map(x=>({t:x,picked:x.C.filter(y=>foe.includes(y)),open:x.C.filter(y=>!foe.includes(y)&&!u.has(y))})).filter(o=>o.open.length).sort((a,b)=>b.picked.length-a.picked.length||b.t.s-a.t.s).slice(0,4);
   h+=`<details class="card" data-k="en-combo" ${op("en-combo")}><summary>${ic("target")}<h2>Combos they might go for</h2></summary>`;
   h+=th.length?th.map((o,idx)=>{
-    const tiles=o.t.C.map((c,k)=>{const m=o.t.mt[k],got=o.picked.includes(c);return`<span class="mem"><b>${esc(c)}</b><small>${esc(m.pn)}${m.pr?" \u00b7 "+rt(m.pr):""}</small><span class="st">${got?"picked":m.g?m.g+" games":""}</span></span>`}).join('<span class="cmb-plus">+</span>');
+    const tiles=o.t.C.map((c,k)=>{const m=o.t.mt[k],got=o.picked.includes(c);return`<div class="cslot"><span class="mem${got?" mb":""}">${icon(c)}<b>${esc(c)}</b><small>${ri(m.pr)}${esc(m.pn)}</small><span class="st">${got?"picked":m.g?m.g+" games":""}</span></span></div>`}).join('<span class="cmb-plus">+</span>');
     return`<div class="cmb"><div class="cmb-h"><b>Combo ${idx+1}</b> <span class="tag">${o.t.C.length} champions</span> <span class="${o.picked.length?"bad":"note"}">${o.picked.length?o.picked.length+" already picked":"none picked yet"}</span></div><div class="cmb-m">${tiles}</div><div class="cmb-b"><div class="nl bad" style="margin:0 0 4px">Ban to break it</div><div class="sg">${o.open.map(y=>`<button data-ban="${esc(y)}"><span>${esc(y)}</span><em>part of their combo</em></button>`).join("")}</div></div></div>`;
   }).join("")+`<p class="note">Combos come from your saved team combos that their active players can play.</p>`:`<p class="note">No combo found. Save team combos in Your notes and add champions to their profiles.</p>`;
   h+=`</details>`;
@@ -1848,9 +1862,9 @@ function profCard(p){
   const role=p.role||derivedRole(p),rid=p.riot||p.name,link=rid.includes("#")?"https://www.op.gg/summoners/"+encodeURIComponent(p.region||"euw")+"/"+encodeURIComponent(rid.replace("#","-")):"";
   const wc=v=>v>=55?"hi":v&&v<48?"lo":"";
   const pills=tg?`<span class="pill">${tg} games</span><span class="pill w ${wc(wr)}">${wr.toFixed(1)}% WR</span><span class="pill">${kda.toFixed(2)} KDA</span>`:"";
-  const tiles=rows.map(c=>`<div class="pt"><button class="lnk" data-ped="${key}|${esc(c.n)}">${icons?icon(c.n):""}${esc(c.n)}</button><div class="pts"><span class="w ${wc(c.wr)}">${c.wr}%</span><span>${c.g} games</span><span>${c.kda} KDA</span></div><button class="x" data-pcx="${key}|${esc(c.n)}" aria-label="Remove ${esc(c.n)}">\u00d7</button></div>`).join("");
+  const tiles=rows.map(c=>`<div class="pt"><button class="lnk" data-ped="${key}|${esc(c.n)}">${icon(c.n)}${esc(c.n)}</button><div class="pts"><span class="w ${wc(c.wr)}">${c.wr}%</span><span>${c.g} games</span><span>${c.kda} KDA</span></div><button class="x" data-pcx="${key}|${esc(c.n)}" aria-label="Remove ${esc(c.n)}">\u00d7</button></div>`).join("");
   const body=(my?`<div class="nl">Imported stats</div>`:"")+(rows.length?`<div class="pgrid">${tiles}</div>`:`<p class="note">${my?"No imported stats yet. Use the paste or Riot import above.":"No champions yet. Add the champions this player plays."}</p>`);
-  return`<details class="ng pc" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><span class="pn"><b>${esc(p.name)}</b> ${role?`<span class="tag">${ri(role)}${rt(role)}</span>`:""} <span class="tag">${isAct?"Active":"Bench"}</span></span><span class="pills">${pills}</span></summary>${body}<p style="margin:8px 0 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="actb${isAct?" on":""}" data-pact="${key}" aria-pressed="${isAct}">${isAct?"\u2605 Active":"Bench"}</button>${link?`<a href="${link}" target="_blank" rel="noopener">Open on op.gg</a>`:""}<button class="btn" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></p></details>`;
+  return`<details class="ng pc" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><span class="pn"><b>${esc(p.name)}</b> ${role?`<span class="tag">${ri(role)}${rt(role)}</span>`:""} <span class="tag">${isAct?"Active":"Bench"}</span></span><span class="pills">${pills}</span></summary>${body}<div class="pacts"><button class="actb${isAct?" on":""}" data-pact="${key}" aria-pressed="${isAct}">${isAct?"\u2605 Active":"Bench"}</button>${link?`<a class="btn" href="${link}" target="_blank" rel="noopener">op.gg</a>`:""}<button class="btn rm" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></div></details>`;
 }
 const synAdj=(L=A().syn)=>{const a={};L.forEach(([x,y])=>{(a[x]=a[x]||new Set()).add(y);(a[y]=a[y]||new Set()).add(x)});return a};
 function maxCl(adj,nodes){
@@ -1926,16 +1940,17 @@ function singleCounters(T){
 }
 function scAnalysis(P,mine,benchN){
   const th=threats(P);
-  let h=`<div class="card"><h2>${mine?"Combos your players can play":"Combos to watch out for"}</h2>`;
-  if(!th.length)return h+`<p class="note">No combos found. Add champions to the ${mine?"players":"profiles"} and save team combos in Your notes. A combo appears here when different players can play all of its champions.</p></div>`;
+  const k=mine?"sc-mine":"sc-threat";
+  let h=`<details class="card" data-k="${k}" ${op(k)}><summary>${ic(mine?"grid":"target")}<h2>${mine?"Combos your players can play":"Combos to watch out for"}</h2>${th.length?` <span class="tag">${th.length}</span>`:""}</summary>`;
+  if(!th.length)return h+`<p class="note">No combos found. Add champions to the ${mine?"players":"profiles"} and save team combos in Your notes. A combo appears here when different players can play all of its champions.</p></details>`;
   if(benchN>0)h+=`<p class="note" style="margin:0 0 6px">Based on the active lineup. ${benchN} bench player${benchN>1?"s are":" is"} not included.</p>`;
   h+=th.map((t,idx)=>{
     const cc=mine?[]:counterCombos(t.C),sg=mine?[]:singleCounters(t.C);
-    const tiles=t.C.map((c,i)=>{const m=t.mt[i];return`<span class="mem"><b>${esc(c)}</b><small>${esc(m.pn)}${m.pr?" \u00b7 "+esc(RN[m.pr]||m.pr):""}</small><span class="st">${m.g?m.g+" games":""}${m.wr?(m.g?" \u00b7 ":"")+m.wr+"% WR":""}</span></span>`}).join('<span class="cmb-plus">+</span>');
-    const good=mine?"":`<div class="cmb-b"><div class="nl good" style="margin:0 0 4px">Good against this</div>${cc.length?cc.map(c=>`<div class="cmb-m" style="margin:0 0 6px">${c.C.map(x=>`<span class="mem sm strong"><b>${esc(x)}</b></span>`).join('<span class="cmb-plus">+</span>')}<span class="note" style="align-self:center">counters ${c.hit.map(esc).join(", ")}</span></div>`).join(""):`<p class="note" style="margin:0 0 4px">No combo found. Save "strong against" or "weak against" notes for these champions.</p>`}${sg.length?`<div class="nl" style="margin:6px 0 3px">Single counters</div><div>${sg.map(x=>`<span class="nc strong">${esc(x.n)}</span>`).join("")}</div>`:""}</div>`;
+    const tiles=t.C.map((c,i)=>{const m=t.mt[i];return`<div class="cslot"><span class="mem">${icon(c)}<b>${esc(c)}</b><small>${ri(m.pr)}${esc(m.pn)}</small><span class="st">${m.g?`<span>${m.g} games</span>`:""}${m.wr?` <span>${m.wr}%</span>`:""}</span></span></div>`}).join('<span class="cmb-plus">+</span>');
+    const good=mine?"":`<div class="cmb-b"><div class="nl good" style="margin:0 0 4px">Good against this</div>${cc.length?cc.map(c=>`<div class="cmb-m" style="margin:0 0 6px">${c.C.map(x=>`<span class="mem sm strong">${icon(x)}<b>${esc(x)}</b></span>`).join('<span class="cmb-plus">+</span>')}<span class="note" style="align-self:center">counters ${c.hit.map(esc).join(", ")}</span></div>`).join(""):`<p class="note" style="margin:0 0 4px">No combo found. Save "strong against" or "weak against" notes for these champions.</p>`}${sg.length?`<div class="nl" style="margin:6px 0 3px">Single counters</div><div class="chips">${sg.map(x=>`<span class="chip sc">${icon(x.n)}${esc(x.n)}</span>`).join("")}</div>`:""}</div>`;
     return`<div class="cmb"><div class="cmb-h"><b>${mine?"Combo":"Threat"} ${idx+1}</b> <span class="tag">${t.C.length} champions</span></div><div class="cmb-m">${tiles}</div>${good}</div>`;
   }).join("");
-  return h+`</div>`;
+  return h+`</details>`;
 }
 function scView(){
   if(!DS.so)return;
@@ -1958,6 +1973,7 @@ function scView(){
   $("scmode").textContent=sb&&scOK?"Teams are saved in the shared database.":"Teams are saved in this browser only. Create the scouts table in Supabase to share them.";
   if(!P.find(p=>p.id===scSel))scSel=P[0]?P[0].id:"";
   $("psel").innerHTML=P.length?P.map(p=>`<option value="${esc(p.id)}"${p.id===scSel?" selected":""}>${esc(pl(p))}</option>`).join(""):`<option value="">${my?"No player yet":"No profile yet"}</option>`;
+  if(P.length&&!VER&&!icoAsked){icoAsked=true;loadIcons()}
   $("scp").innerHTML=P.length?P.map(profCard).join(""):`<p class="note">${my?"Add your players to see their pools and get pick suggestions that fit them.":"Add a profile to start scouting."}</p>`;
   $("sca").innerHTML=P.length?scAnalysis(actOf(P),my,P.length-actOf(P).length):"";
   $("sclu").innerHTML=!my?lineupHtml(P):"";
