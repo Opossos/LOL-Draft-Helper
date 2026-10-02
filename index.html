@@ -281,13 +281,16 @@ html.locked body>*:not(#gate){display:none!important}
 .tpt{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
 .tpb{display:flex;align-items:center;gap:5px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--ink);font:inherit;font-size:13px;cursor:pointer;max-width:100%}
 .tpb span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tpb small{color:var(--mute);font-size:11px;background:var(--chip);border-radius:999px;padding:0 6px}
+.tpb small{color:var(--ink);font-size:12px;font-weight:700;background:var(--chip);border-radius:999px;padding:0 7px}
 .tpb[aria-pressed="true"]{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold);font-weight:600}
 .tpb.bench{opacity:.7}
 .tph{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .tpk{margin:10px 0 0;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
 .tpkh{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .tpkh .rf{margin:0}
+.fx{display:inline-block;flex:none;margin-left:5px;padding:0 4px;border:1px solid var(--ap);border-radius:4px;color:var(--ap);font-size:10px;font-weight:700;line-height:14px;letter-spacing:.02em;vertical-align:middle;font-style:normal;text-transform:uppercase}
+.tgc .fx{position:absolute;z-index:2;top:3px;left:3px;margin:0;background:var(--panel);max-width:none;overflow:visible;font-size:9px;line-height:13px;padding:0 3px}
+.tml{align-self:center;font-size:12px;color:var(--mute);white-space:nowrap}
 .tpkh input{flex:1 1 160px;min-width:0;margin:0}
 .lnk{border:0;background:none;padding:0;color:var(--gold);font:inherit;text-decoration:underline;cursor:pointer}
 .tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;max-height:340px;overflow-y:auto;padding:2px;overscroll-behavior:contain}
@@ -296,11 +299,15 @@ html.locked body>*:not(#gate){display:none!important}
 .tic i{position:absolute;inset:0;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:400;color:var(--mute)}
 .tic .ico{position:absolute;inset:0;width:100%;height:100%;margin:0;border-radius:0}
 .tgc span{font-size:11px;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tgc em{position:absolute;top:2px;right:2px;min-width:18px;height:18px;padding:0 4px;border-radius:999px;font-style:normal;font-size:11px;font-weight:700;line-height:18px;text-align:center;color:#fff;background:var(--gold)}
+.tgc em{position:absolute;top:2px;right:2px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;font-style:normal;font-size:12px;font-weight:800;line-height:20px;text-align:center;color:var(--bg);background:var(--gold);box-shadow:0 0 0 2px var(--panel)}
 .tgc.in{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
-.tgc.no{border-color:#d04545;opacity:.75}
-.tgc.no em{background:#d04545}
+.tgc.no{border-color:var(--red);opacity:.8}
+.tgc.no em{background:var(--red)}
 .tgc.no .tic{filter:grayscale(1)}
+.tgc.lr{border-color:var(--ap);border-style:dashed}
+.tgc.lr em,.tovi.lr em{background:var(--ap)}
+.tovi.lr .tic{box-shadow:inset 0 0 0 2px var(--ap);opacity:.85}
+.nc.learn{border-color:var(--ap);border-style:dashed}
 #tll{display:flex;flex-direction:column;gap:6px}
 .tov{display:flex;flex-direction:column;gap:4px;width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
 .tov.on{border-color:var(--gold)}
@@ -311,14 +318,14 @@ html.locked body>*:not(#gate){display:none!important}
 .tovc{display:flex;flex-wrap:wrap;gap:3px}
 .tovi{position:relative;display:inline-flex}
 .tovi .tic{width:28px;height:28px;border-radius:5px}.tovi .tic i{font-size:10px}
-.tovi em{position:absolute;right:-2px;bottom:-2px;font-style:normal;font-size:9px;font-weight:700;line-height:12px;min-width:12px;text-align:center;border-radius:6px;color:#fff;background:var(--gold)}
-.tovi.no .tic{filter:grayscale(1);opacity:.55;box-shadow:inset 0 0 0 2px #d04545}
-@media (max-width:520px){.tgrid{grid-template-columns:repeat(auto-fill,minmax(64px,1fr));max-height:300px}.tgc .tic{width:36px;height:36px}.tlist li{padding:3px 6px;margin-bottom:3px}.tpkh .rf{width:100%}.tpkh .rf button{flex:1}}
+.tovi em{position:absolute;right:-3px;bottom:-3px;font-style:normal;font-size:10px;font-weight:800;line-height:14px;min-width:14px;padding:0 2px;text-align:center;border-radius:7px;color:var(--bg);background:var(--gold);box-shadow:0 0 0 1.5px var(--panel)}
+.tovi.no .tic{filter:grayscale(1);opacity:.55;box-shadow:inset 0 0 0 2px var(--red)}
+@media (max-width:520px){.tgrid{grid-template-columns:repeat(auto-fill,minmax(64px,1fr));max-height:300px}.tgc .tic{width:36px;height:36px}.tlist li{padding:3px 6px;margin-bottom:3px}.tpkh .rf{width:100%;flex-wrap:wrap}.tml{width:100%}.tpkh .rf button{flex:1;padding:6px 4px}}
 .tlist li{display:flex;align-items:center;gap:8px;padding:5px 8px;margin:0 0 4px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
 .tlist li.drag{opacity:.45}
 .tlist li.over{border-color:var(--gold);box-shadow:inset 0 3px 0 var(--gold)}
 .tlist .dg{cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;color:var(--mute);padding:2px 6px}
-.tlist .tn{width:1.6em;color:var(--mute);font-size:13px}
+.tlist .tn{width:1.6em;color:var(--ink);font-size:14px;font-weight:700}
 .tlist .tname{flex:1}
 .tlist .ico{width:28px;height:28px;margin:0}
 .tlist button{border:0;background:transparent;color:var(--mute);font-size:18px;line-height:1;cursor:pointer}
@@ -637,7 +644,7 @@ body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
 <div id="tlu"></div>
 <div class="nl" style="margin-top:10px">All players</div>
 <div id="tll"></div>
-<p class="note">Tap a champion in the grid to add it, tap it again to take it out. Numbers show the place in the tier list; drag the ☰ handle to change the order, best first (or focus the handle and press the up or down arrow key). The can't play list is for champions a player does not play at all. A suggestion drops out when every player who could fill its role can't play it.</p>
+<p class="note">Tap a champion in the grid to add it, tap it again to take it out. Learning is for champions a player is practicing but is not ready to play yet; they are only shown here and do not change the suggestions. Numbers show the place in the tier list; drag the ☰ handle to change the order, best first (or focus the handle and press the up or down arrow key). The can't play list is for champions a player does not play at all. A suggestion drops out when every player who could fill its role can't play it.</p>
 </details>
 <details class="card tools" open id="cdc"><summary><svg class="ic" aria-hidden="true"><use href="#i-db"/></svg><h2 id="acT">Champion data</h2></summary>
 <select id="psel" aria-label="Profile"></select>
@@ -848,6 +855,8 @@ Veigar|MB|P|c
 Zaahen|TJ|A|ec
 Zyra|S|P|c`.split("\n").map(l=>{const[n,r,d,t]=l.split("|");return{n,r:[...r],d,t:t||""}}).sort((x,y)=>x.n.localeCompare(y.n));
 const BY=Object.fromEntries(D.map(c=>[c.n,c]));
+const isFlex=n=>!!BY[n]&&BY[n].r.length>1;
+const fx=n=>isFlex(n)?`<span class="fx" title="Flex pick: ${BY[n].r.map(r=>RN[r]).join(" / ")}">Flex</span>`:"";
 const BASE=Object.fromEntries(D.map(c=>[c.n,{r:c.r.slice(),d:c.d,t:c.t}]));
 const TARGETS=[["bp","Blue pick"],["rp","Red pick"],["bb","Blue ban"],["rb","Red ban"]];
 let st={bp:[],rp:[],bb:[],rb:[]},mk={ban:[],pre:[]},cons=[],SW={},role="",query="",me="b",auto=true;
@@ -1026,7 +1035,7 @@ function dmgBar(a){
 // your five roles with the champion assigned to each; picks without a free role are listed as flex
 function teamSlots(mine,a){
   const flex=mine.filter((n,i)=>!a.roles[i]);
-  return`<div class="lineup tslots">${RO.map(r=>{const i=a.roles.indexOf(r),n=i>=0?mine[i]:"";return`<span class="lu${n?"":" none"}"><small>${ri(r)}${rt(r)}</small><b>${n?icon(n)+esc(n):"Open"}</b></span>`}).join("")}</div>${flex.length?`<p class="note" style="margin:0 0 4px">No free role for: ${flex.map(esc).join(", ")}</p>`:""}`;
+  return`<div class="lineup tslots">${RO.map(r=>{const i=a.roles.indexOf(r),n=i>=0?mine[i]:"";return`<span class="lu${n?"":" none"}"><small>${ri(r)}${rt(r)}</small><b>${n?icon(n)+esc(n)+fx(n):"Open"}</b></span>`}).join("")}</div>${flex.length?`<p class="note" style="margin:0 0 4px">No free role for: ${flex.map(esc).join(", ")}</p>`:""}`;
 }
 // plain warnings about what the team still misses
 function teamWarn(mine,a){
@@ -1052,7 +1061,7 @@ function board(){
     let h=`<div class="side ${cls}"><h2>${title}</h2>`;
     for(let i=0;i<5;i++){
       const n=st[k][i];
-      h+=n?`<button class="slot f" data-rm="${k}" data-i="${i}" aria-label="Remove ${esc(n)}">${esc(n)}<small>${a.roles[i]?RN[a.roles[i]]:"Flex"}</small></button>`
+      h+=n?`<button class="slot f" data-rm="${k}" data-i="${i}" aria-label="Remove ${esc(n)}"><span>${esc(n)}${a.roles[i]?fx(n):""}</span><small>${a.roles[i]?RN[a.roles[i]]:"Flex"}</small></button>`
           :(mine&&mk.pre[i-st[k].length]?`<button class="slot g" data-g="${mk.pre[i-st[k].length]}" data-gk="pre" title="Prepick. Tap to lock in, right-click to change."><span>${mk.pre[i-st[k].length]}</span><small>Prepick</small></button>`:`<button class="slot" data-t="${k}"><small>Empty</small></button>`);
     }
     h+=`<div class="bans">`;
@@ -1073,7 +1082,7 @@ function controls(){
 function grid(){
   const u=used(),q=query.trim().toLowerCase();
   const list=D.filter(c=>(!role||c.r.includes(role))&&(!q||c.n.toLowerCase().includes(q))&&!(hide&&u.has(c.n)));
-  $("grid").innerHTML=list.length?list.map(c=>`<button class="ch ${c.d==="P"?"P":c.d==="M"?"M":""} ${u.has(c.n)?"off":""} ${mk.ban.includes(c.n)?"mb":mk.pre.includes(c.n)?"mp":""}" data-n="${c.n}">${icons?icon(c.n):""}<b>${c.n}</b><span>${c.r.map(r=>RN[r]).join(", ")}</span>${mk.ban.includes(c.n)?'<span class="bd">Ban candidate</span>':mk.pre.includes(c.n)?'<span class="bd">Prepick</span>':""}</button>`).join(""):`<p class="note">No champion matches. Clear the search or pick another role.</p>`;
+  $("grid").innerHTML=list.length?list.map(c=>`<button class="ch ${c.d==="P"?"P":c.d==="M"?"M":""} ${u.has(c.n)?"off":""} ${mk.ban.includes(c.n)?"mb":mk.pre.includes(c.n)?"mp":""}" data-n="${c.n}">${icons?icon(c.n):""}<b>${c.n}${fx(c.n)}</b><span>${c.r.map(r=>RN[r]).join(", ")}</span>${mk.ban.includes(c.n)?'<span class="bd">Ban candidate</span>':mk.pre.includes(c.n)?'<span class="bd">Prepick</span>':""}</button>`).join(""):`<p class="note">No champion matches. Clear the search or pick another role.</p>`;
 }
 function banFor(members){
   const u=used(),foe=EN(),fo=foe.length?analyse(foe).open:RO,m=new Map();
@@ -1177,7 +1186,7 @@ function enemyView(){
   // what each free player might pick
   // champions played in Prime League come first, then ranked by games
   const likely=free.map(x=>({x,top:enC(x).filter(c=>BY[c.n]&&!u.has(c.n)).sort((a,b)=>b.plgw-a.plgw||b.plw-a.plw||b.g-a.g||b.wr-a.wr).slice(0,6)}));
-  const tile=c=>`<button class="ept${c.plg?" pl":""}" data-ban="${esc(c.n)}" title="Ban ${esc(c.n)}${c.plg?`, played ${c.plg}\u00d7 in Prime League${c.plsp?" ("+c.plsp+")":""}`:""}${c.g?`, ${c.g} ranked games`:""}${c.wr?`, ${c.wr}% WR`:""}">${icon(c.n)}<span><b>${esc(c.n)}</b>${c.plg?`<small class="plx">PL ${c.plg}\u00d7 \u00b7 ${c.plw}W ${c.plg-c.plw}L</small>`:""}${c.g||c.wr?`<small>${[c.g?c.g+" games":"",c.wr?c.wr+"%":""].filter(Boolean).join(" \u00b7 ")}</small>`:""}</span></button>`;
+  const tile=c=>`<button class="ept${c.plg?" pl":""}" data-ban="${esc(c.n)}" title="Ban ${esc(c.n)}${c.plg?`, played ${c.plg}\u00d7 in Prime League${c.plsp?" ("+c.plsp+")":""}`:""}${c.g?`, ${c.g} ranked games`:""}${c.wr?`, ${c.wr}% WR`:""}">${icon(c.n)}<span><b>${esc(c.n)}${fx(c.n)}</b>${c.plg?`<small class="plx">PL ${c.plg}\u00d7 \u00b7 ${c.plw}W ${c.plg-c.plw}L</small>`:""}${c.g||c.wr?`<small>${[c.g?c.g+" games":"",c.wr?c.wr+"%":""].filter(Boolean).join(" \u00b7 ")}</small>`:""}</span></button>`;
   h+=`<details class="card" data-k="en-pick" ${op("en-pick")}><summary>${ic("eye")}<h2>What they might pick</h2></summary>`;
   h+=likely.length?likely.map(o=>`<div class="epr"><div class="eph"><b>${esc(o.x.name)}</b><span class="tag">${ri(role(o.x))}${rt(role(o.x))}</span></div>${o.top.length?`<div class="eptiles">${o.top.map(tile).join("")}</div>`:`<p class="note" style="margin:0">No available champions saved for this player. Import their stats in Teams, then Scout.</p>`}</div>`).join("")+`<p class="note">Champions they played in Prime League (gold, PL = games, wins and losses) come first, then their most played ranked champions. Only available champions are shown. Tap one to ban it, or right-click for more options.</p>`:`<p class="note">All enemy players have picked a champion.</p>`;
   h+=`</details>`;
@@ -1195,7 +1204,7 @@ function enemyView(){
   }));
   const bans=[...cand.values()].sort((a,b)=>b.s-a.s||a.n.localeCompare(b.n)).slice(0,8);
   h+=`<details class="card" data-k="en-ban" ${op("en-ban")}><summary>${ic("ban")}<h2>Bans against them</h2></summary>`;
-  h+=bans.length?`<div class="sg">${bans.map(o=>`<button data-ban="${esc(o.n)}"><span>${esc(o.n)}</span><em>${esc(o.why.join(", "))}</em></button>`).join("")}</div><p class="note">Ranked by how much they play it (Prime League games count more), whether it counters your picks, and whether it fits their picks. Tap to add it to your bans.</p>`:`<p class="note">Nothing to ban yet. Add champions to their profiles.</p>`;
+  h+=bans.length?`<div class="sg">${bans.map(o=>`<button data-ban="${esc(o.n)}"><span>${esc(o.n)}${fx(o.n)}</span><em>${esc(o.why.join(", "))}</em></button>`).join("")}</div><p class="note">Ranked by how much they play it (Prime League games count more), whether it counters your picks, and whether it fits their picks. Tap to add it to your bans.</p>`:`<p class="note">Nothing to ban yet. Add champions to their profiles.</p>`;
   h+=`</details>`;
   // combos they could build from their pools
   const th=threats(roster).map(x=>({t:x,picked:x.C.filter(y=>foe.includes(y)),open:x.C.filter(y=>!foe.includes(y)&&!u.has(y))})).filter(o=>o.open.length).sort((a,b)=>b.picked.length-a.picked.length||b.t.s-a.t.s).slice(0,4);
@@ -1213,11 +1222,11 @@ function analysis(){
   const turn=cur===k?"It is your turn to pick.":cur===(me==="b"?"bb":"rb")?"It is your turn to ban.":j>=0?`Your next pick is step ${j+1}, after ${j-i} more actions.`:"";
   const now=cur===k||cur===(me==="b"?"bb":"rb");
   let h=`<details class="card tcard" data-k="team" ${op("team")}><summary>${ic("users")}<h2>Your team (${nm})</h2> <span class="tag">${mine.length}/5 picked</span></summary>${turn?`<p class="turn${now?" now":""}">${turn}</p>`:""}${teamSlots(mine,a)}${mine.length?dmgBar(a):""}${traits(a)}${teamWarn(mine,a)}${insights()}${mine.length===5?`<div class="note" style="margin:0">Draft complete.</div>`:""}`;
-  if(mine.length<5)h+=`<h3>Best picks now</h3>`+(sg.length?`<div class="sg bp">${sg.map(x=>`<button data-addmine="${esc(x.n)}"><span>${icon(x.n)}${esc(x.n)}</span><em>${x.w.map(t=>`<i class="${/^(weak vs|team gets|not in|easy to counter|.* can't play)/.test(t)?"neg":""}">${esc(t)}</i>`).join("")}</em></button>`).join("")}</div><p class="note">Ranked by your open roles, damage mix, team tools, your notes, your players' tier lists and the draft order.${sg.ties?" More champions fit just as well. Notes and tier lists narrow the list down.":""}</p>`:`<p class="note" style="margin:0">No clear favourite. Any champion for your open roles fits equally well. Save notes or add your players' tier lists to get real suggestions.</p>`);
+  if(mine.length<5)h+=`<h3>Best picks now</h3>`+(sg.length?`<div class="sg bp">${sg.map(x=>`<button data-addmine="${esc(x.n)}"><span>${icon(x.n)}${esc(x.n)}${fx(x.n)}</span><em>${x.w.map(t=>`<i class="${/^(weak vs|team gets|not in|easy to counter|.* can't play)/.test(t)?"neg":""}">${esc(t)}</i>`).join("")}</em></button>`).join("")}</div><p class="note">Ranked by your open roles, damage mix, team tools, your notes, your players' tier lists and the draft order.${sg.ties?" More champions fit just as well. Notes and tier lists narrow the list down.":""}</p>`:`<p class="note" style="margin:0">No clear favourite. Any champion for your open roles fits equally well. Save notes or add your players' tier lists to get real suggestions.</p>`);
   h+=`</details>`+playersCard(mine)+`<details class="card" data-k="combos" ${op("combos")}><summary>${ic("grid")}<h2>Team combos</h2></summary>`;
   h+=cb.length?cb.map(comboCard).join("")+`<p class="note">Combos use champions you saved as working well together. Only available champions that fit your open roles are shown. Tap a dashed champion to pick it, or a ban to add it to your bans. Right-click a champion (long-press on touch) to prepick it or mark it as a ban candidate.</p>`:`<p class="note">No available combo fits yet. Save a team combo in Your notes to see combos here.</p>`;
   h+=`</details>`+counterCard(mine)+`<details class="card" data-k="bans" ${op("bans")}><summary>${ic("ban")}<h2>Ban ideas for your picks</h2></summary>`;
-  h+=bn.length?`<div class="sg">${bn.map(([b,o])=>`<button data-ban="${esc(b)}"><span>${esc(b)}</span><em>${esc(o.w.join(", "))}</em></button>`).join("")}</div><p class="note">Tap a champion to add it to your bans. Only champions the enemy can still play in their open roles are listed.</p>`:`<p class="note">Save weakness notes ("is weak against" or "works well into") and ban ideas will appear here.</p>`;
+  h+=bn.length?`<div class="sg">${bn.map(([b,o])=>`<button data-ban="${esc(b)}"><span>${esc(b)}${fx(b)}</span><em>${esc(o.w.join(", "))}</em></button>`).join("")}</div><p class="note">Tap a champion to add it to your bans. Only champions the enemy can still play in their open roles are listed.</p>`:`<p class="note">Save weakness notes ("is weak against" or "works well into") and ban ideas will appear here.</p>`;
   h+=`</details>`;
   if(foe.length){
     const e=analyse(foe),t=e.ad+e.ap||1,pa=e.ad/t;
@@ -1301,6 +1310,7 @@ document.addEventListener("click",e=>{
   else if(b.dataset.nty){ntype=b.dataset.nty;if(ntype==="combo"){MS.nb=[];DRAW.nb()}}
   else if(b.dataset.dcb){delCombo(b.dataset.dcb);return}
   else if(b.dataset.ccx){cantRm(b.dataset.ccx);return}
+  else if(b.dataset.lcx){learnRm(b.dataset.lcx);return}
   else if(b.id==="priot"){riotImport();return}
   else if(b.id==="pstop"){riotStop=true;return}
   else if(b.dataset.ppx){PP.splice(+b.dataset.ppx,1);ppView();return}
@@ -2412,40 +2422,48 @@ function tierView(){
   $("tpt").innerHTML=P.length?P.map(x=>{const r=x.role||derivedRole(x),n=(x.pool||[]).length;return`<button class="tpb${act.includes(x)?"":" bench"}" data-tps="${esc(x.id)}" aria-pressed="${x.id===tSel}">${r?ri(r):""}<span>${esc(x.name)}</span><small>${n}</small></button>`}).join(""):`<p class="note">Add a player first.</p>`;
   const x=P.find(y=>y.id===tSel);
   $("tpe").innerHTML=x?tierPanel(x,act.includes(x)):"";
-  $("tmode").innerHTML=[["pool","Add to tier list"],["cant","Add to can't play"]].map(([k,l])=>`<button data-tmode="${k}" aria-pressed="${tMode===k}">${l}</button>`).join("");
+  $("tmode").innerHTML=`<span class="tml">Tap adds to</span>`+[["pool","Tier list"],["learn","Learning"],["cant","Can't play"]].map(([k,l])=>`<button data-tmode="${k}" aria-pressed="${tMode===k}">${l}</button>`).join("");
   document.querySelector(".tpk").hidden=!x;
   tierGrid();
   $("tlu").innerHTML=lineupHtml(P);
   $("tll").innerHTML=P.map(y=>{
-    const r=y.role||derivedRole(y),pool=y.pool||[],cant=y.cant||[];
-    return`<button class="tov${y.id===tSel?" on":""}${act.includes(y)?"":" bench"}" data-tps="${esc(y.id)}"><span class="tovh">${r?ri(r):""}<b>${esc(y.name)}</b><small>${pool.length} in list${cant.length?` · ${cant.length} can't play`:""}</small></span><span class="tovc">${pool.length?pool.map((n,i)=>`<span class="tovi" title="${i+1}. ${esc(n)}">${tIco(n)}<em>${i+1}</em></span>`).join(""):`<small class="note">Nothing yet</small>`}${cant.map(n=>`<span class="tovi no" title="Can't play ${esc(n)}">${tIco(n)}</span>`).join("")}</span></button>`;
+    const r=y.role||derivedRole(y),pool=y.pool||[],cant=y.cant||[],learn=y.learn||[];
+    return`<button class="tov${y.id===tSel?" on":""}${act.includes(y)?"":" bench"}" data-tps="${esc(y.id)}"><span class="tovh">${r?ri(r):""}<b>${esc(y.name)}</b><small>${pool.length} in list${learn.length?` · ${learn.length} learning`:""}${cant.length?` · ${cant.length} can't play`:""}</small></span><span class="tovc">${pool.length?pool.map((n,i)=>`<span class="tovi" title="${i+1}. ${esc(n)}">${tIco(n)}<em>${i+1}</em></span>`).join(""):`<small class="note">Nothing yet</small>`}${learn.map(n=>`<span class="tovi lr" title="Learning ${esc(n)}">${tIco(n)}<em>L</em></span>`).join("")}${cant.map(n=>`<span class="tovi no" title="Can't play ${esc(n)}">${tIco(n)}</span>`).join("")}</span></button>`;
   }).join("");
 }
 function tierPanel(x,on){
   const pool=x.pool||[],r=x.role||derivedRole(x);
-  return`<div class="tp${on?"":" bench"}"><div class="tph"><b>${esc(x.name)}</b> ${r?`<span class="tag">${ri(r)}${rt(r)}</span>`:""} <button class="actb${on?" on":""}" data-pact="${esc(x.id)}" aria-pressed="${on}" title="${on?"Playing. Click to move to the bench":"On the bench. Click to make this player active"}">${on?"★ Active":"Bench"}</button></div>${pool.length?`<ol class="tlist">${pool.map((n,i)=>`<li data-pid="${esc(x.id)}" data-tn="${esc(n)}"><span class="dg" data-drag tabindex="0" role="button" aria-label="Drag to reorder ${esc(n)}">☰</span><span class="tn">${i+1}</span>${icon(n)}<span class="tname">${esc(n)}</span><button data-tcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from the tier list">×</button></li>`).join("")}</ol>`:`<p class="note" style="margin:6px 0">No champions yet. Tap champions below to add them.</p>`}${(x.cant||[]).length?`<div class="nl">Can't play</div><div>${x.cant.map(n=>`<span class="nc weak">${icon(n)}${esc(n)}<button data-ccx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from can't play">×</button></span>`).join("")}</div>`:""}</div>`;
+  return`<div class="tp${on?"":" bench"}"><div class="tph"><b>${esc(x.name)}</b> ${r?`<span class="tag">${ri(r)}${rt(r)}</span>`:""} <button class="actb${on?" on":""}" data-pact="${esc(x.id)}" aria-pressed="${on}" title="${on?"Playing. Click to move to the bench":"On the bench. Click to make this player active"}">${on?"★ Active":"Bench"}</button></div>${pool.length?`<ol class="tlist">${pool.map((n,i)=>`<li data-pid="${esc(x.id)}" data-tn="${esc(n)}"><span class="dg" data-drag tabindex="0" role="button" aria-label="Drag to reorder ${esc(n)}">☰</span><span class="tn">${i+1}</span>${icon(n)}<span class="tname">${esc(n)}${fx(n)}</span><button data-tcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from the tier list">×</button></li>`).join("")}</ol>`:`<p class="note" style="margin:6px 0">No champions yet. Tap champions below to add them.</p>`}${(x.learn||[]).length?`<div class="nl">Learning (practiced, not ready yet)</div><div>${x.learn.map(n=>`<span class="nc learn">${icon(n)}${esc(n)}<button data-lcx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from learning">\u00d7</button></span>`).join("")}</div>`:""}${(x.cant||[]).length?`<div class="nl">Can't play</div><div>${x.cant.map(n=>`<span class="nc weak">${icon(n)}${esc(n)}<button data-ccx="${esc(x.id)}|${esc(n)}" aria-label="Remove ${esc(n)} from can't play">×</button></span>`).join("")}</div>`:""}</div>`;
 }
 function tierGrid(){
   const x=tierP(),g=$("tgrid");
   if(!x){g.innerHTML="";return}
-  const r=x.role||derivedRole(x),q=$("tq").value.trim().toLowerCase(),pool=x.pool||[],cant=x.cant||[];
-  const list=D.filter(c=>(tAll||!r||c.r.includes(r))&&(!q||c.n.toLowerCase().includes(q))).map(c=>c.n).sort((a,b)=>{const ia=pool.indexOf(a),ib=pool.indexOf(b);return(ia<0)-(ib<0)||ia-ib||a.localeCompare(b)});
+  const r=x.role||derivedRole(x),q=$("tq").value.trim().toLowerCase(),pool=x.pool||[],cant=x.cant||[],learn=x.learn||[];
+  const list=D.filter(c=>(tAll||!r||c.r.includes(r))&&(!q||c.n.toLowerCase().includes(q))).map(c=>c.n).sort((a,b)=>{const ia=pool.indexOf(a),ib=pool.indexOf(b);return(ia<0)-(ib<0)||ia-ib||(!learn.includes(a))-(!learn.includes(b))||a.localeCompare(b)});
   $("tchint").innerHTML=r?`${tAll?"All champions":"Only "+RN[r]+" champions"} are shown for ${esc(x.name)}. <button class="lnk" id="tall" type="button">${tAll?"Show "+RN[r]+" only":"Show all"}</button>`:"";
-  g.innerHTML=list.length?list.map(n=>{const i=pool.indexOf(n),no=cant.includes(n);return`<button class="tgc${i>=0?" in":""}${no?" no":""}" data-tpk="${esc(n)}" aria-pressed="${i>=0||no}" title="${esc(n)}${i>=0?" · #"+(i+1)+" in the tier list":no?" · can't play":""}">${tIco(n)}<span>${esc(n)}</span>${i>=0?`<em>${i+1}</em>`:no?`<em>✕</em>`:""}</button>`}).join(""):`<p class="note">No champion matches.</p>`;
+  g.innerHTML=list.length?list.map(n=>{const i=pool.indexOf(n),no=cant.includes(n),lr=learn.includes(n);return`<button class="tgc${i>=0?" in":""}${no?" no":""}${lr?" lr":""}" data-tpk="${esc(n)}" aria-pressed="${i>=0||no||lr}" title="${esc(n)}${i>=0?" · #"+(i+1)+" in the tier list":no?" · can't play":lr?" · learning":""}">${fx(n)}${tIco(n)}<span>${esc(n)}</span>${i>=0?`<em>${i+1}</em>`:no?`<em>✕</em>`:lr?`<em>L</em>`:""}</button>`}).join(""):`<p class="note">No champion matches.</p>`;
 }
+const TL={pool:["the tier list","added as #"],learn:["learning","marked as learning"],cant:["can't play","added to can't play"]};
 async function tierTap(n){
   const t=curTeam(),p=tierP();
   if(!p||!BY[n])return;
-  p.pool=p.pool||[];p.cant=p.cant||[];
-  const inP=p.pool.includes(n),inC=p.cant.includes(n);let m;
-  if(tMode==="pool"){
-    if(inP){p.pool=p.pool.filter(x=>x!==n);m=n+" taken out of the tier list."}
-    else{p.pool.push(n);p.cant=p.cant.filter(x=>x!==n);m=inC?n+" moved from can't play to the tier list.":n+" added as #"+p.pool.length+"."}
-  }else{
-    if(inC){p.cant=p.cant.filter(x=>x!==n);m=n+" taken out of can't play."}
-    else{p.cant.push(n);p.pool=p.pool.filter(x=>x!==n);m=inP?n+" moved from the tier list to can't play.":n+" added to can't play."}
+  const k=tMode,L=["pool","learn","cant"];
+  L.forEach(x=>{p[x]=p[x]||[]});
+  let m;
+  if(p[k].includes(n)){p[k]=p[k].filter(x=>x!==n);m=n+" taken out of "+TL[k][0]+"."}
+  else{
+    const from=L.find(x=>x!==k&&p[x].includes(n));
+    L.forEach(x=>{if(x!==k)p[x]=p[x].filter(y=>y!==n)});
+    p[k].push(n);
+    m=from?n+" moved from "+TL[from][0]+" to "+TL[k][0]+".":k==="pool"?n+" added as #"+p.pool.length+".":n+" "+TL[k][1]+"."
   }
+  if(!p.learn.length)delete p.learn;
   await scPersist(t);render();$("tmsg").textContent=m;
+}
+async function learnRm(v){
+  const[id,n]=v.split("|"),t=curTeam(),p=t&&t.data.find(x=>x.id===id);
+  if(!p||!p.learn)return;
+  p.learn=p.learn.filter(x=>x!==n);if(!p.learn.length)delete p.learn;await scPersist(t);render();
 }
 async function cantRm(v){
   const[id,n]=v.split("|"),t=curTeam(),p=t&&t.data.find(x=>x.id===id);
@@ -2858,7 +2876,7 @@ function champBlock(n){
   const c=BY[n],wk=weakOf(n),sr=strongOf(n),sy=synOf(n),pre=mk.pre.includes(n);
   const risky=wk.filter(x=>EN().includes(x)),good=sr.filter(x=>EN().includes(x)),link=sy.filter(x=>teamBase().includes(x));
   const roles=c?c.r.map(r=>`<span class="tag">${ri(r)}${rt(r)}</span>`).join(""):"";
-  let h=`<div class="cc"><div class="cch"><span class="chh">${icon(n)}<span style="min-width:0"><b class="cn">${esc(n)}</b>${pre?' <span class="tag">\u2605 Prepick</span>':""}<span class="tags">${roles}</span></span></span><button class="btn" ${pre?`data-unpre="${esc(n)}"`:`data-cx="${esc(n)}"`}>${pre?"Remove prepick":"Remove"}</button></div>`;
+  let h=`<div class="cc"><div class="cch"><span class="chh">${icon(n)}<span style="min-width:0"><b class="cn">${esc(n)}</b>${fx(n)}${pre?' <span class="tag">\u2605 Prepick</span>':""}<span class="tags">${roles}</span></span></span><button class="btn" ${pre?`data-unpre="${esc(n)}"`:`data-cx="${esc(n)}"`}>${pre?"Remove prepick":"Remove"}</button></div>`;
   if(risky.length)h+=`<p class="bad">Risky: the enemy has ${risky.map(esc).join(", ")}.</p>`;
   if(good.length)h+=`<p class="good">Good pick: it beats ${good.map(esc).join(", ")}.</p>`;
   if(link.length)h+=`<p class="good">Works well with your ${link.map(x=>esc(x)+(mk.pre.includes(x)?" (prepick)":"")).join(", ")}.</p>`;
