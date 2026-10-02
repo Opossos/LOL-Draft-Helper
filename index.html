@@ -1976,9 +1976,12 @@ async function plGet(url){
   catch(e){throw new Error("Could not reach the pl-fetch function. Check that it is deployed under that name.")}
   const d=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(r.status===404&&!d.error?"The pl-fetch function is not deployed yet.":d.error||"pl-fetch answered "+r.status+".");
+  plLast=d.status||0;
   if(d.status!==200||!d.html)return null;
   return new DOMParser().parseFromString(d.html,"text/html");
 }
+let plLast=0;
+const plWhy=()=>plLast===403||plLast===429||plLast===503?` primeleague.gg refused the request (answer ${plLast}). The site blocks automatic access from the server, so this update can't work. Paste the pages instead.`:plLast?` primeleague.gg answered ${plLast}.`:" primeleague.gg sent an empty page.";
 async function plAuto(){
   const t=curTeam();
   if(plBusy||!t||t.id===MYID||!t.pl||plMissingCol())return;
@@ -1998,7 +2001,7 @@ async function plAuto(){
     return o;
   };
   try{
-    const d0=await get(t.pl);if(!d0)throw new Error("The team link did not load. Check the saved Prime League link.");
+    const d0=await get(t.pl);if(!d0)throw new Error("The team link did not load."+(plLast===404?" Check the saved Prime League link.":plWhy()));
     const splits=splitLinks(d0);
     // the general team page lists the earlier splits
     const ga=d0.querySelector('a[href*="/leagues/teams/'+tid+'"]'),gu=/\/leagues\/teams\//.test(t.pl)?t.pl:ga?plLink(ga.getAttribute("href").replace("/en/","/de/")):"";
