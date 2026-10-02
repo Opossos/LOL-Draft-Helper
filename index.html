@@ -92,7 +92,8 @@ body .mem.sm.mt button{margin-left:auto;flex:none}
 .epl{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .epl .lu b{font-weight:600}
 .epl .lu.got{border-color:var(--red)}
-.epr{margin:10px 0}
+.epr{margin:8px 0}
+.epr+.epr{border-top:1px solid var(--line);padding-top:8px}
 .epr .eph{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
 body .cmb-h{align-items:center}
 .cmb-h .chh .ico{width:30px;height:30px;border-radius:6px}
@@ -107,6 +108,16 @@ body .cmb-h{align-items:center}
 .cprow{margin:10px 0}
 .cph{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap}
 .cptiles{display:flex;flex-wrap:wrap;gap:6px}
+.eptiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px}
+.ept{display:flex;align-items:center;gap:8px;min-width:0;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ept:hover,.ept:focus-visible{border-color:var(--red)}
+.ept.pl{border-color:var(--gold);box-shadow:inset 3px 0 0 var(--gold)}
+.ept .ico{width:26px;height:26px;flex:none;margin:0;border-radius:6px}
+.ept>span{display:flex;flex-direction:column;min-width:0}
+.ept b{font-size:14px;font-weight:600}
+.ept b,.ept small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ept small{font-size:12px;color:var(--mute)}
+.ept small.plx{color:var(--gold);font-weight:600}
 button.mem.sm{cursor:pointer;text-align:left}
 button.mem.sm .ico{display:inline-block}
 button.mem.sm small{display:block}
@@ -1077,10 +1088,11 @@ function enemyView(){
   h+=`<details class="card" data-k="en-line" ${op("en-line")}><summary>${ic("users")}<h2>Enemy lineup</h2></summary>${t.pl?`<p style="margin:0 0 6px"><a class="btn" href="${esc(t.pl)}" target="_blank" rel="noopener">Open ${esc(t.name)} on Prime League</a></p>`:""}<p class="note" style="margin:0 0 4px">${turn}</p><div class="epl">${roster.map(sc).join("")}</div>${PB.n?`<div class="nl" style="margin:8px 0 2px">They usually ban (${PB.n} Prime League game${PB.n>1?"s":""})</div>${plBanChips(PB.own.slice(0,5))}`:""}</details>`;
   const pill=c=>[c.plg?c.plg+" PL game"+(c.plg>1?"s":""):"",c.g?c.g+" games":"",c.wr?c.wr+"% WR":""].filter(Boolean).join(" \u00b7 ");
   // what each free player might pick
-  // Prime League games weigh more than ranked games
-  const likely=free.map(x=>({x,top:enC(x).filter(c=>BY[c.n]&&!u.has(c.n)).sort((a,b)=>(b.plg*20+b.g)-(a.plg*20+a.g)||b.wr-a.wr).slice(0,5)}));
+  // champions played in Prime League come first, then ranked by games
+  const likely=free.map(x=>({x,top:enC(x).filter(c=>BY[c.n]&&!u.has(c.n)).sort((a,b)=>b.plg-a.plg||b.plw-a.plw||b.g-a.g||b.wr-a.wr).slice(0,6)}));
+  const tile=c=>`<button class="ept${c.plg?" pl":""}" data-ban="${esc(c.n)}" title="Ban ${esc(c.n)}${c.plg?`, played ${c.plg}\u00d7 in Prime League`:""}${c.g?`, ${c.g} ranked games`:""}${c.wr?`, ${c.wr}% WR`:""}">${icon(c.n)}<span><b>${esc(c.n)}</b>${c.plg?`<small class="plx">PL ${c.plg}\u00d7 \u00b7 ${c.plw}W ${c.plg-c.plw}L</small>`:""}${c.g||c.wr?`<small>${[c.g?c.g+" games":"",c.wr?c.wr+"%":""].filter(Boolean).join(" \u00b7 ")}</small>`:""}</span></button>`;
   h+=`<details class="card" data-k="en-pick" ${op("en-pick")}><summary>${ic("eye")}<h2>What they might pick</h2></summary>`;
-  h+=likely.length?likely.map(o=>`<div class="epr"><div class="eph"><b>${esc(o.x.name)}</b><span class="tag">${ri(role(o.x))}${rt(role(o.x))}</span></div>${o.top.length?`<div class="cptiles">${o.top.map(c=>`<button class="mem sm weak" data-ban="${esc(c.n)}" title="Ban ${esc(c.n)}">${icon(c.n)}<span><b>${esc(c.n)}</b><small>${pill(c)}</small></span></button>`).join("")}</div>`:`<p class="note" style="margin:0">No available champions saved for this player. Import their stats in Teams, then Scout.</p>`}</div>`).join("")+`<p class="note">Their most played champions that are still available. Tap one to ban it, or right-click for more options.</p>`:`<p class="note">All enemy players have picked a champion.</p>`;
+  h+=likely.length?likely.map(o=>`<div class="epr"><div class="eph"><b>${esc(o.x.name)}</b><span class="tag">${ri(role(o.x))}${rt(role(o.x))}</span></div>${o.top.length?`<div class="eptiles">${o.top.map(tile).join("")}</div>`:`<p class="note" style="margin:0">No available champions saved for this player. Import their stats in Teams, then Scout.</p>`}</div>`).join("")+`<p class="note">Champions they played in Prime League (gold, PL = games, wins and losses) come first, then their most played ranked champions. Only available champions are shown. Tap one to ban it, or right-click for more options.</p>`:`<p class="note">All enemy players have picked a champion.</p>`;
   h+=`</details>`;
   // what we should ban
   const cand=new Map();
@@ -1938,8 +1950,8 @@ function plOf(p){
 const plKda=s=>[s.k,s.d,s.a].map(v=>{v/=s.g;return Number.isInteger(v)?v:v.toFixed(1)}).join("/");
 // ranked champions plus Prime League champions, one entry per champion (plg = Prime League games)
 function enC(x){
-  const m=new Map(x.champs.map(c=>[c.n,{...c,plg:0}]));
-  plOf(x).forEach(s=>{const c=m.get(s.n);if(c)c.plg=s.g;else m.set(s.n,{n:s.n,g:0,wr:0,kda:0,plg:s.g})});
+  const m=new Map(x.champs.map(c=>[c.n,{...c,plg:0,plw:0}]));
+  plOf(x).forEach(s=>{const c=m.get(s.n);if(c){c.plg=s.g;c.plw=s.w}else m.set(s.n,{n:s.n,g:0,wr:0,kda:0,plg:s.g,plw:s.w})});
   return[...m.values()];
 }
 function plBans(t){
