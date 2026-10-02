@@ -5,15 +5,37 @@ const {expect}=require("@playwright/test");
 const APP="file://"+path.resolve(__dirname,"..","index.html");
 
 // Supabase, champion icons and role images are not needed for the tests; blocking them keeps runs fast and offline.
-async function block(page){
-  await page.route(/supabase\.co|ddragon\.leagueoflegends\.com|emoji\.gg/,r=>r.abort());
+// With a fake database (see fakeDb) Supabase requests go there instead.
+async function block(page,db){
+  await page.route(/ddragon\.leagueoflegends\.com|emoji\.gg/,r=>r.abort());
+  await page.route(/supabase\.co/,db?db.handler:r=>r.abort());
+}
+
+// A tiny stand-in for the Supabase tables: no password, empty notes and champion edits, and a scouts table in memory.
+// Pages opened with the same fakeDb share it, like teammates on the same site.
+function fakeDb(){
+  const rows=new Map();
+  const handler=async route=>{
+    const req=route.request(),u=new URL(req.url()),m=req.method();
+    const json=b=>route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(b)});
+    if(u.pathname.endsWith("/rpc/pw_status"))return json("open");
+    if(u.pathname.endsWith("/rest/v1/scouts")){
+      const id=u.searchParams.get("id");
+      if(m==="GET")return json([...rows.values()].filter(r=>!id||"eq."+r.id===id));
+      if(m==="POST"){[].concat(JSON.parse(req.postData())).forEach(r=>rows.set(r.id,{...rows.get(r.id),...r}));return route.fulfill({status:201,body:""})}
+      if(m==="DELETE"){rows.delete(String(id).replace(/^eq\./,""));return route.fulfill({status:204,body:""})}
+    }
+    if(m==="GET")return json([]);
+    return route.fulfill({status:201,body:""});
+  };
+  return{rows,handler};
 }
 
 // Opens the app with the given localStorage entries (objects are stored as JSON) and collects page errors.
-async function openApp(page,store={}){
+async function openApp(page,store={},{db}={}){
   const errors=[];
   page.on("pageerror",e=>errors.push(e.message));
-  await block(page);
+  await block(page,db);
   // seed localStorage before the app's own scripts run, once per test, so reloads inside a test keep the app's data
   const seed=Math.random().toString(36).slice(2);
   // the mark lives in window.name, which survives reloads in the same tab (localStorage can read empty for a moment after one)
@@ -45,4 +67,4 @@ async function restart(page){
   return fresh;
 }
 
-module.exports={APP,block,openApp,restart,player,myTeam,draft,isPhone};
+module.exports={APP,block,fakeDb,openApp,restart,player,myTeam,draft,isPhone};

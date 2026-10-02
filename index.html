@@ -539,6 +539,38 @@ body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
 .grid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:5px}
 .ch{min-height:44px}
 }
+/* draft bar: undo, next game, live */
+.dact{display:flex;gap:6px;flex-wrap:wrap}
+.reset .ic{width:1em;height:1em;margin-right:5px;vertical-align:-.12em}
+.reset:disabled{opacity:.45;cursor:default}.reset:disabled:hover{border-color:var(--line);color:inherit}
+.reset[aria-pressed=true]{background:var(--ok);border-color:var(--ok);color:var(--panel)}
+#lmsg{margin:0 0 8px}
+/* lane matchup under each pick */
+.slot .sn{display:flex;flex-direction:column;min-width:0}
+.slot em.vs{font-style:normal;font-size:11px;color:var(--mute);margin:0;line-height:1.25}
+.slot em.vs.good{color:var(--ok)}.slot em.vs.bad{color:var(--red)}
+/* saved games and the champion page */
+.gsts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:4px 16px}
+.gst{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid var(--line);font-size:14px}
+.gst>span:first-child{min-width:0;overflow-wrap:anywhere}.gst>span:last-child{text-align:right;flex:none;max-width:60%}
+.gst .good,.gst .bad{margin:0}
+.gst .lnk,.gpk .lnk{color:var(--ink);text-decoration:none;font-weight:600}
+.gst .ico,.gpk .ico{width:20px;height:20px;border-radius:4px;vertical-align:-5px;margin-right:4px}
+.gm{border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:6px 0}
+.gm>summary{cursor:pointer}
+.gm>summary .gr{float:right;margin-left:8px}
+.gm>summary .good,.gm>summary .bad{margin:0}
+.gmb .nl{margin:8px 0 2px}
+.gpk{display:flex;flex-wrap:wrap;gap:4px 10px}
+.gmb .btn[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+dialog input[type=text],dialog select{padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit;box-sizing:border-box}
+#chp{width:min(92vw,560px);max-width:none;max-height:85vh;overflow:auto;box-sizing:border-box}
+#chp h3{margin:14px 0 4px;font-size:15px}
+#chp .chh .ico{width:52px;height:52px}
+.cca{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+#gdlg .bar{display:flex;gap:6px;flex-wrap:wrap}
+#bkf{margin:4px 0 8px}
+#gno{margin-left:8px}#gno:empty{display:none}
 </style>
 </head>
 <body>
@@ -556,6 +588,10 @@ body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
 <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
 <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
 <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></symbol>
+<symbol id="i-next" viewBox="0 0 24 24"><path d="M5 5l8 7-8 7z"/><path d="M17 5v14"/></symbol>
+<symbol id="i-live" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/></symbol>
+<symbol id="i-save" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/></symbol>
 <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
 <symbol id="r-T" viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 4.2 3 7.2 7 9 4-1.8 7-4.8 7-9V6z"/></symbol>
 <symbol id="r-J" viewBox="0 0 24 24"><path d="M12 21v-7"/><path d="M12 14c-4 0-7-3-7-7 4 0 7 3 7 7zM12 14c4 0 7-3 7-7-4 0-7 3-7 7z"/></symbol>
@@ -574,12 +610,13 @@ body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
 <header class="top" id="hh"><h1>Draft helper</h1><div class="tb"><button id="lo" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-bulb"/></svg>Suggestions</button><button id="ro" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Champions</button><button id="so" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>Teams</button><button id="eb" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg>Enemy draft</button><button id="stl" title="Switch the look: Light, Dark or GG"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg><span>Light</span></button></div></header>
 <main>
 <p class="sub">Open the Champions panel to pick, and the Suggestions panel for picks, combos and bans.</p>
-<details class="card tools" open><summary><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg><h2>Draft board</h2></summary>
-<div class="dbar"><div class="tg" id="side" role="group" aria-label="Your side"></div><button class="reset" id="reset">Clear draft</button></div>
+<details class="card tools" open><summary><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg><h2>Draft board</h2><span class="tag" id="gno"></span></summary>
+<div class="dbar"><div class="tg" id="side" role="group" aria-label="Your side"></div><div class="dact"><button class="reset" id="undo" disabled title="Undo the last change to the draft (Ctrl+Z)"><svg class="ic" aria-hidden="true"><use href="#i-undo"/></svg>Undo</button><button class="reset" id="ngame" title="Save this game with its result and start the next one"><svg class="ic" aria-hidden="true"><use href="#i-next"/></svg>Next game</button><button class="reset" id="live" aria-pressed="false" title="Share this draft live with your team"><svg class="ic" aria-hidden="true"><use href="#i-live"/></svg>Live</button><button class="reset" id="reset">Clear draft</button></div></div>
+<p class="note" id="lmsg" role="status" hidden></p>
 <div class="board" id="board"></div>
 <div class="tg" id="tg" role="group" aria-label="Add champion to"></div>
 </details>
-<details class="card tools" open><summary><svg class="ic" aria-hidden="true"><use href="#i-ban"/></svg><h2>Fearless bans</h2></summary><p class="note" style="margin:0 0 6px">Banned for everyone. These do not use blue or red bans.</p><div class="cbw"><div class="mcs" id="fz-c"></div><input id="fz" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Fearless bans" placeholder="Search a champion to ban for everyone" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div></details>
+<details class="card tools" open><summary><svg class="ic" aria-hidden="true"><use href="#i-ban"/></svg><h2>Fearless bans</h2></summary><p class="note" style="margin:0 0 6px">Banned for everyone. These do not use blue or red bans.</p><div class="cbw"><div class="mcs" id="fz-c"></div><input id="fz" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Fearless bans" placeholder="Search a champion to ban for everyone" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div><div class="bar" style="margin-top:4px"><button class="btn" id="nser">New series</button> <span class="note" style="margin:0" id="sernote"></span></div></details>
 <details class="card tools" open><summary><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg><h2>Consider champions</h2></summary>
 <div class="cbw"><input id="cq" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-label="Champion to add to consider" placeholder="Search a champion to add" autocomplete="off"><ul class="cbl" role="listbox" hidden></ul></div>
 <div id="cres"></div>
@@ -614,6 +651,23 @@ body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
 <p class="note" id="dnmsg" role="status" style="margin:0"></p>
 <div id="dnl"></div>
 </details>
+<details class="card tools" id="gmc"><summary><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><h2>Saved games</h2> <span class="tag" id="gmcount"></span></summary>
+<div id="gml"></div>
+</details>
+<details class="card tools" id="bkc"><summary><svg class="ic" aria-hidden="true"><use href="#i-save"/></svg><h2>Backup</h2></summary>
+<p class="note" style="margin:0 0 8px">One file with everything: your notes, champion edits, teams with their players and tier lists, saved games, Fearless bans, the current draft and your settings. Keep it somewhere safe, or use it to move to another device.</p>
+<div class="bar"><button class="btn" id="bkdl">Download backup</button> <button class="btn" id="bkcp">Copy as text</button></div>
+<div class="nl" style="margin-top:10px">Restore</div>
+<input type="file" id="bkf" accept=".json,application/json,text/plain" aria-label="Backup file">
+<textarea id="bkt" aria-label="Backup text" placeholder="Or paste the backup text here"></textarea>
+<button class="btn" id="bkrs">Restore from this text</button>
+<p class="note" id="bkmsg" role="status"></p>
+</details>
+<dialog id="gdlg"><form method="dialog"><h3 style="margin:0 0 6px" id="gdt">Save this game</h3><p class="note" style="margin:0 0 10px" id="gds"></p>
+<label class="fl" for="gdo">Opponent (optional)</label><input id="gdo" type="text" autocomplete="off" placeholder="Team name" style="width:100%;margin:0 0 8px">
+<label style="display:block;margin:0 0 12px"><input type="checkbox" id="gdf" checked> Fearless: ban all picked champions for the rest of the series</label>
+<div class="bar"><button class="btn good" value="w" autofocus>Won</button> <button class="btn bad" value="l">Lost</button> <button class="btn" value="n">No result</button> <button class="btn" value="">Cancel</button></div></form></dialog>
+<dialog id="chp" aria-label="Champion"><div id="chpb"></div><form method="dialog" style="margin-top:12px"><button class="btn">Close</button></form></dialog>
 <div class="cm" id="cm" role="menu" hidden></div>
 <dialog id="cfm"><form method="dialog"><p id="cfm-t"></p><button class="btn" value="0">Cancel</button> <button class="btn" id="cfm-y" value="1">Delete</button></form></dialog>
 </main>
@@ -884,14 +938,23 @@ const isFlex=n=>!!BY[n]&&BY[n].r.length>1;
 const fx=n=>isFlex(n)?`<span class="fx" title="Flex pick: ${BY[n].r.map(r=>RN[r]).join(" / ")}">Flex</span>`:"";
 const BASE=Object.fromEntries(D.map(c=>[c.n,{r:c.r.slice(),d:c.d,t:c.t}]));
 const TARGETS=[["bp","Blue pick"],["rp","Red pick"],["bb","Blue ban"],["rb","Red ban"]];
-let st={bp:[],rp:[],bb:[],rb:[]},mk={ban:[],pre:[]},cons=[],SW={},role="",query="",me="b",auto=true,sRole="";
+let st={bp:[],rp:[],bb:[],rb:[]},mk={ban:[],pre:[]},cons=[],SW={},role="",query="",me="b",auto=true,sRole="",ser={n:1,id:""};
 try{if(localStorage.getItem("lolMe")==="r")me="r"}catch(e){}
 let target=me==="b"?"bp":"rp";
 try{
   const v=JSON.parse(localStorage.getItem("lolDraft")||"null"),ok=a=>Array.isArray(a)&&a.length<=5&&a.every(x=>typeof x==="string");
-  if(v&&v.st&&["bp","rp","bb","rb"].every(k=>ok(v.st[k]))){st=v.st;if(v.mk&&Array.isArray(v.mk.ban)&&Array.isArray(v.mk.pre))mk=v.mk;if(Array.isArray(v.cons))cons=v.cons;if(v.SW&&typeof v.SW==="object")SW=v.SW;auto=v.auto!==false;if(TARGETS.some(t=>t[0]===v.target))target=v.target}
+  if(v&&v.st&&["bp","rp","bb","rb"].every(k=>ok(v.st[k]))){st=v.st;if(v.mk&&Array.isArray(v.mk.ban)&&Array.isArray(v.mk.pre))mk=v.mk;if(Array.isArray(v.cons))cons=v.cons;if(v.SW&&typeof v.SW==="object")SW=v.SW;auto=v.auto!==false;if(TARGETS.some(t=>t[0]===v.target))target=v.target;if(v.ser&&v.ser.n>0)ser={n:Math.floor(v.ser.n),id:String(v.ser.id||"")}}
 }catch(e){}
-function saveDraft(){try{localStorage.setItem("lolDraft",JSON.stringify({st,mk,cons,SW,auto,target}))}catch(e){}}
+function saveDraft(){try{localStorage.setItem("lolDraft",JSON.stringify({st,mk,cons,SW,auto,target,ser}))}catch(e){}}
+// undo: every change to the draft (picks, bans, marks, consider list, Fearless bans, series) can be taken back, newest first
+let UNDO=[],dLast=null,dQuiet=false;
+const dSig=()=>JSON.stringify({st,mk,cons,fz:MS.fz,ser});
+function trackUndo(){const s=dSig();if(dLast!==null&&s!==dLast&&!dQuiet){UNDO.push(dLast);if(UNDO.length>60)UNDO.shift()}dLast=s;dQuiet=false}
+function undo(){
+  const s=UNDO.pop();if(!s)return;
+  const o=JSON.parse(s);st=o.st;mk=o.mk;cons=o.cons;MS.fz=o.fz;ser=o.ser;DRAW.fz();saveFear();
+  dQuiet=true;render();
+}
 const MY=()=>st[me==="b"?"bp":"rp"],EN=()=>st[me==="b"?"rp":"bp"];
 const $=id=>document.getElementById(id);
 const used=()=>new Set([].concat(st.bp,st.rp,st.bb,st.rb,MS.fz));
@@ -1107,13 +1170,21 @@ function traits(a){
   return`<div class="tr">${[["t","Frontline"],["e","Main engage"],["f","Follow-up engage"],["c","Crowd control"],["s","Sustain"]].map(([k,l])=>`<span class="${a.tr.has(k)?"y":""}">${l}</span>`).join("")}</div>`;
 }
 function board(){
+  // roles on both sides, so every pick can show the enemy in the same role and your note about that matchup
+  const myK=me==="b"?"bp":"rp",R={};
+  ["bp","rp"].forEach(k=>{R[k]=st[k].length?analyse(st[k],k===myK?roleMap(st[k]):null).roles:[]});
+  const vs=(k,i)=>{
+    const r=R[k][i],o=k==="bp"?"rp":"bp",j=r?R[o].indexOf(r):-1;if(j<0)return"";
+    const n=st[k][i],e=st[o][j],w=strongOf(n).includes(e),l=!w&&weakOf(n).includes(e);
+    return`<em class="vs${w?" good":l?" bad":""}" title="${esc(n)} against ${esc(e)} in ${RN[r]}${w?": your notes say "+esc(n)+" is strong against "+esc(e):l?": your notes say "+esc(n)+" is weak against "+esc(e):""}">vs ${esc(e)}${w?" \u00b7 strong":l?" \u00b7 weak":""}</em>`;
+  };
   const side=(k,bk,cls,title)=>{
-    const mine=k===(me==="b"?"bp":"rp");
-    const a=st[k].length?analyse(st[k],mine?roleMap(st[k]):null):{roles:[]};
+    const mine=k===myK;
+    const a={roles:R[k]};
     let h=`<div class="side ${cls}"><h2>${title}</h2>`;
     for(let i=0;i<5;i++){
       const n=st[k][i];
-      h+=n?`<button class="slot f" data-rm="${k}" data-i="${i}" aria-label="Remove ${esc(n)}"><span>${esc(n)}${a.roles[i]?fx(n):""}</span><small>${a.roles[i]?RN[a.roles[i]]:"Flex"}</small></button>`
+      h+=n?`<button class="slot f" data-rm="${k}" data-i="${i}" data-cp="${esc(n)}" aria-label="Remove ${esc(n)}"><span class="sn"><span>${esc(n)}${a.roles[i]?fx(n):""}</span>${vs(k,i)}</span><small>${a.roles[i]?RN[a.roles[i]]:"Flex"}</small></button>`
           :(mine&&mk.pre[i-st[k].length]?`<button class="slot g" data-g="${mk.pre[i-st[k].length]}" data-gk="pre" title="Prepick. Tap to lock in, right-click to change."><span>${mk.pre[i-st[k].length]}</span><small>Prepick</small></button>`:`<button class="slot" data-t="${k}"><small>Empty</small></button>`);
     }
     h+=`<div class="bans">`;
@@ -1126,6 +1197,9 @@ function board(){
   $("board").innerHTML=side("bp","bb","b","Blue team"+(me==="b"?" (you)":""))+side("rp","rb","r","Red team"+(me==="r"?" (you)":""));
 }
 function controls(){
+  $("undo").disabled=!UNDO.length;
+  $("gno").textContent=ser.n>1?"Game "+ser.n:"";
+  $("live").hidden=!SB.url;$("live").setAttribute("aria-pressed",LIVE&&sb&&scOK);
   $("side").innerHTML=[["b","Play blue"],["r","Play red"]].map(([k,l])=>`<button data-me="${k}" aria-pressed="${me===k}">${l}</button>`).join("");
   const i=stepNow();
   $("tg").innerHTML=`<button data-auto="1" aria-pressed="${auto}">Follow draft order</button>`+(auto?`<span class="note" style="align-self:center">${i<20?"Step "+(i+1)+" of 20: "+SN[ORDER[i]]+(ORDER[i][0]===me?" (you)":""):"Draft complete"}</span>`:TARGETS.map(([k,l])=>`<button data-t="${k}" aria-pressed="${target===k}">${l} (${st[k].length}/5)</button>`).join(""));
@@ -1316,7 +1390,7 @@ function analysis(){
   }
   $("an").innerHTML=h;
 }
-function render(){EFF=null;PLC=null;saveDraft();defView();document.body.dataset.me=me;$("hide").setAttribute("aria-pressed",hide);board();controls();grid();analysis();consider();notes();histView();scView();if(DS.eo)enemyView()}
+function render(){EFF=null;PLC=null;trackUndo();saveDraft();defView();document.body.dataset.me=me;$("hide").setAttribute("aria-pressed",hide);board();controls();grid();analysis();consider();notes();histView();scView();gameView();if(DS.eo)enemyView();liveOut()}
 function add(n,k){
   k=k||(auto&&stepNow()<20?ORDER[stepNow()]:target);
   if(used().has(n)||st[k].length>=5)return false;
@@ -1327,6 +1401,7 @@ document.addEventListener("click",e=>{
   if(lpFired){lpFired=false;return}
   if(!e.target.closest("#cm"))closeMenu();
   const b=e.target.closest("button");if(!b)return;
+  if(b.closest("#chp")&&(b.dataset.addmine||b.dataset.ban||b.dataset.c))$("chp").close();
   if(b.dataset.rm){st[b.dataset.rm].splice(+b.dataset.i,1)}
   else if(b.dataset.t){target=b.dataset.t}
   else if(b.dataset.r!==undefined){role=b.dataset.r}
@@ -1338,6 +1413,18 @@ document.addEventListener("click",e=>{
   else if(b.dataset.addr){add(b.dataset.addr,"rp")}
   else if(b.dataset.n){add(b.dataset.n)}
   else if(b.id==="reset"){clearDraft();return}
+  else if(b.id==="undo"){undo();return}
+  else if(b.id==="ngame"){nextGame();return}
+  else if(b.id==="nser"){newSeries();return}
+  else if(b.id==="live"){liveToggle();return}
+  else if(b.dataset.gres){gameRes(b.dataset.gres);return}
+  else if(b.dataset.gdel){gameDel(b.dataset.gdel);return}
+  else if(b.dataset.gload){gameLoad(b.dataset.gload)}
+  else if(b.dataset.gf){GV.f=b.dataset.gf;gvSave()}
+  else if(b.dataset.chp){openChamp(b.dataset.chp);return}
+  else if(b.id==="bkdl"){backupDownload();return}
+  else if(b.id==="bkcp"){backupCopy();return}
+  else if(b.id==="bkrs"){restoreAll($("bkt").value);return}
   else if(b.dataset.auto){auto=!auto}
   else if(b.dataset.swap){const[k,r,a]=b.dataset.swap.split("|").map(decodeURIComponent),kk=k+"|"+r;delete SW[kk];SW[kk]=a}
   else if(b.dataset.mrm){const[id,n]=b.dataset.mrm.split("|");MS[id]=MS[id].filter(x=>x!==n);DRAW[id]();if(id==="fz")saveFear()}
@@ -1486,19 +1573,20 @@ function closeMenu(){cm.hidden=true}
 function openMenu(n,x,y){
   const isB=mk.ban.includes(n),isP=mk.pre.includes(n);
   cm.dataset.n=n;
-  const on=[isB,cons.includes(n)||isP,isP,MS.fz.includes(n)];
-  const it=[["ban","Consider banning","ban"],["look","Consider picking","eye"],["pre","Prepick","star"],["fear","Fearless ban","lock"]];
-  cm.innerHTML=it.map(([m,l,g],i)=>`<button role="menuitem" data-m="${m}">${ic(g)}${on[i]?"\u2713 ":""}${l}</button>`).join("");
+  const on=[isB,cons.includes(n)||isP,isP,MS.fz.includes(n),false];
+  // a champion already picked or banned only gets its champion page
+  const it=[["ban","Consider banning","ban"],["look","Consider picking","eye"],["pre","Prepick","star"],["fear","Fearless ban","lock"],["page","Champion page","note"]].filter(x=>!used().has(n)||x[0]==="page"||(x[0]==="fear"&&MS.fz.includes(n)));
+  cm.innerHTML=it.map(([m,l,g])=>`<button role="menuitem" data-m="${m}">${ic(g)}${on[["ban","look","pre","fear","page"].indexOf(m)]?"\u2713 ":""}${l}</button>`).join("");
   cm.hidden=false;cmAt=performance.now();
   const r=cm.getBoundingClientRect();
   cm.style.left=Math.max(4,Math.min(x,innerWidth-r.width-8))+"px";
   cm.style.top=Math.max(4,Math.min(y,innerHeight-r.height-8))+"px";
 }
 function markTarget(e){
-  const t=e.target.closest("[data-n],[data-g],[data-addmine],[data-ban],[data-mk]");
-  if(!t||t.closest("#cm"))return null;
-  const n=t.dataset.n||t.dataset.g||t.dataset.addmine||t.dataset.ban||t.dataset.mk;
-  return t.dataset.g||!used().has(n)?n:null;
+  const t=e.target.closest("[data-n],[data-g],[data-addmine],[data-ban],[data-mk],[data-cp],[data-chp]");
+  if(!t||t.closest("#cm,dialog"))return null;
+  const n=t.dataset.n||t.dataset.g||t.dataset.addmine||t.dataset.ban||t.dataset.mk||t.dataset.cp||t.dataset.chp;
+  return BY[n]?n:null;
 }
 function menuAction(m){
   const n=cm.dataset.n;
@@ -1510,6 +1598,7 @@ function menuAction(m){
   }else if(m==="fear"){const i=MS.fz.indexOf(n);if(i>=0)MS.fz.splice(i,1);else MS.fz.push(n);DRAW.fz();saveFear()}
   else if(m==="lock"){add(n,me==="b"?"bp":"rp")}
   else if(m==="banow"){add(n,me==="b"?"bb":"rb")}
+  else if(m==="page"){closeMenu();openChamp(n);return}
   else if(m==="look"){const i=cons.indexOf(n);if(i>=0)cons.splice(i,1);else if(!mk.pre.includes(n)){cons.push(n);$("cq").scrollIntoView({behavior:"smooth",block:"center"})}}
   closeMenu();
 }
@@ -1522,7 +1611,11 @@ document.addEventListener("pointerdown",e=>{
   lpT=setTimeout(()=>{lpFired=true;openMenu(n,x,y)},550);
 });
 ["pointerup","pointercancel"].forEach(t=>document.addEventListener(t,()=>clearTimeout(lpT)));
-document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMenu()});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape")closeMenu();
+  // Ctrl+Z (Cmd+Z) undoes the last draft change, but not while typing in a field
+  if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key.toLowerCase()==="z"&&!e.target.closest("input,textarea,select,[contenteditable]")&&!document.querySelector("dialog[open]")){e.preventDefault();undo()}
+});
 // scrolling closes the menu, but not the small scroll that often comes with opening it (a list still settling, a long-press finger moving)
 window.addEventListener("scroll",()=>{if(!cm.hidden&&performance.now()-cmAt>400)closeMenu()},true);
 
@@ -1873,7 +1966,7 @@ async function sbLoad(){
   const rows=await r.json();
   await loadChamps();
   await loadScouts();
-  const sig=JSON.stringify([rows,OVR,SC]);
+  const sig=JSON.stringify([rows,OVR,SC,GS]);
   if(sig===sbSig)return;
   sbSig=sig;applyRows(rows);
 }
@@ -1919,7 +2012,10 @@ async function loadScouts(){
     else{mOK=false;r=await sbf("scouts?select=id,name,data,pl&order=name");if(r.ok)plOK=true;else{plOK=false;r=await sbf("scouts?select=id,name,data&order=name")}}
     if(!r.ok){scOK=false;return}
     scOK=true;
-    SC=(await r.json()).filter(x=>x&&typeof x.id==="string"&&Array.isArray(x.data)).map(x=>({id:x.id,name:String(x.name||"Team"),data:x.data,pl:typeof x.pl==="string"?x.pl:"",matches:Array.isArray(x.matches)?x.matches:[]}));PLC=null;
+    const rows=(await r.json()).filter(x=>x&&typeof x.id==="string"&&Array.isArray(x.data)),own=x=>/^(game|live):/.test(x.id);
+    GS=rows.filter(x=>x.id.startsWith("game:")).map(x=>x.data[0]&&x.data[0].game).filter(okGame);
+    const lv=rows.find(x=>x.id===LID);if(LIVE&&lv)liveIn(lv.data[0]&&lv.data[0].live);
+    SC=rows.filter(x=>!own(x)).map(x=>({id:x.id,name:String(x.name||"Team"),data:x.data,pl:typeof x.pl==="string"?x.pl:"",matches:Array.isArray(x.matches)?x.matches:[]}));PLC=null;
     ensureMy();SC.sort((a,b)=>(b.id===MYID)-(a.id===MYID));fixSel();
   }catch(e){scOK=false}
 }
@@ -2979,7 +3075,7 @@ function champBlock(n){
   const c=BY[n],wk=weakOf(n),sr=strongOf(n),sy=synOf(n),pre=mk.pre.includes(n);
   const risky=wk.filter(x=>EN().includes(x)),good=sr.filter(x=>EN().includes(x)),link=sy.filter(x=>teamBase().includes(x));
   const roles=c?c.r.map(r=>`<span class="tag">${ri(r)}${rt(r)}</span>`).join(""):"";
-  let h=`<div class="cc"><div class="cch"><span class="chh">${icon(n)}<span style="min-width:0"><b class="cn">${esc(n)}</b>${fx(n)}${pre?' <span class="tag">\u2605 Prepick</span>':""}<span class="tags">${roles}</span></span></span><button class="btn" ${pre?`data-unpre="${esc(n)}"`:`data-cx="${esc(n)}"`}>${pre?"Remove prepick":"Remove"}</button></div>`;
+  let h=`<div class="cc"><div class="cch"><span class="chh">${icon(n)}<span style="min-width:0"><b class="cn">${esc(n)}</b>${fx(n)}${pre?' <span class="tag">\u2605 Prepick</span>':""}<span class="tags">${roles}</span></span></span><span class="cca"><button class="btn" data-chp="${esc(n)}">Champion page</button><button class="btn" ${pre?`data-unpre="${esc(n)}"`:`data-cx="${esc(n)}"`}>${pre?"Remove prepick":"Remove"}</button></span></div>`;
   { const R=activePlayers().filter(hasLists),can=R.filter(x=>!cantP(x,n)).map(x=>{const i=(x.pool||[]).indexOf(n);return esc(pl(x))+(i>=0?" #"+(i+1):" (not confident)")});
     if(R.length)h+=can.length?`<p class="note" style="margin:2px 0 6px">Can pick it: ${can.join(", ")}</p>`:`<p class="note bad" style="margin:2px 0 6px">None of your players can pick it (not in a tier list or not confident list).</p>`; }
   if(risky.length)h+=`<p class="bad">Risky: the enemy has ${risky.map(esc).join(", ")}.</p>`;
@@ -2997,6 +3093,287 @@ function consider(){
   const list=[...mk.pre,...cons.filter(x=>!mk.pre.includes(x))];
   if(list.length&&!VER&&!icoAsked){icoAsked=true;loadIcons()}
   $("cres").innerHTML=list.length?planCard()+list.map(champBlock).join(""):`<p class="note">Search a champion above to add it here. Prepicked champions appear here automatically.</p>`;
+}
+// Saved games: each finished draft with its result. Shared through the scouts table (rows "game:<id>") when the
+// database is reachable, otherwise kept in this browser. A Prime League team's imported matches can be added to the stats.
+let GL=[],GS=[];
+const okGame=g=>g&&typeof g==="object"&&typeof g.id==="string"&&g.st&&["bp","rp","bb","rb"].every(k=>Array.isArray(g.st[k])&&g.st[k].every(x=>typeof x==="string"));
+try{GL=JSON.parse(localStorage.getItem("lolGames")||"[]").filter(okGame)}catch(e){}
+let GV={f:"all",t:""};
+try{Object.assign(GV,JSON.parse(localStorage.getItem("lolGV")||"{}"))}catch(e){}
+function gvSave(){try{localStorage.setItem("lolGV",JSON.stringify(GV))}catch(e){}}
+const gShared=()=>sb&&scOK;
+const games=()=>{const m=new Map();GL.forEach(g=>m.set(g.id,g));GS.forEach(g=>m.set(g.id,g));return[...m.values()].sort((a,b)=>b.at-a.at)};
+const gRow=g=>({id:"game:"+g.id,name:"Saved game",data:[{id:"game",name:"Saved game",champs:[],active:false,game:g}]});
+const gMine=g=>g.st[g.me==="r"?"rp":"bp"],gFoe=g=>g.st[g.me==="r"?"bp":"rp"];
+function gLocal(){try{localStorage.setItem("lolGames",JSON.stringify(GL))}catch(e){}}
+async function gamePut(g){
+  if(gShared()){
+    try{await sbx("scouts",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(gRow(g))});GS=GS.filter(x=>x.id!==g.id).concat(g);GL=GL.filter(x=>x.id!==g.id);gLocal();return true}
+    catch(e){}
+  }
+  GL=GL.filter(x=>x.id!==g.id).concat(g);gLocal();return false;
+}
+function lmsg(t){const m=$("lmsg");m.textContent=t;m.hidden=!t}
+function gdAsk(){
+  return new Promise(res=>{const d=$("gdlg");d.onclose=()=>res(d.returnValue);d.returnValue="";d.showModal()});
+}
+async function nextGame(){
+  if(!st.bp.length&&!st.rp.length){lmsg("Pick champions first. Next game saves the draft and starts the next one.");return}
+  const prev=games().find(g=>ser.id&&g.ser===ser.id),t=enTeam();
+  $("gdt").textContent="Save game "+ser.n;
+  $("gds").textContent="You: "+(MY().join(", ")||"no picks")+". Enemy: "+(EN().join(", ")||"no picks")+".";
+  $("gdo").value=prev?prev.opp||"":DS.eo&&t?t.name:"";
+  try{$("gdf").checked=localStorage.getItem("lolGF")!=="0"}catch(e){}
+  const v=await gdAsk();
+  if(!v)return;
+  const fear=$("gdf").checked;
+  try{localStorage.setItem("lolGF",fear?"1":"0")}catch(e){}
+  if(!ser.id)ser.id=uid();
+  const g={id:uid(),at:Date.now(),n:ser.n,ser:ser.id,me,res:v==="w"||v==="l"?v:"",opp:$("gdo").value.trim().slice(0,60),st:JSON.parse(JSON.stringify(st))};
+  const shared=await gamePut(g);
+  if(fear)[...st.bp,...st.rp].forEach(n=>{if(!MS.fz.includes(n))MS.fz.push(n)});
+  DRAW.fz();saveFear();
+  ser={n:ser.n+1,id:ser.id};
+  st={bp:[],rp:[],bb:[],rb:[]};SW={};mk={ban:[],pre:[]};cons=[];target=me==="b"?"bp":"rp";sRole="";
+  lmsg("Game "+g.n+" saved"+(shared?" for everyone":" in this browser")+(fear?", its picks are now Fearless bans":"")+". Undo brings the draft back.");
+  render();
+}
+async function newSeries(){
+  if((MS.fz.length||ser.n>1)&&!await ask("Start a new series? The Fearless bans are cleared and the game count starts at 1 again. Saved games stay.","New series"))return;
+  MS.fz=[];DRAW.fz();saveFear();ser={n:1,id:""};lmsg("");
+  render();
+}
+async function gameRes(v){
+  const[id,r]=v.split("|"),g=games().find(x=>x.id===id);if(!g)return;
+  await gamePut({...g,res:g.res===r?"":r});render();
+}
+async function gameDel(id){
+  const g=games().find(x=>x.id===id);if(!g)return;
+  if(!await ask("Delete this saved game?\n"+gTitle(g),"Delete"))return;
+  try{if(GS.some(x=>x.id===id))await sbx("scouts?id=eq."+encodeURIComponent("game:"+id),{method:"DELETE"})}catch(e){lmsg("Could not delete the game. Try again.");return}
+  GS=GS.filter(x=>x.id!==id);GL=GL.filter(x=>x.id!==id);gLocal();render();
+}
+function gameLoad(id){
+  const g=games().find(x=>x.id===id);if(!g)return;
+  st=JSON.parse(JSON.stringify(g.st));me=g.me==="r"?"r":"b";mk={ban:[],pre:[]};SW={};target=me==="b"?"bp":"rp";
+  try{localStorage.setItem("lolMe",me)}catch(e){}
+  lmsg("Loaded "+gTitle(g)+" on the board. Undo brings your draft back.");
+  $("board").scrollIntoView({behavior:"smooth",block:"start"});
+}
+const gDate=at=>{try{return new Date(at).toLocaleDateString(void 0,{day:"numeric",month:"short"})}catch(e){return""}};
+const gTitle=g=>"Game "+g.n+(g.opp?" vs "+g.opp:"")+", "+gDate(g.at);
+const resTxt=r=>r==="w"?`<span class="good">Won</span>`:r==="l"?`<span class="bad">Lost</span>`:`<span class="note">No result</span>`;
+// a record "3W 1L" with the win rate
+const rec=o=>`${o.w}W ${o.l}L${o.w+o.l?` <small>(${Math.round(o.w/(o.w+o.l)*100)}%)</small>`:""}`;
+function gEntries(){
+  const out=[];
+  if(GV.f!=="pl")games().forEach(g=>out.push({res:g.res,mine:gMine(g),foe:gFoe(g),src:"saved"}));
+  const t=SC.find(x=>x.id===GV.t&&x.id!==MYID);
+  if(t&&GV.f!=="saved")(t.matches||[]).forEach(m=>(m.games||[]).forEach(g=>out.push({res:g.w?"w":"l",mine:(g.ps||[]).map(q=>q.c),foe:(g.ops||[]).map(q=>q.c),src:"pl"})));
+  return out;
+}
+function gStats(E){
+  const P=new Map(),V=new Map(),PR=new Map(),put=(m,k,r)=>{const o=m.get(k)||{k,w:0,l:0};o[r]++;m.set(k,o)};
+  E.filter(e=>e.res).forEach(e=>{
+    const ms=[...new Set(e.mine)].filter(x=>BY[x]).sort();
+    ms.forEach((x,i)=>{put(P,x,e.res);ms.slice(i+1).forEach(y=>put(PR,x+" + "+y,e.res))});
+    new Set(e.foe).forEach(x=>BY[x]&&put(V,x,e.res));
+  });
+  const by=(m,min)=>[...m.values()].filter(o=>o.w+o.l>=min).sort((a,b)=>(b.w+b.l)-(a.w+a.l)||b.w/(b.w+b.l)-a.w/(a.w+a.l)||a.k.localeCompare(b.k));
+  return{P:by(P,1),PR:by(PR,2).sort((a,b)=>b.w/(b.w+b.l)-a.w/(a.w+a.l)||(b.w+b.l)-(a.w+a.l)),V:by(V,1)};
+}
+function gameView(){
+  const G=games(),plT=SC.filter(t=>t.id!==MYID&&(t.matches||[]).some(m=>(m.games||[]).length));
+  if(GV.t&&!plT.some(t=>t.id===GV.t))GV.t="";
+  if(!GV.t&&GV.f==="pl")GV.f="all";
+  $("gmcount").textContent=G.length?G.length:"";
+  const E=gEntries(),done=E.filter(e=>e.res),w=done.filter(e=>e.res==="w").length,S=gStats(E);
+  let h=`<p class="note" style="margin:0 0 8px">Tap Next game on the draft board to save a finished draft with its result. ${gShared()?"Saved games are shared with everyone using this site.":"Saved games are kept in this browser."}</p>`;
+  if(plT.length)h+=`<label class="fl" for="gpl">Add Prime League games of</label><select id="gpl"><option value="">No Prime League team</option>${plT.map(t=>`<option value="${esc(t.id)}"${t.id===GV.t?" selected":""}>${esc(t.name)}</option>`).join("")}</select>`;
+  if(GV.t)h+=`<div class="rf" role="group" aria-label="Games to count">${[["all","All games"],["saved","Saved drafts"],["pl","Prime League"]].map(([k,l])=>`<button data-gf="${k}" aria-pressed="${GV.f===k}">${l}</button>`).join("")}</div>`;
+  if(!E.length){$("gml").innerHTML=h+`<p class="note">No games yet.</p>`;return}
+  const row=o=>{const n=o.k.split(" + ");return`<div class="gst"><span>${n.map(x=>`<button class="lnk" data-chp="${esc(x)}">${icon(x)}${esc(x)}</button>`).join(" + ")}</span><span class="${o.w>o.l?"good":o.w<o.l?"bad":""}">${rec(o)}</span></div>`};
+  h+=`<p style="margin:8px 0"><b>Record: ${rec({w,l:done.length-w})}</b> <span class="note">${E.length} game${E.length>1?"s":""}${E.length>done.length?", "+(E.length-done.length)+" without result":""}</span></p>`;
+  h+=`<div class="gsts"><div><div class="nl">Your picks</div>${S.P.slice(0,10).map(row).join("")||`<p class="note">No results yet.</p>`}</div>`;
+  h+=`<div><div class="nl">Pairs played together (2+ games)</div>${S.PR.slice(0,6).map(row).join("")||`<p class="note">Play two champions together in two games to see them here.</p>`}</div>`;
+  h+=`<div><div class="nl">Against enemy champions</div>${S.V.slice(0,10).map(row).join("")||`<p class="note">No results yet.</p>`}</div></div>`;
+  if(G.length&&GV.f!=="pl"){
+    const side=(L,cls)=>`<span class="gpk ${cls}">${L.map(x=>`<button class="lnk" data-chp="${esc(x)}" title="${esc(x)}">${icon(x)}<span>${esc(x)}</span></button>`).join("")||`<small>–</small>`}</span>`;
+    h+=`<div class="nl" style="margin-top:10px">Games</div>`+G.map(g=>`<details class="gm" data-k="gm:${esc(g.id)}" ${OPEN["gm:"+g.id]?"open":""}><summary><span class="gr">${resTxt(g.res)}</span><b>${esc(gTitle(g))}</b> <span class="plside ${g.me==="r"?"r":"b"}">${g.me==="r"?"Red":"Blue"}</span></summary>
+<div class="gmb"><div class="nl">You</div>${side(gMine(g),"al")}<div class="nl">Enemy</div>${side(gFoe(g),"en")}<div class="nl">Bans</div><span class="note">${esc([...g.st.bb,...g.st.rb].join(", ")||"none")}</span>
+<div class="bar" style="margin-top:8px"><button class="btn" data-gres="${esc(g.id)}|w" aria-pressed="${g.res==="w"}">Won</button> <button class="btn" data-gres="${esc(g.id)}|l" aria-pressed="${g.res==="l"}">Lost</button> <button class="btn" data-gload="${esc(g.id)}">Show on the board</button> <button class="btn" data-gdel="${esc(g.id)}">Delete</button></div></div></details>`).join("");
+  }
+  $("gml").innerHTML=h;
+}
+document.addEventListener("change",e=>{if(e.target.id==="gpl"){GV.t=e.target.value;if(!GV.t)GV.f="all";gvSave();gameView()}});
+
+// Champion page: everything about one champion in one place
+function openChamp(n){
+  if(!BY[n])return;
+  if(!VER&&!icoAsked){icoAsked=true;loadIcons()}
+  $("chpb").innerHTML=champPage(n);
+  const d=$("chp");if(!d.open)d.showModal();
+  d.scrollTop=0;
+}
+function champPage(n){
+  const c=BY[n],u=used(),mine=MY(),foe=EN();
+  const link=L=>L.length?`<div class="chips">${L.map(x=>`<button class="chip${foe.includes(x)?" en":mine.includes(x)?" al":""}" data-chp="${esc(x)}">${icon(x)}${esc(x)}</button>`).join("")}</div>`:`<p class="note" style="margin:0 0 8px">None saved.</p>`;
+  const where=st.bp.includes(n)?"Picked by blue":st.rp.includes(n)?"Picked by red":st.bb.includes(n)||st.rb.includes(n)?"Banned":MS.fz.includes(n)?"Fearless ban":mk.pre.includes(n)?"Prepick":mk.ban.includes(n)?"Ban candidate":"";
+  let h=`<div class="chh">${icon(n)}<span style="min-width:0"><b class="cn">${esc(n)}</b>${fx(n)}<span class="tags">${c.r.map(r=>`<span class="tag">${ri(r)}${rt(r)}</span>`).join("")}<span class="tag">${{A:"AD",P:"AP",M:"Mixed damage"}[c.d]}</span>${where?`<span class="tag">${where}</span>`:""}</span></span></div>`;
+  h+=`<div class="tr">${[["t","Frontline"],["e","Main engage"],["f","Follow-up engage"],["c","Crowd control"],["s","Sustain"],["l","Low damage"]].filter(([k])=>c.t.includes(k)).map(([,l])=>`<span class="y">${l}</span>`).join("")||`<small class="note" style="margin:0">No team tools</small>`}</div>`;
+  if(!u.has(n)){
+    h+=`<div class="bar">${mine.length<5?`<button class="btn" data-addmine="${esc(n)}">Pick for your team</button>`:""} <button class="btn" data-ban="${esc(n)}">Ban</button> ${cons.includes(n)||mk.pre.includes(n)?"":`<button class="btn" data-c="${esc(n)}">Consider</button>`}</div>`;
+  }
+  h+=`<h3>Your notes</h3><div class="nl good">Strong against</div>${link(strongOf(n))}<div class="nl bad">Weak against</div>${link(weakOf(n))}<div class="nl">Works well with</div>${link(synOf(n))}`;
+  // your players
+  const P=sortP(myPlayers()).map(x=>{
+    const i=(x.pool||[]).indexOf(n),st_=i>=0?"Tier list #"+(i+1):(x.unsure||[]).includes(n)?"Not confident":(x.learn||[]).includes(n)?"Learning":hasLists(x)?"Can't play":"";
+    const s=(x.champs||[]).find(y=>y.n===n),stat=s&&(s.g||s.wr)?[s.g?s.g+" games":"",s.wr?s.wr+"% WR":""].filter(Boolean).join(", "):"";
+    return st_||stat?`<div class="gst"><span>${esc(pl(x))}${x.active?"":" <small class=\"note\">bench</small>"}</span><span class="${i>=0?"good":st_==="Can't play"?"bad":"note"}">${[st_,stat].filter(Boolean).join(" · ")}</span></div>`:"";
+  }).join("");
+  h+=`<h3>Your players</h3>${P||`<p class="note" style="margin:0">None of your players has it in a list.</p>`}`;
+  // enemy players, Prime League picks and bans of scouted teams
+  const E=[],L={g:0,w:0,b:0,vs:0,n:0};
+  SC.filter(t=>t.id!==MYID).forEach(t=>{
+    t.data.forEach(x=>{const e=x.champs&&enC(x).find(y=>y.n===n);if(e&&(e.g||e.plg))E.push({t,x,e})});
+    (t.matches||[]).forEach(m=>(m.games||[]).forEach(g=>{L.n++;if((g.ps||[]).some(q=>q.c===n)){L.g++;if(g.w)L.w++}if((g.bans||[]).includes(n))L.b++;if((g.obans||[]).includes(n))L.vs++}));
+  });
+  E.sort((a,b)=>b.e.plg-a.e.plg||b.e.g-a.e.g);
+  h+=`<h3>Enemy players who play it</h3>${E.length?E.slice(0,12).map(({t,x,e})=>`<div class="gst"><span>${esc(x.name)} <small class="note">${esc(t.name)}</small></span><span>${[e.plg?`<span class="plx">PL ${e.plg}× ${e.plw}W ${e.plg-e.plw}L</span>`:"",e.g?e.g+" games"+(e.wr?", "+e.wr+"%":""):""].filter(Boolean).join(" · ")}</span></div>`).join(""):`<p class="note" style="margin:0">No scouted player has played it.</p>`}`;
+  if(L.n)h+=`<h3>Prime League</h3><p style="margin:0">In ${L.n} imported game${L.n>1?"s":""} of your scouted teams: picked ${L.g}×${L.g?" ("+L.w+"W "+(L.g-L.w)+"L)":""}, banned by them ${L.b}×, banned against them ${L.vs}×.</p>`;
+  const G=games().filter(g=>g.res),gw=G.filter(g=>gMine(g).includes(n)),gv=G.filter(g=>gFoe(g).includes(n)),wr=a=>({w:a.filter(g=>g.res==="w").length,l:a.filter(g=>g.res==="l").length});
+  if(gw.length||gv.length)h+=`<h3>Your saved games</h3><p style="margin:0">${gw.length?"Played by you: "+rec(wr(gw)):""}${gw.length&&gv.length?"<br>":""}${gv.length?"Against you: "+rec(wr(gv)):""}</p>`;
+  return h;
+}
+
+// Backup and restore of everything this app keeps
+const BKAPP="lol-draft-helper";
+function backupObj(){
+  return{app:BKAPP,v:1,at:new Date().toISOString(),notes:{syn:REL.syn,weak:REL.weak,strong:REL.strong},champs:OVR,teams:SC,games:games(),fear:MS.fz,
+    draft:{st,mk,cons,SW,auto,target,ser},settings:{me,theme,open:OPEN,cf:[...CF],cui:CUI,hide},defOff:[...OFF]};
+}
+const bkmsg=t=>{$("bkmsg").textContent=t};
+function backupDownload(){
+  try{
+    const b=new Blob([JSON.stringify(backupObj(),null,1)],{type:"application/json"}),a=document.createElement("a");
+    a.href=URL.createObjectURL(b);a.download="draft-helper-backup-"+new Date().toISOString().slice(0,10)+".json";
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    bkmsg("Backup downloaded.");
+  }catch(e){bkmsg("Could not download. Use Copy as text instead.")}
+}
+function backupCopy(){
+  const t=JSON.stringify(backupObj());$("bkt").value=t;
+  try{navigator.clipboard.writeText(t).then(()=>bkmsg("Backup copied. It is also in the box below."),()=>bkmsg("The backup is in the box below. Select it and copy it."))}catch(e){bkmsg("The backup is in the box below. Select it and copy it.")}
+}
+$("bkf").addEventListener("change",async()=>{
+  const f=$("bkf").files[0];if(!f)return;
+  try{await restoreAll(await f.text())}finally{$("bkf").value=""}
+});
+const strs=a=>Array.isArray(a)&&a.every(x=>typeof x==="string");
+const pairs=a=>Array.isArray(a)&&a.every(p=>Array.isArray(p)&&p.length===2&&p.every(x=>typeof x==="string"));
+async function restoreAll(text){
+  let o;
+  try{o=JSON.parse(String(text||"").trim())}catch(e){bkmsg("That is not a backup. Choose the backup file or paste its text.");return}
+  // a notes backup from "Back up or restore notes" works here too
+  if(o&&!o.app&&(o.syn||o.weak||o.strong))o={app:BKAPP,notes:o};
+  if(!o||o.app!==BKAPP){bkmsg("That is not a backup of this app.");return}
+  const N=o.notes||{},T=Array.isArray(o.teams)?o.teams.filter(t=>t&&typeof t.id==="string"&&Array.isArray(t.data)):[],GG=Array.isArray(o.games)?o.games.filter(okGame):[];
+  const nN=["syn","weak","strong"].reduce((s,k)=>s+(pairs(N[k])?N[k].length:0),0),nC=o.champs&&typeof o.champs==="object"?Object.keys(o.champs).length:0;
+  const parts=[nN&&nN+" notes",T.length&&T.length+" teams",nC&&nC+" champion edits",GG.length&&GG.length+" saved games",o.draft&&"the draft"].filter(Boolean);
+  if(!parts.length){bkmsg("The backup is empty.");return}
+  if(!await ask(`Restore this backup${o.at?" from "+gDate(Date.parse(o.at)):""}?\nIt has ${parts.join(", ")}.\nNotes and saved games are added to yours. Teams and champion edits in the backup replace the ones with the same name. The draft, Fearless bans and settings are replaced.`,"Restore"))return;
+  bkmsg("Restoring...");
+  let nAdd=0;const err=[];
+  try{for(const k of ["syn","weak","strong"])for(const[a,b]of pairs(N[k])?N[k]:[])if(a&&b&&a!==b&&!hasNote(k,a,b)){await putNote(k,a,b);nAdd++}}catch(e){err.push("notes")}
+  try{
+    for(const[n,x]of Object.entries(o.champs||{})){
+      if(!BY[n]||!x||!Array.isArray(x.r)||!["A","P","M"].includes(x.d)||typeof x.t!=="string")continue;
+      const r=x.r.filter(k=>RO.includes(k)),t=x.t.replace(/[^tecsfl]/g,"");if(!r.length)continue;
+      if(sb&&chOK)await sbx("champs",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({n,r:r.join(""),d:x.d,t})});
+      else OVR[n]={r,d:x.d,t};
+    }
+    if(!(sb&&chOK)){saveLocalOvr();applyOvr()}
+  }catch(e){err.push("champion edits")}
+  try{
+    for(const t of T){
+      const nt={id:t.id,name:String(t.name||"Team"),data:t.data,pl:typeof t.pl==="string"?t.pl:"",matches:Array.isArray(t.matches)?t.matches:[]};
+      SC=SC.filter(x=>x.id!==nt.id).concat(nt);
+      if(sb&&scOK)await scSave(nt);
+    }
+    ensureMy();SC.sort((a,b)=>(b.id===MYID)-(a.id===MYID));fixSel();PLC=null;if(!(sb&&scOK))scLocal();
+  }catch(e){err.push("teams")}
+  for(const g of GG)if(!games().some(x=>x.id===g.id))await gamePut(g);
+  if(strs(o.fear)){MS.fz=o.fear.filter(x=>BY[x]);DRAW.fz();saveFear()}
+  const d=o.draft;
+  if(d&&d.st&&["bp","rp","bb","rb"].every(k=>strs(d.st[k])&&d.st[k].length<=5)){
+    st=d.st;mk=d.mk&&strs(d.mk.ban)&&strs(d.mk.pre)?d.mk:{ban:[],pre:[]};cons=strs(d.cons)?d.cons:[];SW=d.SW&&typeof d.SW==="object"?d.SW:{};
+    auto=d.auto!==false;if(TARGETS.some(t=>t[0]===d.target))target=d.target;if(d.ser&&d.ser.n>0)ser={n:Math.floor(d.ser.n),id:String(d.ser.id||"")};
+  }
+  const S=o.settings||{};
+  try{
+    if(S.me==="b"||S.me==="r"){me=S.me;localStorage.setItem("lolMe",me)}
+    if(THEMES.some(t=>t[0]===S.theme)){theme=S.theme;applyTheme(theme);localStorage.setItem("lolTheme",theme);styleBtn()}
+    if(strs(S.cf)){CF=new Set(S.cf);localStorage.setItem("lolCF",JSON.stringify(S.cf))}
+    if(S.cui&&typeof S.cui==="object"){Object.assign(CUI,S.cui);localStorage.setItem("lolCUI",JSON.stringify(CUI))}
+    if(typeof S.hide==="boolean"){hide=S.hide;localStorage.setItem("lolHide",hide?"1":"0")}
+    if(S.open&&typeof S.open==="object"){Object.assign(OPEN,S.open);localStorage.setItem("lolOpen",JSON.stringify(OPEN))}
+    if(!SB.url&&strs(o.defOff)){OFF=new Set(o.defOff);localStorage.setItem("lolDefOff",JSON.stringify(o.defOff))}
+  }catch(e){}
+  if(sb)try{await sbLoad()}catch(e){}
+  bkmsg(err.length?"Restored, except the "+err.join(" and ")+". Try again later.":`Restored: ${nAdd} new notes, ${T.length} teams, ${GG.length} games.`);
+  render();
+}
+
+// Live draft: everyone who turns Live on edits the same draft. It lives in the scouts table (row "live:draft"),
+// so the database password protects it like everything else. Each change gets the next version number.
+const CID=uid(),LID="live:draft";
+let LIVE=false,liveV=0,liveSeen="",liveSent="",livePushT=0;
+try{LIVE=localStorage.getItem("lolLive")==="1"}catch(e){}
+const liveState=()=>({st,mk,fz:MS.fz,me,ser});
+async function liveToggle(){
+  if(LIVE&&sb&&scOK){LIVE=false;try{localStorage.setItem("lolLive","0")}catch(e){}lmsg("Live is off. Changes stay on this device.");render();return}
+  if(!(sb&&scOK)){lmsg("Live draft needs the shared database, which is not reachable right now.");return}
+  LIVE=true;try{localStorage.setItem("lolLive","1")}catch(e){}
+  lmsg("Joining the live draft...");
+  const got=await liveFetch(true).catch(()=>null);
+  if(got===null){LIVE=false;lmsg("Could not reach the live draft. Try again.");render();return}
+  if(!got){liveSent="";render()}
+  lmsg(got?"Live: you joined your team's draft. Changes show on every device with Live on.":"Live: your draft is now shared. Teammates tap Live to join.");
+  render();
+}
+// returns true when a live draft exists (and was taken over), false when there is none, throws when unreachable
+async function liveFetch(join){
+  const r=await sbf("scouts?id=eq."+encodeURIComponent(LID)+"&select=data");
+  if(!r.ok)throw 0;
+  const rows=await r.json(),d=rows[0]&&Array.isArray(rows[0].data)&&rows[0].data[0]&&rows[0].data[0].live;
+  return liveIn(d,join);
+}
+function liveIn(d,join){
+  if(!d||typeof d!=="object"||!d.st||!["bp","rp","bb","rb"].every(k=>strs(d.st[k])))return false;
+  const sig=JSON.stringify(d);
+  if(sig===liveSeen&&!join)return true;
+  liveSeen=sig;liveV=Math.max(liveV,+d.v||0);
+  if(d.by===CID&&!join)return true;
+  st=d.st;mk=d.mk&&strs(d.mk.ban)&&strs(d.mk.pre)?d.mk:{ban:[],pre:[]};MS.fz=strs(d.fz)?d.fz:[];
+  if(d.me==="b"||d.me==="r")me=d.me;if(d.ser&&d.ser.n>0)ser={n:Math.floor(d.ser.n),id:String(d.ser.id||"")};
+  DRAW.fz();saveFear();target=me==="b"?"bp":"rp";
+  liveSent=JSON.stringify(liveState());dQuiet=true;
+  render();
+  return true;
+}
+async function livePush(){
+  const d={...liveState(),v:++liveV,by:CID,at:Date.now()};
+  liveSeen=JSON.stringify(d);
+  try{await sbx("scouts",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({id:LID,name:"Live draft",data:[{id:"live",name:"Live draft",champs:[],active:false,live:d}]})})}
+  catch(e){lmsg("Live: could not send the last change. It is sent again with your next change.");liveSent=""}
+}
+// called on every render: a change on this device is sent shortly after
+function liveOut(){
+  if(!LIVE||!(sb&&scOK))return;
+  const s=JSON.stringify(liveState());
+  if(s===liveSent)return;
+  liveSent=s;clearTimeout(livePushT);livePushT=setTimeout(livePush,200);
 }
 Object.values(DRAW).forEach(f=>f());
 let DS={lo:innerWidth>=1800,ro:false,so:false,eo:false},icons=true,CF=new Set(),CUI={big:false,cfo:false},hide=false,VER="",IDS={},icoAsked=false;
@@ -3060,6 +3437,9 @@ setMode();
       await sbLoad();
       const poll=()=>{if(!document.hidden&&!DR)sbLoad().catch(()=>{})};
       setInterval(poll,8000);document.addEventListener("visibilitychange",poll);
+      // the live draft is checked more often than the rest
+      if(LIVE&&scOK){if(!await liveFetch(true).catch(()=>true))liveSent=""}
+      setInterval(()=>{if(LIVE&&scOK&&!document.hidden)liveFetch().catch(()=>{})},2000);
     }
     catch(e){sb=false;REL=LOC;msg("Could not reach the shared notes. Using this browser only.")}
     setMode();render();return;
