@@ -376,6 +376,7 @@ summary{cursor:pointer;color:var(--mute)}
 .plch .good,.plch .bad{margin:0;font-weight:600}.plch small{color:var(--mute)}
 .plc .chips{margin:0}
 .plc .chip.sc .rico{width:14px;height:14px;margin:0 4px 0 -2px}
+.plbm{margin:6px 0;padding-left:20px}.plbm li{margin:0 0 6px}
 .plchoose{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .pt.plt{padding-right:8px}
 .pc .pn b{color:var(--ink)}
@@ -533,8 +534,14 @@ body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
 <form class="bar" id="tf" hidden><input id="scn" type="text" placeholder="Name of the new team" aria-label="Team name"><button class="btn" id="tok" type="submit">Create</button><button class="btn" id="tcancel" type="button">Cancel</button></form>
 <p class="note" id="tempty" hidden>No scouted team yet. Create one with "+ New team" or import it from Prime League below.</p>
 <div class="plsec"><div class="nl">Prime League</div>
-<div class="bar" id="plrow"><input id="plu" type="url" inputmode="url" placeholder="Prime League team link" aria-label="Prime League team link"><button class="btn" id="plsave" type="button">Save link</button><a class="btn" id="plopen" target="_blank" rel="noopener" hidden>Open on Prime League</a><button class="btn" id="plauto" type="button" hidden>Update from Prime League</button></div>
-<p class="note" id="plautoh" hidden style="margin:4px 0 0">Loads the roster, every player's champions for the last three splits and the played matches with bans and comps.</p>
+<div class="bar" id="plrow"><input id="plu" type="url" inputmode="url" placeholder="Prime League team link" aria-label="Prime League team link"><button class="btn" id="plsave" type="button">Save link</button><a class="btn" id="plopen" target="_blank" rel="noopener" hidden>Open on Prime League</a></div>
+<details id="plbmd"><summary>Import a whole team with one bookmark</summary>
+<ol class="note plbm">
+<li>Drag this button to your browser's bookmarks bar: <a class="btn" id="plbm" href="#">PL scout</a> On a phone, <button class="lnk" id="plbmc" type="button">copy the code</button> and save it as the address of a new bookmark.</li>
+<li>Open the team's page on primeleague.gg and tap the bookmark. It loads the players' pages of the last three splits and the played matches, about 20 pages.</li>
+<li>Click Copy in the box that appears and paste it into the box below.</li>
+</ol>
+</details>
 <details id="plimp"><summary>Import from a Prime League page</summary>
 <p class="note" style="margin:6px 0">Open a page on primeleague.gg, show the page source (Ctrl+U), select all (Ctrl+A), copy (Ctrl+C) and paste it here. The team page adds confirmed players, a match page adds the champions and bans they played, and the group page lists the team's matches so you can see which are still missing.</p>
 <textarea id="plsrc" aria-label="Prime League page source" placeholder="Paste the page source here"></textarea>
@@ -1207,7 +1214,8 @@ document.addEventListener("click",e=>{
   else if(b.dataset.plside){plMatchImport(+b.dataset.plside);return}
   else if(b.dataset.plgt){plGroupImport(b.dataset.plgt);return}
   else if(b.dataset.plrm){plMatchRm(b.dataset.plrm);return}
-  else if(b.id==="plauto"){plAuto();return}
+  else if(b.id==="plgb"){plBundleImport();return}
+  else if(b.id==="plbmc"){navigator.clipboard.writeText(plBmHref()).then(()=>scmsg("Bookmark code copied. Create a new bookmark and paste it as its address."),()=>scmsg("Could not copy. Drag the PL scout button to your bookmarks bar instead."));return}
   else if(b.id==="plgu"){plUserImport();return}
   else if(b.id==="padd"){scAddProfile();return}
   else if(b.id==="pcadd"){scAddChamp();return}
@@ -1289,6 +1297,8 @@ $("ec").addEventListener("change",()=>{$("emsg").textContent="";editForm()});
 $("nsearch").addEventListener("input",e=>{nq=e.target.value;notes()});
 $("dnq").addEventListener("input",defView);
 document.addEventListener("change",e=>{const s=e.target.closest&&e.target.closest("select[data-prole]");if(s)playerRole(s.dataset.prole,s.value)});
+$("plbm").href=plBmHref();
+$("plbm").addEventListener("click",e=>{e.preventDefault();scmsg("Drag the PL scout button to your bookmarks bar, then use it on primeleague.gg.")});
 $("plsrc").addEventListener("input",()=>{const v=$("plsrc").value.trim();PLR=v?plParse(v):null;plPrev()});
 combo("sc");combo("tc",0,tierOk);
 $("tsel").addEventListener("change",()=>{tSel=$("tsel").value;$("tc").value="";$("tmsg").textContent="";tierView()});
@@ -1759,7 +1769,19 @@ async function plSave(){
 }
 // Prime League roster import: reads the pasted page source of a team page
 let PLR=null;
-function plParse(src){return plParseDoc(new DOMParser().parseFromString(src,"text/html"))}
+function plParse(src){
+  if(/^\s*\{/.test(src)){
+    try{
+      const j=JSON.parse(src);
+      if(j&&j.plbundle&&Array.isArray(j.pages)){
+        const pages=new Map(j.pages.filter(x=>x&&typeof x.u==="string"&&typeof x.h==="string").map(x=>[plU(x.u),x.h])),cache=new Map();
+        const doc=u=>{const k=plU(u);if(!pages.has(k))return null;if(!cache.has(k))cache.set(k,new DOMParser().parseFromString(pages.get(k),"text/html"));return cache.get(k)};
+        return{kind:"bundle",team:String(j.team||""),pages,doc};
+      }
+    }catch(e){}
+  }
+  return plParseDoc(new DOMParser().parseFromString(src,"text/html"));
+}
 function plParseDoc(d){
   if(d.querySelector(".league-match-sub-lol,.content-match-head"))return plParseMatch(d);
   if(d.querySelector(".league-group-matches"))return plParseGroup(d);
@@ -1779,6 +1801,7 @@ function plPrev(){
   if(PLR.kind==="match"){el.innerHTML=plMatchPrev();return}
   if(PLR.kind==="group"){el.innerHTML=plGroupPrev();return}
   if(PLR.kind==="user"){el.innerHTML=plUserPrev();return}
+  if(PLR.kind==="bundle"){el.innerHTML=plBundlePrev();return}
   if(!PLR.players.length){el.innerHTML=`<p class="note">No players found. Make sure you copied the whole page source of a Prime League team page.</p>`;return}
   const known=plKnown(),add=PLR.players.filter(x=>x.ok&&!known.has(x.riot.toLowerCase())),skip=PLR.players.filter(x=>!x.ok);
   const t=curTeam(),target=t&&t.id!==MYID?t.name:(PLR.team||"a new team");
@@ -1820,7 +1843,7 @@ function plTeamMs(d){
   d.querySelectorAll('a[href*="/leagues/matches/"]').forEach(a=>{
     const h=a.getAttribute("href"),m=/\/matches\/(\d+)/.exec(h);if(!m)return;
     const tr=a.closest("tr"),played=!!tr&&[...tr.querySelectorAll("td")].some(td=>/^\s*\d+\s*:\s*\d+\s*$/.test(td.textContent));
-    const o=out.get(m[1]);if(!o)out.set(m[1],{id:m[1],url:plLink(h.replace(/\/(en)\//,"/de/")),played});else if(played)o.played=true;
+    const o=out.get(m[1]);if(!o)out.set(m[1],{id:m[1],url:plLink(new URL(h,"https://www.primeleague.gg/").href),played});else if(played)o.played=true;
   });
   return[...out.values()];
 }
@@ -1967,51 +1990,109 @@ function plUserPrev(){
   const list=U.champs.map(c=>`<span class="chip">${esc(c.n)} ${c.g}\u00d7</span>`).join("");
   return`<p class="note" style="margin:0">${esc(U.riot||"Player")} \u00b7 ${esc(U.season.name)}: ${U.champs.length?U.champs.reduce((a,c)=>a+c.g,0)+" games":"no games"}.</p>${list?`<div class="plp">${list}</div>`:""}${p?`<button class="btn" id="plgu" type="button">Save for ${esc(p.name)}</button>`:`<p class="note" style="margin:0">${t&&t.id!==MYID?esc(U.riot)+" is not in "+esc(t.name)+". Import the team page first.":"Choose the scouted team first."}</p>`}`;
 }
-// one click: the pl-fetch function loads the team page, player pages and match pages
-let plBusy=false;
-const fnHead=()=>({apikey:SB.key,...(window.APPPW?{"x-app-password":window.APPPW}:{}),"Content-Type":"application/json",...(SB.key.startsWith("sb_")?{}:{Authorization:"Bearer "+SB.key})});
-async function plGet(url){
-  let r;
-  try{r=await fetch(SB.url+"/functions/v1/pl-fetch",{method:"POST",headers:fnHead(),body:JSON.stringify({url})})}
-  catch(e){throw new Error("Could not reach the pl-fetch function. Check that it is deployed under that name.")}
-  const d=await r.json().catch(()=>({}));
-  if(!r.ok)throw new Error(r.status===404&&!d.error?"The pl-fetch function is not deployed yet.":d.error||"pl-fetch answered "+r.status+".");
-  plLast=d.status||0;
-  if(d.status!==200||!d.html)return null;
-  return new DOMParser().parseFromString(d.html,"text/html");
-}
-let plLast=0;
-const plWhy=()=>plLast===403||plLast===429||plLast===503?` primeleague.gg refused the request (answer ${plLast}). The site blocks automatic access from the server, so this update can't work. Paste the pages instead.`:plLast?` primeleague.gg answered ${plLast}.`:" primeleague.gg sent an empty page.";
-async function plAuto(){
-  const t=curTeam();
-  if(plBusy||!t||t.id===MYID||!t.pl||plMissingCol())return;
-  plBusy=true;$("plauto").disabled=true;
-  const tid=plTid(t.pl),seen=new Map();let n=0;
-  const get=async u=>{
-    if(seen.has(u))return seen.get(u);
-    n++;scmsg(`Loading Prime League pages... ${n}`);
-    const d=await plGet(u);seen.set(u,d);await new Promise(r=>setTimeout(r,250));return d;
+// Prime League bundle: the bookmarklet (plBm) runs on primeleague.gg in the user's own browser,
+// loads the team's player and match pages there and hands them over as one paste
+const plU=u=>String(u||"").replace(/^https?:\/\/[^/]+/,"").replace(/^\/(de|en)(?=\/)/,"").replace(/[?#].*$/,"").replace(/\/+$/,"");
+function plBm(){
+  if(window.__plbm)return;window.__plbm=1;
+  var box=document.createElement("div");
+  box.style.cssText="position:fixed;z-index:2147483647;top:12px;right:12px;max-width:340px;padding:14px;background:#111;color:#fff;font:14px/1.4 system-ui,sans-serif;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.5)";
+  document.body.appendChild(box);
+  var say=function(t){box.textContent=t};
+  var stop=function(ms){setTimeout(function(){box.remove();window.__plbm=0},ms)};
+  var tm=/\/teams\/(\d+)/.exec(location.pathname);
+  if(!tm||!/primeleague\.gg$/.test(location.hostname)){say("Open a team page on primeleague.gg first, then tap the bookmark again.");stop(5000);return}
+  var tid=tm[1],P=new DOMParser(),out=[],seen=new Map(),n=0;
+  var abs=function(h){return new URL(h,location.href).href.split("#")[0]};
+  var keep=function(d,u){
+    var c=d.documentElement.cloneNode(true);
+    c.querySelectorAll("script,style,svg,noscript,iframe,link:not([rel=alternate]),meta,#header,#footer,#sidebar").forEach(function(e){e.remove()});
+    c.querySelectorAll("img").forEach(function(i){i.removeAttribute("src");i.removeAttribute("srcset");i.removeAttribute("data-src")});
+    out.push({u:u,h:c.outerHTML});
   };
+  var get=async function(u){
+    if(seen.has(u))return seen.get(u);
+    n++;say("Loading Prime League pages... "+n);
+    var d=null;
+    try{var r=await fetch(u,{credentials:"include"});if(r.ok){d=P.parseFromString(await r.text(),"text/html");keep(d,u)}}catch(e){}
+    seen.set(u,d);await new Promise(function(r){setTimeout(r,300)});return d;
+  };
+  var splits=function(d,o){
+    d.querySelectorAll('a[href*="/teams/'+tid+'"]').forEach(function(a){
+      var m=/^(.*\/leagues\/[a-z0-9-]+\/(\d+)-[^/?#]+)\/teams\/\d+[^/?#]*/.exec(abs(a.getAttribute("href")));
+      if(m&&!o.has(m[2]))o.set(m[2],{id:m[2],base:m[1],team:m[0]});
+    });
+  };
+  (async function(){try{
+    var here=abs(location.href);seen.set(here,document);keep(document,here);
+    var S=new Map();splits(document,S);
+    var g=document.querySelector('a[href*="/leagues/teams/'+tid+'"]');
+    var gu=/\/leagues\/teams\//.test(location.pathname)?here:g?abs(g.getAttribute("href")):"";
+    if(gu){var dg=await get(gu);if(dg)splits(dg,S)}
+    var top=Array.from(S.values()).sort(function(a,b){return b.id-a.id}).slice(0,3);
+    if(!top.length)throw new Error("No split found. Open the team's page of the current split.");
+    var users=new Set(),ms=new Set();
+    for(var i=0;i<top.length;i++){
+      var d=await get(top[i].team);if(!d)continue;top[i].ok=1;
+      if(i===0)d.querySelectorAll('.content-portrait-grid-l a[href*="/users/"]').forEach(function(a){var m=/\/users\/(\d+-[^/?#]+)/.exec(a.getAttribute("href"));if(m)users.add(m[1])});
+      if(i<2)d.querySelectorAll('a[href*="/leagues/matches/"]').forEach(function(a){var tr=a.closest("tr");if(tr&&Array.from(tr.querySelectorAll("td")).some(function(td){return/^\s*\d+\s*:\s*\d+\s*$/.test(td.textContent)}))ms.add(abs(a.getAttribute("href")))});
+    }
+    for(var s of top)if(s.ok)for(var u of users)await get(s.base+"/users/"+u);
+    for(var m of ms)await get(m);
+    var data=JSON.stringify({plbundle:1,team:here,pages:out});
+    box.textContent="";
+    var p=document.createElement("div");p.textContent="Loaded "+out.length+" pages. Click Copy, then paste it into the Prime League box of the draft helper.";
+    var b=document.createElement("button");b.textContent="Copy";b.style.cssText="margin:10px 8px 0 0;padding:6px 14px;font:inherit;cursor:pointer";
+    var x=b.cloneNode();x.textContent="Close";
+    b.onclick=async function(){
+      try{await navigator.clipboard.writeText(data)}
+      catch(e){var ta=document.createElement("textarea");ta.value=data;box.appendChild(ta);ta.select();document.execCommand("copy");ta.remove()}
+      p.textContent="Copied. Now paste it into the draft helper.";
+    };
+    x.onclick=function(){box.remove();window.__plbm=0};
+    box.append(p,b,x);
+  }catch(e){say("Prime League import stopped: "+(e&&e.message||e));stop(6000)}})();
+}
+function plBmHref(){return"javascript:"+encodeURIComponent("("+plBm.toString()+")()")}
+function plBundlePrev(){
+  const B=PLR,d=B.doc(B.team),T=d?plParseDoc(d):null;
+  if(!T||T.kind!=="team")return`<p class="note">The pasted data has no team page. Run the bookmark on the team's page on primeleague.gg.</p>`;
+  const users=[...B.pages.keys()].filter(k=>/\/users\//.test(k)).length,ms=[...B.pages.keys()].filter(k=>/\/matches\//.test(k)).length;
+  const tid=plTid(B.team),t=SC.find(x=>x.id!==MYID&&tid&&plTid(x.pl)===tid);
+  return`<p class="note" style="margin:0">${esc(T.team||"Team")}: ${T.players.length} players, ${users} player pages, ${ms} played matches.</p><button class="btn" id="plgb" type="button">${t?"Update "+esc(t.name):"Add "+esc(T.team||"team")+" as a scouted team"}</button>`;
+}
+async function plBundleImport(){
+  const B=PLR;if(!B||B.kind!=="bundle"||plMissingCol())return;
+  const d=B.doc(B.team),T=d&&plParseDoc(d);if(!T||T.kind!=="team")return;
+  const tid=plTid(B.team),n=(T.team||"").toLowerCase();
+  let t=SC.find(x=>x.id!==MYID&&tid&&plTid(x.pl)===tid)||SC.find(x=>x.id!==MYID&&!x.pl&&x.name.toLowerCase()===n);
+  if(!t){t={id:uid(),name:T.team||"Team "+SC.length,data:[],pl:"",matches:[]};SC.push(t)}
+  if(!t.pl&&(plOK||!SB.url))t.pl=plLink(B.team)||T.link;
+  scId=t.id;PLR=null;$("plsrc").value="";$("plprev").innerHTML="";
+  await plRun(t,B.team,async u=>B.doc(u));
+}
+// shared by the bundle import: roster, player splits and played matches of team t, starting at its team page
+async function plRun(t,start,get){
+  const tid=plTid(start||t.pl);
   const splitLinks=d=>{
     const o=new Map();if(!d||!tid)return o;
     d.querySelectorAll('a[href*="/teams/'+tid+'"]').forEach(a=>{
-      const m=/^(.*\/leagues\/[a-z0-9-]+\/(\d+)-[^/?#]+)\/teams\/\d+[^/?#]*/.exec(a.getAttribute("href").replace("/en/","/de/"));
-      if(m&&!o.has(m[2]))o.set(m[2],{id:m[2],base:plLink(m[1]),team:plLink(m[0])});
+      const m=/^(.*\/leagues\/[a-z0-9-]+\/(\d+)-[^/?#]+)\/teams\/\d+[^/?#]*/.exec(a.getAttribute("href"));
+      if(m&&!o.has(m[2]))o.set(m[2],{id:m[2],base:m[1],team:m[0]});
     });
     return o;
   };
   try{
-    const d0=await get(t.pl);if(!d0)throw new Error("The team link did not load."+(plLast===404?" Check the saved Prime League link.":plWhy()));
+    const d0=await get(start);if(!d0)throw new Error("The team page is missing.");
     const splits=splitLinks(d0);
-    // the general team page lists the earlier splits
-    const ga=d0.querySelector('a[href*="/leagues/teams/'+tid+'"]'),gu=/\/leagues\/teams\//.test(t.pl)?t.pl:ga?plLink(ga.getAttribute("href").replace("/en/","/de/")):"";
-    if(gu){const dg=gu===t.pl?d0:await get(gu).catch(()=>null);splitLinks(dg).forEach((v,k)=>{if(!splits.has(k))splits.set(k,v)})}
+    const ga=d0.querySelector('a[href*="/leagues/teams/'+tid+'"]');
+    if(ga){const dg=await get(ga.getAttribute("href"));splitLinks(dg).forEach((v,k)=>{if(!splits.has(k))splits.set(k,v)})}
     const top=[...splits.values()].sort((a,b)=>+b.id-+a.id).slice(0,3);
-    if(!top.length)throw new Error("No split found on the team page. Save the link of the team's page in the current split.");
+    if(!top.length)throw new Error("No split found on the team page.");
     let added=0,pages=0,newM=0,roled=0,former=0;
     const ms=new Map();
     for(let i=0;i<top.length;i++){
-      const S=top[i],d=S.team===t.pl?d0:await get(S.team);
+      const S=top[i],d=plU(S.team)===plU(start)?d0:await get(S.team);
       if(!d)continue;
       const T=plParseDoc(d);if(T.kind!=="team")continue;
       S.ok=true;S.name=T.season&&T.season.name||"Split "+S.id;
@@ -2024,7 +2105,7 @@ async function plAuto(){
       if(i<2)T.ms.filter(m=>m.played).forEach(m=>{if(!ms.has(m.id))ms.set(m.id,m)});
     }
     const got=top.filter(S=>S.ok);
-    if(!got.length)throw new Error("The team pages did not load.");
+    if(!got.length)throw new Error("The team pages are missing.");
     // each player's champions per split
     for(const S of got)for(const p of t.data.filter(x=>x.plu&&!x.former)){
       const d=await get(S.base+"/users/"+p.plu);if(!d)continue;
@@ -2042,8 +2123,8 @@ async function plAuto(){
     }
     PLC=null;await scPersist(t);
     scmsg(`Updated ${t.name} from ${got.map(x=>x.name).join(", ")}: ${pages} player split${pages===1?"":"s"}, ${newM} new match${newM===1?"":"es"}`+(added?`, ${added} new player${added>1?"s":""} on the bench`:"")+(former?`, ${former} former player${former>1?"s":""}`:"")+(roled?`, ${roled} role${roled>1?"s":""} set`:"")+".");
-  }catch(e){scmsg("Prime League update stopped: "+(e&&e.message||e))}
-  plBusy=false;render();
+  }catch(e){scmsg("Prime League import stopped: "+(e&&e.message||e))}
+  render();
 }
 async function plUserImport(){
   const U=PLR,t=curTeam(),p=U&&t&&t.id!==MYID?t.data.find(x=>plKey(x)===U.riot.toLowerCase()):null;
@@ -2460,7 +2541,6 @@ function scView(){
   $("tempty").hidden=!!t||!!tform;
   $("scn").placeholder=tform==="rename"&&t?"New name for "+t.name:"Name of the new team";
   if(t&&!my){if(document.activeElement!==$("plu"))$("plu").value=t.pl||"";$("plopen").hidden=!t.pl;if(t.pl)$("plopen").href=t.pl}
-  $("plauto").hidden=$("plautoh").hidden=!(t&&!my&&t.pl&&SB.url);$("plauto").disabled=plBusy;
   $("tf").hidden=!tform;$("tok").textContent=tform==="rename"?"Save":"Create";
   $("scmode").textContent=sb&&scOK?"Teams are saved in the shared database.":"Teams are saved in this browser only. Create the scouts table in Supabase to share them.";
   if(!P.find(p=>p.id===scSel))scSel=P[0]?P[0].id:"";
