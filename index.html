@@ -338,6 +338,14 @@ details{margin-top:10px}
 .cbl li.on,.cbl li:hover{background:var(--chip)}
 .cbl li.none{color:var(--mute);cursor:default}
 summary{cursor:pointer;color:var(--mute)}
+/* Default notes */
+.dn{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
+.dn:last-child{border-bottom:0}
+.dn .dt{flex:1;min-width:0}
+.dn .dt b{font-weight:600;overflow-wrap:anywhere}
+.dn .dt small{display:block;color:var(--mute);font-size:12px}
+.dn.off .dt{opacity:.5}
+.dn .actb{flex:none;min-width:52px}
 /* Your team card */
 .tcard>summary{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .tcard .turn{margin:0 0 8px;color:var(--mute);font-size:14px}
@@ -444,6 +452,13 @@ body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
 <textarea id="nio" aria-label="Notes backup"></textarea>
 <button class="btn" id="nexp">Show my notes</button> <button class="btn" id="nimp">Add notes from this text</button> <button class="btn" id="nmig" hidden>Copy my browser notes to shared notes</button>
 </details>
+</details>
+<details class="card tools" id="dnc"><summary><svg class="ic" aria-hidden="true"><use href="#i-db"/></svg><h2>Default notes</h2> <span class="tag" id="dncount"></span></summary>
+<p class="note" style="margin:0 0 8px">Built-in combos and counters, based on how the champions work, not on statistics. Switched-on notes count for suggestions just like your own notes. When your own note says the opposite, yours wins. Switching a note on or off applies to everyone using this site.</p>
+<input type="search" id="dnq" placeholder="Filter default notes by champion" aria-label="Filter default notes by champion">
+<div class="bar" style="margin-top:8px"><button class="btn" data-dnall="on">Switch all on</button><button class="btn" data-dnall="off">Switch all off</button></div>
+<p class="note" id="dnmsg" role="status" style="margin:0"></p>
+<div id="dnl"></div>
 </details>
 <div class="cm" id="cm" role="menu" hidden></div>
 <dialog id="cfm"><form method="dialog"><p id="cfm-t"></p><button class="btn" value="0">Cancel</button> <button class="btn" id="cfm-y" value="1">Delete</button></form></dialog>
@@ -729,7 +744,7 @@ function stepNow(){
 function nextMine(){const k=me==="b"?"bp":"rp",i=stepNow();return ORDER.findIndex((x,ix)=>ix>=i&&x===k)}
 function combos(){
   const mine=MY(),u=used(),adj={};
-  REL.syn.forEach(([x,y])=>{(adj[x]=adj[x]||new Set()).add(y);(adj[y]=adj[y]||new Set()).add(x)});
+  A().syn.forEach(([x,y])=>{(adj[x]=adj[x]||new Set()).add(y);(adj[y]=adj[y]||new Set()).add(x)});
   const nodes=Object.keys(adj).filter(n=>BY[n]&&(mine.includes(n)||!u.has(n))),res=[];
   (function bk(R,P,X){
     if(res.length>300)return;
@@ -791,7 +806,8 @@ function pickIdeas(cb){
   const fo=foe.length?analyse(foe).open:RO,j=nextMine();
   const later=j<0?0:Math.min(ORDER.slice(j+1).filter(x=>x===ek).length,5-foe.length);
   // combos: remember for each champion whether it would finish a combo or only be one more piece of it
-  const inC=new Map();cb.forEach(c=>c.need.forEach(x=>{const o=inC.get(x),v=c.need.length===1?c.C.length:0;if(!o||v>o)inC.set(x,v)}));
+  // only combos you already started count, otherwise every champion in any saved combo gets a bonus
+  const inC=new Map();cb.filter(c=>c.mi.length||c.C.some(x=>mk.pre.includes(x))).forEach(c=>c.need.forEach(x=>{const o=inC.get(x),v=c.need.length===1?c.C.length:0;if(!o||v>o)inC.set(x,v)}));
   // enemy champions and the lane they play; bot and support share the bot lane
   const lane=r=>r==="S"?"B":r,fr=foe.length?analyse(foe).roles:[],eLane=new Map(foe.map((e,i)=>[e,fr[i]?lane(fr[i]):""]));
   const pre=mk.pre.filter(x=>!mine.includes(x)),out=[];
@@ -1061,7 +1077,7 @@ function analysis(){
   }
   $("an").innerHTML=h;
 }
-function render(){saveDraft();document.body.dataset.me=me;$("icons").setAttribute("aria-pressed",icons);$("ticons").setAttribute("aria-pressed",icons);$("hide").setAttribute("aria-pressed",hide);board();controls();grid();analysis();consider();notes();histView();scView();if(DS.eo)enemyView()}
+function render(){EFF=null;saveDraft();defView();document.body.dataset.me=me;$("icons").setAttribute("aria-pressed",icons);$("ticons").setAttribute("aria-pressed",icons);$("hide").setAttribute("aria-pressed",hide);board();controls();grid();analysis();consider();notes();histView();scView();if(DS.eo)enemyView()}
 function add(n,k){
   k=k||(auto&&stepNow()<20?ORDER[stepNow()]:target);
   if(used().has(n)||st[k].length>=5)return false;
@@ -1098,6 +1114,8 @@ document.addEventListener("click",e=>{
   else if(b.id==="nimp"){importNotes()}
   else if(b.id==="nmig"){migrate()}
   else if(b.dataset.nf){nf=b.dataset.nf}
+  else if(b.dataset.dn){const id=b.dataset.dn;setOff([id],!OFF.has(id));return}
+  else if(b.dataset.dnall){const off=b.dataset.dnall==="off";setOff(DEF.filter(d=>OFF.has(d.id)!==off).map(d=>d.id),off);return}
   else if(b.id==="esave"){doSaveChamp();return}
   else if(b.id==="ereset"){doResetChamp();return}
   else if(b.id==="hide"){hide=!hide;try{localStorage.setItem("lolHide",hide?"1":"0")}catch(e){}}
@@ -1193,6 +1211,7 @@ function combo(id,multi,filt){
 combo("cq");combo("na",1);combo("nb",1);combo("fz",1);combo("ec");
 $("ec").addEventListener("change",()=>{$("emsg").textContent="";editForm()});
 $("nsearch").addEventListener("input",e=>{nq=e.target.value;notes()});
+$("dnq").addEventListener("input",defView);
 combo("sc");combo("tc",0,tierOk);
 $("tsel").addEventListener("change",()=>{tSel=$("tsel").value;$("tc").value="";$("tmsg").textContent="";tierView()});
 $("pp").addEventListener("input",()=>{PP=parsePaste($("pp").value);PPROLE="";ppView()});
@@ -1254,6 +1273,109 @@ const sbf=(p,o={})=>fetch(SB.url+"/rest/v1/"+p,{...o,headers:{apikey:SB.key,...(
 let LOC={syn:[],weak:[],strong:[]},REL,RID={syn:[],weak:[],strong:[]},shared=null,canWrite=true;
 try{const s=JSON.parse(localStorage.getItem("lolRel")||"null");if(s)LOC={syn:s.syn||[],weak:s.weak||[],strong:s.strong||[]}}catch(e){}
 REL=LOC;
+// Default notes: combos (every champion works with every other), pairs and counters (first beats second)
+const DEFSRC=[
+["combo","Yasuo,Malphite,Diana","Three knock-ups and pulls that feed Yasuo's ult"],
+["combo","Yasuo,Alistar,Gragas","Knock-ups for Yasuo's ult"],
+["combo","Miss Fortune,Amumu,Leona","Lock the team in place, then Bullet Time"],
+["combo","Orianna,Malphite,Jarvan IV","Ball on the engager, then Shockwave"],
+["combo","Kog'Maw,Lulu,Braum","Protect the hypercarry"],
+["pair","Yasuo,Wukong","Wukong's ult knocks up for Yasuo"],
+["pair","Orianna,Nocturne","Ball on Nocturne's dive"],
+["pair","Xayah,Rakan","Shared passive and joint engage"],
+["pair","Kalista,Blitzcrank","Kalista throws Blitzcrank, then the hook"],
+["pair","Kalista,Alistar","Kalista throws Alistar into a knock-up"],
+["pair","Lucian,Nami","Nami's E fits Lucian's fast autos"],
+["pair","Lucian,Braum","Lucian's double autos stack Braum's passive"],
+["pair","Twitch,Lulu","Buffs and peel for a carry who wins fights alone"],
+["pair","Master Yi,Taric","Taric keeps Yi alive in fights"],
+["pair","Samira,Rell","Hard engage that sets up Samira's ult"],
+["pair","Samira,Nautilus","Hard engage that sets up Samira's ult"],
+["pair","Kai'Sa,Nautilus","Nautilus' crowd control sets up Kai'Sa's ult"],
+["pair","Jarvan IV,Galio","Cage, then Galio's taunt"],
+["counter","Malzahar,Yasuo","Point-click crowd control Wind Wall cannot block"],
+["counter","Annie,Yasuo","Point-click stun Wind Wall cannot block"],
+["counter","Vex,Yasuo","Vex punishes dashes"],
+["counter","Vex,Yone","Vex punishes dashes"],
+["counter","Vex,Akali","Vex punishes dashes"],
+["counter","Vex,Katarina","Vex punishes dashes"],
+["counter","Poppy,Jarvan IV","Poppy's W stops dashes"],
+["counter","Poppy,Lee Sin","Poppy's W stops dashes"],
+["counter","Poppy,Camille","Poppy's W stops dashes"],
+["counter","Morgana,Blitzcrank","Black Shield blocks the hook"],
+["counter","Morgana,Thresh","Black Shield blocks the hook"],
+["counter","Morgana,Pyke","Black Shield blocks the hook"],
+["counter","Morgana,Nautilus","Black Shield blocks the hook and the ult"],
+["counter","Lissandra,Zed","Self-ult and root against the assassin"],
+["counter","Lissandra,Talon","Self-ult and root against the assassin"],
+["counter","Rammus,Master Yi","Punishes a champion who relies on autos"],
+["counter","Rammus,Tryndamere","Punishes a champion who relies on autos"],
+["counter","Jax,Master Yi","Counter Strike blocks autos"],
+["counter","Jax,Tryndamere","Counter Strike blocks autos"],
+["counter","Malphite,Tryndamere","Armor and slows against crit autos"],
+["counter","Teemo,Tryndamere","Blind against crit autos"],
+["counter","Quinn,Darius","Range beats a melee bruiser in lane"],
+["counter","Vayne,Darius","Range beats a melee bruiser"],
+["counter","Teemo,Darius","Range and blind beat a melee bruiser in lane"],
+["counter","Quinn,Nasus","Range stops Nasus from stacking"],
+["counter","Teemo,Nasus","Range and blind stop Nasus from stacking"],
+["counter","Darius,Nasus","Early pressure before Nasus scales"],
+["counter","Malzahar,Kassadin","Suppression against a slippery mage"],
+["counter","Malzahar,Katarina","Suppression stops her ult"]
+];
+const dslug=x=>x.replace(/[^A-Za-z0-9]+/g,"");
+const DEF=DEFSRC.map(([t,c,why])=>{const C=c.split(",");return{t,C,why,id:{combo:"t",pair:"p",counter:"k"}[t]+"-"+C.map(dslug).join("-")}}).filter(d=>d.C.every(n=>BY[n]));
+let OFF=new Set(),EFF=null;
+try{if(!SB.url)OFF=new Set(JSON.parse(localStorage.getItem("lolDefOff")||"[]"))}catch(e){}
+// your notes plus the switched-on defaults; a default counter is skipped when your notes say the opposite
+function A(){
+  if(EFF)return EFF;
+  const syn=REL.syn.slice(),weak=REL.weak.slice(),strong=REL.strong.slice();
+  DEF.forEach(d=>{
+    if(OFF.has(d.id)||defBeaten(d))return;
+    if(d.t==="counter")strong.push([d.C[0],d.C[1]]);
+    else d.C.forEach((x,i)=>d.C.slice(i+1).forEach(y=>syn.push([x,y])));
+  });
+  return EFF={syn,weak,strong};
+}
+const userBeats=(a,b)=>REL.strong.some(p=>p[0]===a&&p[1]===b)||REL.weak.some(p=>p[0]===b&&p[1]===a);
+const defBeaten=d=>d.t==="counter"&&userBeats(d.C[1],d.C[0]);
+async function setOff(ids,off){
+  const msgD=t=>{$("dnmsg").textContent=t};
+  if(!canWrite){msgD("You need Contributor access to change the default notes.");return}
+  if(!ids.length)return;
+  try{
+    if(sb){
+      const r=off?await sbf("notes",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(ids.map(id=>({id:"off:"+id,t:"off",a:id,b:"-"})))})
+                 :await sbf("notes?id=in.("+encodeURIComponent(ids.map(id=>'"off:'+id+'"').join(","))+")",{method:"DELETE"});
+      if(!r.ok)throw{status:r.status};
+      await sbLoad();
+    }else if(shared){
+      for(const id of ids){const d=shared.doc("notes/off-"+id);if(off)await d.set({t:"off",a:id});else await d.delete()}
+    }else if(SB.url){
+      msgD("Could not reach the shared notes, so the change was not saved. Try again later.");return;
+    }else{
+      ids.forEach(id=>off?OFF.add(id):OFF.delete(id));
+      try{localStorage.setItem("lolDefOff",JSON.stringify([...OFF]))}catch(e){}
+    }
+    msgD("");
+  }catch(e){
+    msgD("Could not save the change. The shared notes table probably only accepts the note types syn, weak and strong. Allow the type off in the notes table in Supabase, then try again."+(e&&e.status?" (Error "+e.status+")":""));
+  }
+  render();
+}
+function defView(){
+  const q=$("dnq").value.trim().toLowerCase(),on=DEF.filter(d=>!OFF.has(d.id)).length;
+  $("dncount").textContent=on+" of "+DEF.length+" on";
+  const G=[["combo","Team combos"],["pair","Pairs"],["counter","Counters"]];
+  const row=d=>{
+    const off=OFF.has(d.id),beat=!off&&defBeaten(d);
+    const txt=d.t==="counter"?`<b>${esc(d.C[0])}</b> is strong against <b>${esc(d.C[1])}</b>`:d.C.map(n=>`<b>${esc(n)}</b>`).join(" + ");
+    return`<div class="dn${off||beat?" off":""}"><div class="dt">${txt}<small>${esc(d.why)}${beat?" · ignored, your own note says the opposite":""}</small></div>${canWrite?`<button class="actb${off?"":" on"}" data-dn="${d.id}" aria-pressed="${!off}" aria-label="${off?"Switch on":"Switch off"}">${off?"Off":"On"}</button>`:`<span class="note">${off?"Off":"On"}</span>`}</div>`;
+  };
+  const h=G.map(([t,l])=>{const L=DEF.filter(d=>d.t===t&&(!q||d.C.some(n=>n.toLowerCase().includes(q))));return L.length?`<h3 class="sec">${l} <span class="note">${L.length}</span></h3>${L.map(row).join("")}`:""}).join("");
+  $("dnl").innerHTML=h||`<p class="note">No default note matches your filter.</p>`;
+}
 let OVR={},chOK=false;
 try{const o=JSON.parse(localStorage.getItem("lolChamps")||"{}");Object.keys(o).forEach(n=>{const x=o[n];if(BY[n]&&x&&Array.isArray(x.r)&&x.r.length&&["A","P","M"].includes(x.d)&&typeof x.t==="string")OVR[n]={r:x.r.filter(k=>RO.includes(k)),d:x.d,t:x.t.replace(/[^tecs]/g,"")}})}catch(e){}
 function saveLocalOvr(){try{localStorage.setItem("lolChamps",JSON.stringify(OVR))}catch(e){}}
@@ -1312,10 +1434,10 @@ async function sbx(p,o){const r=await sbf(p,o);if(!r.ok)throw{code:"x"};return r
 function save(){if(shared||sb)return;try{localStorage.setItem("lolRel",JSON.stringify(LOC))}catch(e){}}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const canon=n=>{n=n.trim();const c=D.find(c=>c.n.toLowerCase()===n.toLowerCase());return c?c.n:n};
-const synOf=n=>[...new Set(REL.syn.filter(p=>p.includes(n)).map(p=>p[0]===n?p[1]:p[0]))];
+const synOf=n=>[...new Set(A().syn.filter(p=>p.includes(n)).map(p=>p[0]===n?p[1]:p[0]))];
 // weak: [a,b] a is weak against b. strong: [a,b] a works well into b. Both feed weakOf and strongOf.
-const weakOf=n=>[...new Set([...REL.weak.filter(p=>p[0]===n).map(p=>p[1]),...REL.strong.filter(p=>p[1]===n).map(p=>p[0])])];
-const strongOf=n=>[...new Set([...REL.weak.filter(p=>p[1]===n).map(p=>p[0]),...REL.strong.filter(p=>p[0]===n).map(p=>p[1])])];
+const weakOf=n=>[...new Set([...A().weak.filter(p=>p[0]===n).map(p=>p[1]),...A().strong.filter(p=>p[1]===n).map(p=>p[0])])];
+const strongOf=n=>[...new Set([...A().weak.filter(p=>p[1]===n).map(p=>p[0]),...A().strong.filter(p=>p[0]===n).map(p=>p[1])])];
 function msg(t){$("nmsg").textContent=t}
 const hasNote=(k,a,b)=>REL[k].some(p=>(p[0]===a&&p[1]===b)||(k==="syn"&&p[0]===b&&p[1]===a));
 function nid(k,a,b){
@@ -1415,12 +1537,14 @@ async function migrate(){
 }
 function applyRows(rows){
   const R={syn:[],weak:[],strong:[]},I={syn:[],weak:[],strong:[]},S=[];
+  const O=new Set();
   rows.forEach(x=>{
+    if(x.t==="off"&&typeof x.a==="string"){if(!x.deleted)O.add(x.a);return}
     if(!["syn","weak","strong"].includes(x.t)||typeof x.a!=="string"||typeof x.b!=="string")return;
     if(x.deleted){S.push(x);return}
     R[x.t].push([x.a,x.b]);I[x.t].push(x.id);
   });
-  REL=R;RID=I;SOFT=S;render();
+  REL=R;RID=I;SOFT=S;OFF=O;render();
 }
 let sbSig="";
 async function sbLoad(){
@@ -1436,12 +1560,13 @@ async function sbLoad(){
 }
 function watchShared(){
   shared.collection("notes").onSnapshot(snap=>{
-    const R={syn:[],weak:[],strong:[]},I={syn:[],weak:[],strong:[]};
+    const R={syn:[],weak:[],strong:[]},I={syn:[],weak:[],strong:[]},O=new Set();
     snap.docs.forEach(d=>{
       const x=d.data()||{};
+      if(x.t==="off"&&typeof x.a==="string"){O.add(x.a);return}
       if(["syn","weak","strong"].includes(x.t)&&typeof x.a==="string"&&typeof x.b==="string"){R[x.t].push([x.a,x.b]);I[x.t].push(d.id)}
     });
-    REL=R;RID=I;render();
+    REL=R;RID=I;OFF=O;render();
   },()=>{shared=null;REL=LOC;RID={syn:[],weak:[],strong:[]};setMode();render()});
 }
 let SC=[],scId="",scSel="",scOK=false,scMode="my";
@@ -1673,7 +1798,7 @@ function profCard(p){
   const body=(my?`<div class="nl">Imported stats</div>`:"")+(rows.length?`<div class="pgrid">${tiles}</div>`:`<p class="note">${my?"No imported stats yet. Use the paste or Riot import above.":"No champions yet. Add the champions this player plays."}</p>`);
   return`<details class="ng pc" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><span class="pn"><b>${esc(p.name)}</b> ${role?`<span class="tag">${ri(role)}${rt(role)}</span>`:""} <span class="tag">${isAct?"Active":"Bench"}</span></span><span class="pills">${pills}</span></summary>${body}<p style="margin:8px 0 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="actb${isAct?" on":""}" data-pact="${key}" aria-pressed="${isAct}">${isAct?"\u2605 Active":"Bench"}</button>${link?`<a href="${link}" target="_blank" rel="noopener">Open on op.gg</a>`:""}<button class="btn" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></p></details>`;
 }
-const synAdj=()=>{const a={};REL.syn.forEach(([x,y])=>{(a[x]=a[x]||new Set()).add(y);(a[y]=a[y]||new Set()).add(x)});return a};
+const synAdj=(L=A().syn)=>{const a={};L.forEach(([x,y])=>{(a[x]=a[x]||new Set()).add(y);(a[y]=a[y]||new Set()).add(x)});return a};
 function maxCl(adj,nodes){
   const res=[];
   (function bk(R,P,X){
@@ -1903,7 +2028,7 @@ function notes(){
   const q=nq.trim().toLowerCase(),match=n=>!q||n.toLowerCase().includes(q);
   let h="";
   if(nf!=="counter"){
-    const adj=synAdj(),cl=maxCl(adj,Object.keys(adj)).filter(c=>c.some(match)).sort((a,b)=>b.length-a.length||a[0].localeCompare(b[0]));
+    const adj=synAdj(REL.syn),cl=maxCl(adj,Object.keys(adj)).filter(c=>c.some(match)).sort((a,b)=>b.length-a.length||a[0].localeCompare(b[0]));
     if(cl.length){
       h+=`<h3 class="sec">Team combos <span class="note">${cl.length}</span></h3><div class="cg">`;
       h+=cl.map(c=>{
@@ -1930,7 +2055,7 @@ function notes(){
 }
 function insights(){
   const L=[];
-  REL.syn.forEach(([x,y])=>{if(MY().includes(x)&&MY().includes(y))L.push(`<div class="good">Synergy: ${esc(x)} and ${esc(y)}</div>`)});
+  A().syn.forEach(([x,y])=>{if(MY().includes(x)&&MY().includes(y))L.push(`<div class="good">Synergy: ${esc(x)} and ${esc(y)}</div>`)});
   MY().forEach(p=>{
     weakOf(p).filter(x=>EN().includes(x)).forEach(x=>L.push(`<div class="bad">${esc(p)} is weak against ${esc(x)}</div>`));
     strongOf(p).filter(x=>EN().includes(x)).forEach(x=>L.push(`<div class="good">${esc(p)} counters ${esc(x)}</div>`));
@@ -1970,7 +2095,7 @@ function planCard(){
   const base=teamBase().slice(0,5);
   if(!base.length)return"";
   const a=analyse(base),group=[...new Set([...base,...cons])],L=[];
-  REL.syn.forEach(([x,y])=>{if(group.includes(x)&&group.includes(y))L.push(`<div class="good">Synergy: ${esc(x)} and ${esc(y)}</div>`)});
+  A().syn.forEach(([x,y])=>{if(group.includes(x)&&group.includes(y))L.push(`<div class="good">Synergy: ${esc(x)} and ${esc(y)}</div>`)});
   group.forEach(x=>{
     weakOf(x).filter(y=>EN().includes(y)).forEach(y=>L.push(`<div class="bad">${esc(x)} is weak against ${esc(y)}</div>`));
     strongOf(x).filter(y=>EN().includes(y)).forEach(y=>L.push(`<div class="good">${esc(x)} counters ${esc(y)}</div>`));
