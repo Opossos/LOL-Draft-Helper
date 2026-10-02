@@ -1,0 +1,11 @@
+{
+  "name": "lol-draft-helper",
+  "private": true,
+  "description": "Tests for the League of Legends draft helper (index.html)",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}

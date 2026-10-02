@@ -1421,7 +1421,8 @@ try{MS.fz=JSON.parse(localStorage.getItem("lolFear")||"[]").filter(x=>typeof x==
 function saveFear(){try{localStorage.setItem("lolFear",JSON.stringify(MS.fz))}catch(e){}}
 function combo(id,multi,filt){
   const inp=$(id),ul=inp.parentNode.querySelector(".cbl"),cs=multi?$(id+"-c"):null;
-  let idx=-1,items=[];
+  let idx=-1,items=[],committed=inp.value;
+  const fire=()=>{inp.dispatchEvent(new Event("change"));committed=inp.value};
   const find=q=>D.filter(c=>c.n.toLowerCase().includes(q.trim().toLowerCase())&&!(multi&&MS[id].includes(c.n))&&(!filt||filt(c))).map(c=>c.n);
   const close=()=>{ul.hidden=true;inp.setAttribute("aria-expanded","false");idx=-1};
   const show=()=>{
@@ -1433,9 +1434,12 @@ function combo(id,multi,filt){
   const draw=()=>{if(cs)cs.innerHTML=MS[id].map(n=>`<span class="chip">${esc(n)}<button data-mrm="${id}|${esc(n)}" aria-label="Remove ${esc(n)}">\u00d7</button></span>`).join("")};
   DRAW[id]=draw;
   const pick=n=>{
-    if(multi){MS[id].push(n);inp.value="";draw();show();inp.dispatchEvent(new Event("mchange"));return}
-    inp.value=n;close();inp.dispatchEvent(new Event("change"));
+    // after a choice the list closes so it does not cover the buttons below; typing opens it again
+    if(multi){MS[id].push(n);inp.value="";draw();close();inp.dispatchEvent(new Event("mchange"));return}
+    inp.value=n;close();fire();
   };
+  // the browser's own change event on blur would redraw the page under the user's next click; the combo sends its own
+  inp.addEventListener("change",e=>{if(e.isTrusted)e.stopImmediatePropagation()},true);
   inp.addEventListener("focus",()=>{inp.select();show()});
   inp.addEventListener("input",show);
   inp.addEventListener("keydown",e=>{
@@ -1457,7 +1461,7 @@ function combo(id,multi,filt){
     const m=D.find(c=>c.n.toLowerCase()===t&&(!filt||filt(c)))||(ms.length===1&&t?BY[ms[0]]:null);
     if(multi){inp.value="";if(m&&!MS[id].includes(m.n)){MS[id].push(m.n);draw();inp.dispatchEvent(new Event("mchange"))}return}
     const v=m?m.n:"";
-    if(v!==inp.value){inp.value=v;inp.dispatchEvent(new Event("change"))}
+    if(v!==inp.value||v!==committed){inp.value=v;fire()}
   });
 }
 combo("cq");combo("na",1);combo("nb",1);combo("fz",1);combo("ec");
@@ -1477,7 +1481,7 @@ $("fz").addEventListener("mchange",()=>{saveFear();render()});
 
 
 const cm=$("cm");
-let lpFired=false,lpT=null;
+let lpFired=false,lpT=null,cmAt=0;
 function closeMenu(){cm.hidden=true}
 function openMenu(n,x,y){
   const isB=mk.ban.includes(n),isP=mk.pre.includes(n);
@@ -1485,7 +1489,7 @@ function openMenu(n,x,y){
   const on=[isB,cons.includes(n)||isP,isP,MS.fz.includes(n)];
   const it=[["ban","Consider banning","ban"],["look","Consider picking","eye"],["pre","Prepick","star"],["fear","Fearless ban","lock"]];
   cm.innerHTML=it.map(([m,l,g],i)=>`<button role="menuitem" data-m="${m}">${ic(g)}${on[i]?"\u2713 ":""}${l}</button>`).join("");
-  cm.hidden=false;
+  cm.hidden=false;cmAt=performance.now();
   const r=cm.getBoundingClientRect();
   cm.style.left=Math.max(4,Math.min(x,innerWidth-r.width-8))+"px";
   cm.style.top=Math.max(4,Math.min(y,innerHeight-r.height-8))+"px";
@@ -1519,7 +1523,8 @@ document.addEventListener("pointerdown",e=>{
 });
 ["pointerup","pointercancel"].forEach(t=>document.addEventListener(t,()=>clearTimeout(lpT)));
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMenu()});
-window.addEventListener("scroll",closeMenu,true);
+// scrolling closes the menu, but not the small scroll that often comes with opening it (a list still settling, a long-press finger moving)
+window.addEventListener("scroll",()=>{if(!cm.hidden&&performance.now()-cmAt>400)closeMenu()},true);
 
 // Your notes: syn = pairs that work well together, weak = [a, b] means a is weak against b, ban = [pick, ban]
 // Team sync for GitHub Pages: paste your Supabase project URL and anon key here (see setup steps).
