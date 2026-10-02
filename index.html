@@ -340,7 +340,13 @@ details{margin-top:10px}
 .cbl li.none{color:var(--mute);cursor:default}
 summary{cursor:pointer;color:var(--mute)}
 /* Scouting */
-#plimp{margin-top:8px}
+#tf{margin:8px 0 0}
+#tempty{margin:6px 0 0}
+.plsec{margin:12px 0 8px;padding-top:10px;border-top:1px dashed var(--line)}
+.plsec>.nl{margin:0 0 6px;font-weight:600;color:var(--ink);font-size:13px}
+#plrow{margin:0 0 6px}
+#plimp{margin-top:4px}
+#plimp>summary{padding:4px 0}
 #plsrc{width:100%;min-height:80px;margin:0 0 6px}
 .plp{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .plp .chip{font-size:13px}
@@ -497,13 +503,16 @@ body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
 <div class="rf" id="stabs" role="group" aria-label="Team view"></div>
 <details class="card tools" open id="sctc"><summary><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg><h2 id="tth">Team</h2></summary>
 <div class="tbar" id="tbar" role="group" aria-label="Scouted teams"></div>
-<div class="bar" id="plrow" hidden><input id="plu" type="url" inputmode="url" placeholder="Prime League team link" aria-label="Prime League team link"><button class="btn" id="plsave" type="button">Save link</button><a class="btn" id="plopen" target="_blank" rel="noopener" hidden>Open on Prime League</a></div>
-<details id="plimp" hidden><summary>Import players from Prime League</summary>
+<form class="bar" id="tf" hidden><input id="scn" type="text" placeholder="Name of the new team" aria-label="Team name"><button class="btn" id="tok" type="submit">Create</button><button class="btn" id="tcancel" type="button">Cancel</button></form>
+<p class="note" id="tempty" hidden>No scouted team yet. Create one with "+ New team" or import it from Prime League below.</p>
+<div class="plsec"><div class="nl">Prime League</div>
+<div class="bar" id="plrow"><input id="plu" type="url" inputmode="url" placeholder="Prime League team link" aria-label="Prime League team link"><button class="btn" id="plsave" type="button">Save link</button><a class="btn" id="plopen" target="_blank" rel="noopener" hidden>Open on Prime League</a></div>
+<details id="plimp"><summary>Import players from the team page</summary>
 <p class="note" style="margin:6px 0">Open the team's page on primeleague.gg, show the page source (Ctrl+U), select all (Ctrl+A), copy (Ctrl+C) and paste it here. Only confirmed players are added.</p>
 <textarea id="plsrc" aria-label="Prime League page source" placeholder="Paste the page source here"></textarea>
 <div id="plprev"></div>
 </details>
-<form class="bar" id="tf" hidden><input id="scn" type="text" placeholder="Team name" aria-label="Team name"><button class="btn" id="tok" type="submit">Create</button><button class="btn" id="tcancel" type="button">Cancel</button></form>
+</div>
 <p class="note" id="scmode" style="margin:0"></p>
 </details>
 <details class="card tools" id="apc"><summary><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><h2 id="apt">Add profile</h2></summary>
@@ -2041,8 +2050,9 @@ function scView(){
   if(!P.length)$("apc").open=true;$("sctc").hidden=my;
   $("tbar").innerHTML=list.map(x=>{const on=x.id===scId;return`<span class="tchip${on?" on":""}"><button class="tn" data-tsel="${esc(x.id)}" aria-pressed="${on}" title="${esc(x.name)}">${esc(x.name)}</button>${on?`<button class="ti" data-tren="1" aria-label="Rename team">\u270E</button><button class="ti" data-tdel="1" aria-label="Delete team">\u00d7</button>`:""}</span>`}).join("")+`<button class="tchip add" data-tnew="1">+ New team</button>`;
   $("tth").textContent=!my&&t?"Team: "+t.name:"Team";
-  $("plrow").hidden=my||!t;
-  $("plimp").hidden=my;
+  $("plrow").hidden=!t;
+  $("tempty").hidden=!!t||!!tform;
+  $("scn").placeholder=tform==="rename"&&t?"New name for "+t.name:"Name of the new team";
   if(t&&!my){if(document.activeElement!==$("plu"))$("plu").value=t.pl||"";$("plopen").hidden=!t.pl;if(t.pl)$("plopen").href=t.pl}
   $("tf").hidden=!tform;$("tok").textContent=tform==="rename"?"Save":"Create";
   $("scmode").textContent=sb&&scOK?"Teams are saved in the shared database.":"Teams are saved in this browser only. Create the scouts table in Supabase to share them.";
