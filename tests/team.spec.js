@@ -66,6 +66,22 @@ test.describe("suggestions",()=>{
     await expect(card).not.toContainText("Gwen");
   });
 
+  test("team combos in Suggestions leave out champions nobody can pick",async({page})=>{
+    await openApp(page,{lolDr:{lo:true},lolScouts:team(),lolRel:{syn:[
+      ["Orianna","Malphite"],["Malphite","Jinx"],["Orianna","Jinx"], // all three can be picked: shown
+      ["Orianna","Gwen"],["Gwen","Jinx"],                             // Gwen is only learning
+      ["Orianna","Yasuo"],                                            // nobody plays Yasuo
+      ["Aatrox","Malphite"]                                           // only TopGuy can pick either of them
+    ],weak:[],strong:[]}});
+    const card=page.locator('#an details[data-k="combos"]');
+    await expect(card.locator(".cmb").first()).toBeVisible();
+    const names=await card.locator(".cmb .mem b").allTextContents();
+    expect(names).toEqual(expect.arrayContaining(["Orianna","Malphite","Jinx"]));
+    await expect(card).not.toContainText("Gwen");
+    await expect(card).not.toContainText("Yasuo");
+    await expect(card).not.toContainText("Aatrox");
+  });
+
   test("best picks only offer champions your players can pick, with team flex",async({page})=>{
     await openApp(page,{lolDr:{lo:true},lolScouts:team()});
     const names=await page.locator("#an .sg.bp button > span").allTextContents();

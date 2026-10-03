@@ -1002,7 +1002,12 @@ function nextMine(){const k=me==="b"?"bp":"rp",i=stepNow();return ORDER.findInde
 function combos(){
   const mine=MY(),u=used(),adj={};
   A().syn.forEach(([x,y])=>{(adj[x]=adj[x]||new Set()).add(y);(adj[y]=adj[y]||new Set()).add(x)});
-  const nodes=Object.keys(adj).filter(n=>BY[n]&&(mine.includes(n)||!u.has(n))),res=[];
+  // with your players set up, a combo may only ask for champions your players who have not picked yet can pick,
+  // each by a different player (tier list or not confident; can't play and learning champions are left out)
+  const roster=activePlayers(),taken=matchPlayers(mine,roster),canBy=new Map();
+  roster.filter(x=>!taken.has(x.id)).forEach(x=>pcs(x).forEach(c=>{if(!canBy.has(c.n))canBy.set(c.n,[]);canBy.get(c.n).push(x.id)}));
+  const can=n=>!canBy.size||canBy.has(n);
+  const nodes=Object.keys(adj).filter(n=>BY[n]&&(mine.includes(n)||(!u.has(n)&&can(n)))),res=[];
   (function bk(R,P,X){
     if(res.length>300)return;
     if(!P.length&&!X.length){if(R.length>=2)res.push(R);return}
@@ -1017,6 +1022,7 @@ function combos(){
       const mi=C.filter(x=>mine.includes(x)),need=C.filter(x=>!mine.includes(x));
       if(need.length>left||(mine.length>=2&&!mi.length))continue;
       if(!assign([...mine,...need].map(x=>BY[x].r)).every(x=>x))continue;
+      if(canBy.size&&!assign(need.map(x=>canBy.get(x))).every(x=>x))continue;
       const sc=mi.length*3+C.length;
       if(!best||sc>best.s)best={C,mi,need,s:sc};
     }
