@@ -13,12 +13,17 @@ async function block(page,db){
 
 // A tiny stand-in for the Supabase tables: no password, empty notes and champion edits, and a scouts table in memory.
 // Pages opened with the same fakeDb share it, like teammates on the same site.
-function fakeDb(){
+// ranks: answers of the riot-rank function by Riot ID; without it the function counts as not deployed (404)
+function fakeDb({ranks}={}){
   const tables={scouts:new Map(),notes:new Map()},rows=tables.scouts;
   const handler=async route=>{
     const req=route.request(),u=new URL(req.url()),m=req.method();
     const json=b=>route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(b)});
     if(u.pathname.endsWith("/rpc/pw_status"))return json("open");
+    if(u.pathname.endsWith("/functions/v1/riot-rank")){
+      if(!ranks)return route.fulfill({status:404,body:"not found"});
+      return json({ranks:JSON.parse(req.postData()).players.map(p=>({riotId:p.riotId,...(ranks[p.riotId]||{tier:"UNRANKED"})}))});
+    }
     const T=tables[u.pathname.split("/").pop()];
     if(T){
       // id=eq.x or id=in.("x","y")

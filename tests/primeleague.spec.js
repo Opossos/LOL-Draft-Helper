@@ -1,6 +1,6 @@
 // Prime League: the bookmark collects pages on (made-up) primeleague.gg pages, the app imports the paste.
 const {test,expect}=require("@playwright/test");
-const {openApp}=require("./helpers");
+const {openApp,fakeDb}=require("./helpers");
 const PL=require("./fixtures/primeleague");
 
 // serve the made-up site and remember which pages the bookmark asked for
@@ -81,6 +81,49 @@ test.describe("bookmark and import",()=>{
     expect(ms[0].games[0].ps.map(p=>p.c)).toContain("Aatrox");
     expect(ms[0].games[0].ops.map(p=>p.c)).toContain("Renekton");
     expect(ms[1].games[0].side).toBe("b"); // we were the right-hand team in this match
+  });
+
+  test("one active player per role: whoever played the role, the rest on the bench",async({context,page})=>{
+    await serveSite(context);
+    const {data}=await runBookmark(context,PL.teamUrl(PL.SPLITS.spring));
+    // the team is already known with a second top laner who has not played in Prime League
+    const known={id:"t1",name:"Test Team",pl:PL.generalUrl,matches:[],data:[{id:"s",name:"Sub#EUW",region:"euw",role:"T",champs:[],active:false}]};
+    await openApp(page,{lolDr:{so:true},lolScouts:[{id:"my-team",name:"My team",data:[]},known]});
+    await importPaste(page,data);
+    const t=await scouted(page),by=n=>t.data.find(p=>p.name===n);
+    expect(by("Alpha#EUW")).toMatchObject({role:"T",active:true});
+    expect(by("Sub#EUW")).toMatchObject({role:"T",active:false});
+    expect(by("Beta#EUW").active).toBe(true);
+    expect(by("Gamma#EUW").active).toBe(true);
+    // former players who are not on the roster any more stay on the bench
+    expect(t.data.filter(p=>p.former).every(p=>!p.active)).toBe(true);
+    await expect(page.locator('#scp details.pc[data-k="sp:s"] .pn')).toContainText("Bench");
+  });
+
+  test("the import reads each player's solo queue rank and shows it on their card",async({context,page})=>{
+    await serveSite(context);
+    const {data}=await runBookmark(context,PL.teamUrl(PL.SPLITS.spring));
+    const db=fakeDb({ranks:{"Alpha#EUW":{tier:"GRANDMASTER",div:"I",lp:2000,w:120,l:90},"Beta#EUW":{tier:"DIAMOND",div:"II",lp:45,w:30,l:20}}});
+    await openApp(page,{lolDr:{so:true}},{db});
+    await importPaste(page,data);
+    await expect(page.locator("#scmsg")).toContainText("Ranks read for 3 players");
+    const card=n=>page.locator("#scp details.pc",{hasText:n});
+    await expect(card("Alpha#EUW").locator(".tag.rk")).toHaveText("Grandmaster · 2000 LP");
+    await expect(card("Beta#EUW").locator(".tag.rk")).toHaveText("Diamond II · 45 LP");
+    await expect(card("Gamma#EUW").locator(".tag.rk")).toHaveText("Unranked");
+    // saved with the team, and former players are not asked for
+    const t=[...db.rows.values()].find(r=>r.name==="Test Team");
+    expect(t.data.find(p=>p.name==="Alpha#EUW").rank).toMatchObject({tier:"GRANDMASTER",lp:2000,w:120});
+    expect(t.data.filter(p=>p.former).every(p=>!p.rank)).toBe(true);
+  });
+
+  test("without the riot-rank function the import still works and says why ranks are missing",async({context,page})=>{
+    await serveSite(context);
+    const {data}=await runBookmark(context,PL.teamUrl(PL.SPLITS.spring));
+    await openApp(page,{lolDr:{so:true}},{db:fakeDb()});
+    await importPaste(page,data);
+    await expect(page.locator("#scmsg")).toContainText("the riot-rank function is not deployed");
+    await expect(page.locator("#scp .tag.rk")).toHaveCount(0);
   });
 
   test("matches show sides, enemy and ban icons, and splits fold",async({context,page})=>{

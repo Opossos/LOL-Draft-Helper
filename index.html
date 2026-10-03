@@ -641,6 +641,11 @@ details.card[open]>summary{margin-bottom:12px}
 .cc,.cmb{border-radius:var(--r)}
 input[type=search],.tools input,.tools select,.tools textarea{border-radius:var(--rs)}
 dialog{border-radius:12px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+/* solo queue rank tag */
+.tag.rk{font-weight:600}
+.rk-iron,.rk-bronze{color:#8C6A4F;border-color:#8C6A4F}.rk-silver{color:#7A8794;border-color:#7A8794}.rk-gold{color:#B8860B;border-color:#B8860B}
+.rk-platinum{color:#1C8C83;border-color:#1C8C83}.rk-emerald{color:#16955B;border-color:#16955B}.rk-diamond{color:#4A6FD8;border-color:#4A6FD8}
+.rk-master{color:#9B4FD1;border-color:#9B4FD1}.rk-grandmaster{color:#C93C3C;border-color:#C93C3C}.rk-challenger{color:#D49A1E;border-color:#D49A1E}
 /* dropdowns look like the buttons, with their own arrow */
 select,.tools select,.pacts .prole{-webkit-appearance:none;appearance:none;border:1px solid var(--line);border-radius:var(--rs);background:var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%238C9AB0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") right 10px center/10px no-repeat;color:var(--ink);font:inherit;font-weight:500;line-height:1.3;padding:6px 30px 6px 12px;cursor:pointer;transition:background-color .12s,border-color .12s}
 select:hover{background-color:var(--hov);border-color:color-mix(in srgb,var(--line) 60%,var(--mute))}
@@ -2514,12 +2519,16 @@ async function plImport(){
   if(!PLR)return;
   let t=curTeam();
   if(!t){t={id:uid(),name:PLR.team||"Team "+(SC.length+1),data:[]};SC.push(t);scId=t.id}
+  const hadActive=t.data.some(x=>x.active);
   const add=PLR.players.filter(x=>x.ok&&!plFind(t,x.riot,x.nick));
   add.forEach(x=>t.data.push(plNewP(t,x.riot,{region:x.region,u:x.u,nick:x.nick})));
   PLR.players.forEach(x=>{const p=x.u&&plFind(t,x.riot,x.nick);if(p&&!p.plu)p.plu=x.u});
   if(!t.pl&&PLR.link&&(plOK||!SB.url))t.pl=PLR.link;
+  plAutoActive(t,hadActive);
   PLR=null;$("plsrc").value="";$("plprev").innerHTML="";
-  await scPersist(t);scmsg("Added "+add.length+" player"+(add.length===1?"":"s")+" to "+t.name+" on the bench. Set their roles, mark who plays, and use the Riot import to read their champions.");render();
+  await scPersist(t);
+  const rk=await plRanks(t);if(rk.includes("Ranks read"))await scPersist(t);
+  scmsg("Added "+add.length+" player"+(add.length===1?"":"s")+" to "+t.name+" on the bench. Set their roles, mark who plays, and use the Riot import to read their champions."+rk);render();
 }
 // Prime League matches: champions, bans and roles from pasted match pages, match list from the group page
 const plTid=u=>{const m=/\/teams\/(\d+)/.exec(u||"");return m?m[1]:""};
@@ -2530,6 +2539,16 @@ function plFind(t,riot,nick){
   let p=t.data.find(x=>plKey(x)===r);
   if(!p&&t.id===MYID){p=t.data.find(x=>!x.riot&&[gn,nk].includes(String(x.name).toLowerCase()));if(p)p.riot=riot}
   return p;
+}
+// after a Prime League import: one active player per role, the one who played that role most (then most recently)
+// in the imported games, everyone else on the bench. A team where someone was already active keeps your choice.
+function plAutoActive(t,hadActive){
+  if(hadActive)return;
+  const cnt={},last={};
+  (t.matches||[]).forEach((m,mi)=>(m.games||[]).forEach(g=>(g.ps||[]).forEach(q=>{const r=RO[q.row-1];if(!r)return;const k=String(q.r).toLowerCase()+"|"+r;cnt[k]=(cnt[k]||0)+1;last[k]=Math.max(last[k]||0,m.date||mi+1)})));
+  const by={};
+  t.data.forEach(p=>{p.active=false;const r=p.role||derivedRole(p);if(r&&!p.former)(by[r]=by[r]||[]).push(p)});
+  Object.entries(by).forEach(([r,L])=>{const k=p=>plKey(p)+"|"+r;L.sort((a,b)=>(cnt[k(b)]||0)-(cnt[k(a)]||0)||(last[k(b)]||0)-(last[k(a)]||0));L[0].active=true});
 }
 // a new player from Prime League, on the bench; your own team's players get empty tier lists and their nickname
 function plNewP(t,riot,o={}){
@@ -2672,7 +2691,9 @@ async function plMatchImport(k){
   if(!M||M.kind!=="match"||plMissingCol())return;
   const cur=curTeam(),t=cur||plTeamFor(M.sides[k].tid,M.sides[k].name,M.sides[k].link);
   if(!t.pl&&M.sides[k].link&&(plOK||!SB.url))t.pl=M.sides[k].link;
+  const hadActive=t.data.some(x=>x.active);
   const r=plApply(t,M,k),rec=r.rec,added=r.added,roled=r.roled,had=r.had;
+  plAutoActive(t,hadActive);
   PLR=null;$("plsrc").value="";$("plprev").innerHTML="";PLC=null;
   await scPersist(t);
   scmsg(`Imported ${rec.games.length} game${rec.games.length>1?"s":""} vs ${rec.opp} for ${t.name}.`+(roled?` Set the role of ${roled} player${roled>1?"s":""} from the match.`:"")+(added?` Added ${added} player${added>1?"s":""} to the bench${had?(added>1?" as former players":" as a former player"):""}.`:""));
@@ -2796,7 +2817,7 @@ async function plBundleImport(){
 }
 // shared by the bundle import: roster, player splits and played matches of team t, starting at its team page
 async function plRun(t,start,get){
-  const tid=plTid(start||t.pl);
+  const tid=plTid(start||t.pl),hadActive=t.data.some(x=>x.active);
   const splitLinks=d=>{
     const o=new Map();if(!d||!tid)return o;
     d.querySelectorAll('a[href*="/teams/'+tid+'"]').forEach(a=>{
@@ -2844,10 +2865,35 @@ async function plRun(t,start,get){
       const k=plSide(t,M,tid);if(k<0)continue;
       const r=plApply(t,M,k);newM++;roled+=r.roled;former+=r.added;
     }
+    plAutoActive(t,hadActive);
     PLC=null;await scPersist(t);
-    scmsg(`Updated ${t.name} from ${got.map(x=>x.name).join(", ")}: ${pages} player split${pages===1?"":"s"}, ${newM} new match${newM===1?"":"es"}`+(added?`, ${added} new player${added>1?"s":""} on the bench`:"")+(former?`, ${former} former player${former>1?"s":""}`:"")+(roled?`, ${roled} role${roled>1?"s":""} set`:"")+"."+(miss?` ${miss} played match${miss>1?"es were":" was"} not in the paste. Drag the new "PL scout" link to your bookmarks again and run it once more.`:""));
+    const rk=await plRanks(t,`Updated ${t.name}.`);if(rk.includes("Ranks read"))await scPersist(t);
+    scmsg(`Updated ${t.name} from ${got.map(x=>x.name).join(", ")}: ${pages} player split${pages===1?"":"s"}, ${newM} new match${newM===1?"":"es"}`+(added?`, ${added} new player${added>1?"s":""} on the bench`:"")+(former?`, ${former} former player${former>1?"s":""}`:"")+(roled?`, ${roled} role${roled>1?"s":""} set`:"")+"."+(miss?` ${miss} played match${miss>1?"es were":" was"} not in the paste. Drag the new "PL scout" link to your bookmarks again and run it once more.`:"")+rk);
   }catch(e){scmsg("Prime League import stopped: "+(e&&e.message||e))}
   render();
+}
+// solo queue ranks of a team's players with a Riot ID, through the riot-rank function (no games are read)
+const fnHead=()=>({apikey:SB.key,...(window.APPPW?{"x-app-password":window.APPPW}:{}),"Content-Type":"application/json",...(SB.key.startsWith("sb_")?{}:{Authorization:"Bearer "+SB.key})});
+const TIERS={IRON:"Iron",BRONZE:"Bronze",SILVER:"Silver",GOLD:"Gold",PLATINUM:"Platinum",EMERALD:"Emerald",DIAMOND:"Diamond",MASTER:"Master",GRANDMASTER:"Grandmaster",CHALLENGER:"Challenger",UNRANKED:"Unranked"};
+const rankTxt=k=>!k||!TIERS[k.tier]?"":k.tier==="UNRANKED"?"Unranked":TIERS[k.tier]+(/MASTER|CHALLENGER/.test(k.tier)?"":" "+(k.div||""))+" \u00b7 "+(k.lp||0)+" LP";
+async function plRanks(t,before){
+  if(!SB.url)return"";
+  const P=t.data.filter(p=>!p.former&&String(p.riot||p.name).includes("#"));
+  if(!P.length)return"";
+  scmsg((before?before+" ":"")+"Reading ranks...");
+  let got=0;
+  try{
+    for(let i=0;i<P.length;i+=10){
+      const part=P.slice(i,i+10);
+      const r=await fetch(SB.url+"/functions/v1/riot-rank",{method:"POST",headers:fnHead(),body:JSON.stringify({players:part.map(p=>({riotId:p.riot||p.name,region:p.region||"euw"}))})});
+      if(r.status===404)return" Ranks were not read: the riot-rank function is not deployed in Supabase yet.";
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok)return" Ranks were not read: "+(d.error||"error "+r.status)+".";
+      (d.ranks||[]).forEach(k=>{const p=part.find(x=>(x.riot||x.name).toLowerCase()===String(k.riotId).toLowerCase());if(p&&k.tier){p.rank={tier:k.tier,div:k.div||"",lp:k.lp||0,w:k.w||0,l:k.l||0,at:Date.now()};got++}});
+      if(d.limited)return` Read ${got} rank${got===1?"":"s"}, then Riot's rate limit stopped it. Import again in a minute for the rest.`;
+    }
+  }catch(e){return" Ranks were not read: the riot-rank function could not be reached."}
+  return got?` Ranks read for ${got} player${got===1?"":"s"}.`:"";
 }
 async function plUserImport(){
   const U=PLR,t=curTeam(),p=U&&t?plFind(t,U.riot):null;
@@ -3202,7 +3248,7 @@ function profCard(p){
   const rkInner=rows.length?`<div class="pgrid">${tiles}</div>`:`<p class="note">${my?"No ranked stats yet. Use the paste or Riot import above.":"No ranked champions yet. Use the Riot import or add them above."}</p>`;
   // the same layout for your players and scouted players: Prime League above, ranked below
   const body=plBody+(rows.length||!PLs.length?sec("prk","Ranked",tg?tg+" games":"",rkInner):"");
-  return`<details class="ng pc" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><span class="pn"><b>${esc(p.name)}</b> ${role?`<span class="tag">${ri(role)}${rt(role)}</span>`:""} <span class="tag">${isAct?"Active":"Bench"}</span>${p.former?` <span class="tag" title="Played in an imported Prime League match but is not in the team's current roster">Former player</span>`:""}</span><span class="pills">${pills}</span></summary>${body}<div class="pacts"><select class="prole" data-prole="${key}" aria-label="Role of ${esc(p.name)}"><option value="">${!p.role&&role?"Auto ("+RN[role]+")":"Role: auto"}</option>${RO.map(r=>`<option value="${r}"${p.role===r?" selected":""}>${RN[r]}</option>`).join("")}</select><button class="actb${isAct?" on":""}" data-pact="${key}" aria-pressed="${isAct}">${isAct?"\u2605 Active":"Bench"}</button>${link?`<a class="btn" href="${link}" target="_blank" rel="noopener">op.gg</a>`:""}<button class="btn rm" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></div></details>`;
+  return`<details class="ng pc" data-k="sp:${key}" ${OPEN["sp:"+p.id]===false?"":"open"}><summary><span class="pn"><b>${esc(p.name)}</b> ${role?`<span class="tag">${ri(role)}${rt(role)}</span>`:""} <span class="tag">${isAct?"Active":"Bench"}</span>${p.rank?` <span class="tag rk rk-${esc(p.rank.tier.toLowerCase())}" title="Solo queue${p.rank.w+p.rank.l?", "+p.rank.w+"W "+p.rank.l+"L":""}">${esc(rankTxt(p.rank))}</span>`:""}${p.former?` <span class="tag" title="Played in an imported Prime League match but is not in the team's current roster">Former player</span>`:""}</span><span class="pills">${pills}</span></summary>${body}<div class="pacts"><select class="prole" data-prole="${key}" aria-label="Role of ${esc(p.name)}"><option value="">${!p.role&&role?"Auto ("+RN[role]+")":"Role: auto"}</option>${RO.map(r=>`<option value="${r}"${p.role===r?" selected":""}>${RN[r]}</option>`).join("")}</select><button class="actb${isAct?" on":""}" data-pact="${key}" aria-pressed="${isAct}">${isAct?"\u2605 Active":"Bench"}</button>${link?`<a class="btn" href="${link}" target="_blank" rel="noopener">op.gg</a>`:""}<button class="btn rm" data-prm="${key}">${my?"Remove player":"Remove profile"}</button></div></details>`;
 }
 const synAdj=(L=A().syn)=>{const a={};L.forEach(([x,y])=>{(a[x]=a[x]||new Set()).add(y);(a[y]=a[y]||new Set()).add(x)});return a};
 function maxCl(adj,nodes){
