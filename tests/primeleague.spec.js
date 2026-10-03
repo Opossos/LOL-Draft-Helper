@@ -144,6 +144,10 @@ test.describe("your own team",()=>{
     expect(gamma).toMatchObject({name:"Gamma",active:false,pool:[]});
     // the match list shows in My team
     await expect(page.locator('#scpl [data-k="sc-pl"]')).toBeVisible();
+    // and each player's card shows their Prime League champions
+    const card=page.locator('#scp details.pc[data-k="sp:a"]');
+    await expect(card.locator("details.psec").first().locator("> summary")).toContainText("Prime League");
+    await expect(card.locator(".plt").first()).toContainText("Aatrox");
     // saved games can count your team's Prime League games
     await page.click("#so");
     await page.locator("#gmc > summary").click();
