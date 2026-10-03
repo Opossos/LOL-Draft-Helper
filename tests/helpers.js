@@ -14,24 +14,25 @@ async function block(page,db){
 // A tiny stand-in for the Supabase tables: no password, empty notes and champion edits, and a scouts table in memory.
 // Pages opened with the same fakeDb share it, like teammates on the same site.
 function fakeDb(){
-  const rows=new Map();
+  const tables={scouts:new Map(),notes:new Map()},rows=tables.scouts;
   const handler=async route=>{
     const req=route.request(),u=new URL(req.url()),m=req.method();
     const json=b=>route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(b)});
     if(u.pathname.endsWith("/rpc/pw_status"))return json("open");
-    if(u.pathname.endsWith("/rest/v1/scouts")){
-      const id=u.searchParams.get("id");
-      if(m==="GET")return json([...rows.values()].filter(r=>!id||"eq."+r.id===id));
-      if(m==="POST"){[].concat(JSON.parse(req.postData())).forEach(r=>rows.set(r.id,{...rows.get(r.id),...r}));return route.fulfill({status:201,body:""})}
-      if(m==="DELETE"){rows.delete(String(id).replace(/^eq\./,""));return route.fulfill({status:204,body:""})}
+    const T=tables[u.pathname.split("/").pop()];
+    if(T){
+      // id=eq.x or id=in.("x","y")
+      const f=u.searchParams.get("id"),ids=!f?null:f.startsWith("eq.")?[f.slice(3)]:JSON.parse("["+f.slice(4,-1)+"]");
+      if(m==="GET")return json([...T.values()].filter(r=>!ids||ids.includes(r.id)));
+      if(m==="POST"){[].concat(JSON.parse(req.postData())).forEach(r=>T.set(r.id,{...T.get(r.id),...r}));return route.fulfill({status:201,body:""})}
+      if(m==="DELETE"){(ids||[]).forEach(id=>T.delete(id));return route.fulfill({status:204,body:""})}
     }
     if(m==="GET")return json([]);
     return route.fulfill({status:201,body:""});
   };
-  return{rows,handler};
+  return{rows,tables,handler};
 }
 
-// Opens the app with the given localStorage entries (objects are stored as JSON) and collects page errors.
 async function openApp(page,store={},{db}={}){
   const errors=[];
   page.on("pageerror",e=>errors.push(e.message));

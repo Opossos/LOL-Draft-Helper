@@ -256,3 +256,62 @@ test.describe("live draft",()=>{
     expect(await saved(page,"lolGames")).toEqual([]);
   });
 });
+
+test.describe("default notes",()=>{
+  const sw=(page,k)=>page.locator(`[data-dng="${k}"]`);
+
+  test("there are default counters for (almost) every champion",async({page})=>{
+    await openApp(page);
+    await page.locator("#dnc > summary").click();
+    const [on,total]=(await page.locator("#dncount").textContent()).match(/\d+/g).map(Number);
+    expect(on).toBe(total);
+    expect(total).toBeGreaterThan(400);
+    // a champion that had none before
+    await page.fill("#dnq","Aatrox");
+    await expect(page.locator("#dnl")).toContainText("Fiora is strong against Aatrox");
+  });
+
+  test("whole kinds of default notes switch off and on and stay that way",async({page,context})=>{
+    const db=fakeDb();
+    await openApp(page,{},{db});
+    await page.locator("#dnc > summary").click();
+    await expect(sw(page,"k")).toHaveText("On");
+    await sw(page,"k").click();
+    await expect(sw(page,"k")).toHaveText("Off");
+    await expect(sw(page,"p")).toHaveText("On");
+    const off=[...db.tables.notes.values()].filter(r=>r.t==="off").map(r=>r.a);
+    expect(off.every(id=>id.startsWith("k-"))).toBe(true);
+    expect(off.length).toBeGreaterThan(300);
+    // combos and pairs off together, so pairs are off too
+    await sw(page,"tp").click();
+    await expect(sw(page,"tp")).toHaveText("Off");
+    await expect(sw(page,"p")).toHaveText("Off");
+    await expect(page.locator("#dncount")).toHaveText(/^0 of/);
+    // pairs back on: combos and pairs are partly on
+    await sw(page,"p").click();
+    await expect(sw(page,"p")).toHaveText("On");
+    await expect(page.locator("#dng .dn").nth(2)).toContainText(/\d+ of \d+ on/);
+    // the switches are shared: someone else opening the site sees them the same way
+    const again=await context.newPage();
+    await openApp(again,{},{db});
+    await again.locator("#dnc > summary").click();
+    await expect(sw(again,"k")).toHaveText("Off");
+    await expect(sw(again,"p")).toHaveText("On");
+  });
+
+  test("with default counters off, counter picks come only from your own notes",async({page})=>{
+    const db=fakeDb();
+    db.tables.notes.set("strong:Fiora:Malphite",{id:"strong:Fiora:Malphite",t:"strong",a:"Fiora",b:"Malphite"});
+    await openApp(page,{lolDraft:draft({rp:["Malphite"]})},{db});
+    await page.locator("#dnc > summary").click();
+    await page.click("#lo");
+    const card=page.locator('#an details[data-k="counters"]');
+    await expect(card).toContainText("Vel'Koz");
+    await expect(card).toContainText("Fiora");
+    await page.click("#lo");
+    await sw(page,"k").click();
+    await page.click("#lo");
+    await expect(card).not.toContainText("Vel'Koz");
+    await expect(card).toContainText("Fiora");
+  });
+});
