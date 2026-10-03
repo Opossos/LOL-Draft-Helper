@@ -83,21 +83,36 @@ test.describe("bookmark and import",()=>{
     expect(ms[1].games[0].side).toBe("b"); // we were the right-hand team in this match
   });
 
-  test("one active player per role: whoever played the role, the rest on the bench",async({context,page})=>{
+  test("a role with one player makes them active, a role with two or more leaves all on the bench",async({context,page})=>{
     await serveSite(context);
     const {data}=await runBookmark(context,PL.teamUrl(PL.SPLITS.spring));
-    // the team is already known with a second top laner who has not played in Prime League
-    const known={id:"t1",name:"Test Team",pl:PL.generalUrl,matches:[],data:[{id:"s",name:"Sub#EUW",region:"euw",role:"T",champs:[],active:false}]};
+    // the team is already known with a second top laner
+    const known={id:"t1",name:"Test Team",pl:PL.generalUrl,matches:[],data:[{id:"s",name:"Sub#EUW",region:"euw",role:"T",champs:[],active:true}]};
     await openApp(page,{lolDr:{so:true},lolScouts:[{id:"my-team",name:"My team",data:[]},known]});
     await importPaste(page,data);
     const t=await scouted(page),by=n=>t.data.find(p=>p.name===n);
-    expect(by("Alpha#EUW")).toMatchObject({role:"T",active:true});
+    expect(by("Alpha#EUW")).toMatchObject({role:"T",active:false});
     expect(by("Sub#EUW")).toMatchObject({role:"T",active:false});
-    expect(by("Beta#EUW").active).toBe(true);
-    expect(by("Gamma#EUW").active).toBe(true);
-    // former players who are not on the roster any more stay on the bench
+    expect(by("Beta#EUW")).toMatchObject({role:"J",active:true});
+    expect(by("Gamma#EUW")).toMatchObject({role:"M",active:true});
     expect(t.data.filter(p=>p.former).every(p=>!p.active)).toBe(true);
-    await expect(page.locator('#scp details.pc[data-k="sp:s"] .pn')).toContainText("Bench");
+    const card=n=>page.locator("#scp details.pc",{hasText:n}).locator(".pn");
+    await expect(card("Alpha#EUW")).toContainText("Bench");
+    await expect(card("Beta#EUW")).toContainText("Active");
+    // you pick the top laner
+    await page.locator("#scp details.pc",{hasText:"Alpha#EUW"}).locator("[data-pact]").click();
+    await expect(card("Alpha#EUW")).toContainText("Active");
+  });
+
+  test("with nobody marked active, every player shows as not active",async({page})=>{
+    const t={id:"t1",name:"Foe",matches:[],data:[{id:"a",name:"A#EUW",region:"euw",role:"T",champs:[],active:false},{id:"b",name:"B#EUW",region:"euw",role:"J",champs:[],active:false}]};
+    await openApp(page,{lolDr:{so:true,eo:true},lolScouts:[{id:"my-team",name:"My team",data:[]},t]});
+    await page.click('[data-stab="scout"]');
+    const tags=page.locator("#scp details.pc .pn .tag",{hasText:/^(Active|Bench)$/});
+    await expect(tags).toHaveText(["Bench","Bench"]);
+    await expect(page.locator("#sclu .lu.none")).toHaveCount(5);
+    await page.click("#eb");
+    await expect(page.locator("#en")).toContainText("Nobody in Foe is marked active yet");
   });
 
   test("the import reads each player's solo queue rank and shows it on their card",async({context,page})=>{
@@ -115,6 +130,32 @@ test.describe("bookmark and import",()=>{
     const t=[...db.rows.values()].find(r=>r.name==="Test Team");
     expect(t.data.find(p=>p.name==="Alpha#EUW").rank).toMatchObject({tier:"GRANDMASTER",lp:2000,w:120});
     expect(t.data.filter(p=>p.former).every(p=>!p.rank)).toBe(true);
+  });
+
+  test("after Riot's rate limit the rank import waits and reads the rest",async({context,page})=>{
+    await serveSite(context);
+    const {data}=await runBookmark(context,PL.teamUrl(PL.SPLITS.spring));
+    const db=fakeDb({limitOnce:true,ranks:{"Alpha#EUW":{tier:"GOLD",div:"IV",lp:10},"Beta#EUW":{tier:"SILVER",div:"I",lp:90},"Gamma#EUW":{tier:"BRONZE",div:"II",lp:0}}});
+    await openApp(page,{lolDr:{so:true}},{db});
+    await importPaste(page,data);
+    await expect(page.locator("#scmsg")).toContainText("Ranks read for 3 players.",{timeout:10000});
+    await expect(page.locator("#scp .tag.rk")).toHaveCount(3);
+  });
+
+  test("players without a rank are named, and Update ranks reads them again",async({context,page})=>{
+    await serveSite(context);
+    const {data}=await runBookmark(context,PL.teamUrl(PL.SPLITS.spring));
+    const ranks={"Alpha#EUW":{tier:"GOLD",div:"IV",lp:10},"Beta#EUW":{tier:"SILVER",div:"I",lp:90},"Gamma#EUW":{error:"not found"}};
+    const db=fakeDb({ranks});
+    await openApp(page,{lolDr:{so:true}},{db});
+    await importPaste(page,data);
+    await expect(page.locator("#scmsg")).toContainText("Ranks read for 2 players. No rank for Gamma#EUW (Riot ID not found).");
+    // Gamma fixed their Riot ID, Alpha climbed
+    ranks["Gamma#EUW"]={tier:"PLATINUM",div:"III",lp:5};ranks["Alpha#EUW"]={tier:"GOLD",div:"III",lp:20};
+    await page.click("#rkup");
+    await expect(page.locator("#scmsg")).toHaveText("Ranks read for 3 players.");
+    await expect(page.locator("#scp details.pc",{hasText:"Gamma#EUW"}).locator(".tag.rk")).toHaveText("Platinum III · 5 LP");
+    await expect(page.locator("#scp details.pc",{hasText:"Alpha#EUW"}).locator(".tag.rk")).toHaveText("Gold III · 20 LP");
   });
 
   test("without the riot-rank function the import still works and says why ranks are missing",async({context,page})=>{
@@ -184,7 +225,10 @@ test.describe("your own team",()=>{
     expect(alpha.pool).toEqual(["Aatrox"]);        // tier list kept
     expect(alpha.pls["3220"].c.map(c=>c.n)).toContain("Aatrox");
     const gamma=my.data.find(p=>p.riot==="Gamma#EUW");
-    expect(gamma).toMatchObject({name:"Gamma",active:false,pool:[]});
+    // the only mid player in the team plays; Delta and Echo only played before (former) and stay on the bench
+    expect(gamma).toMatchObject({name:"Gamma",role:"M",active:true,pool:[]});
+    expect(my.data.filter(p=>p.former).every(p=>!p.active)).toBe(true);
+    expect(alpha.active).toBe(true);
     // the match list shows in My team
     await expect(page.locator('#scpl [data-k="sc-pl"]')).toBeVisible();
     // and each player's card shows their Prime League champions

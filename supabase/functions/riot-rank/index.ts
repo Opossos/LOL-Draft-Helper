@@ -34,10 +34,20 @@ Deno.serve(async (req) => {
   let body: { players?: { riotId?: string; region?: string }[] } = {};
   try { body = await req.json(); } catch { return json({ error: "Send JSON." }, 400); }
   const players = (body.players || []).slice(0, 10);
-  const riot = (u: string) => fetch(u, { headers: { "X-Riot-Token": KEY } });
+  // Riot allows a development key 20 requests per second: on a rate limit wait (up to 10 s) and try again, twice
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  const riot = async (u: string) => {
+    for (let i = 0; ; i++) {
+      const r = await fetch(u, { headers: { "X-Riot-Token": KEY } });
+      const wait = +(r.headers.get("Retry-After") || 1);
+      if (r.status !== 429 || i === 2 || wait > 10) return r;
+      await sleep(wait * 1000 + 200);
+    }
+  };
   const out = [];
   for (const p of players) {
-    const id = String(p.riotId || ""), region = PLATFORM[String(p.region)] ? String(p.region) : "euw";
+    if (out.length) await sleep(120);
+    const id = String(p.riotId || "").trim(), region = PLATFORM[String(p.region)] ? String(p.region) : "euw";
     const [name, tag] = id.split("#");
     if (!name || !tag) { out.push({ riotId: id, error: "not a Riot ID" }); continue; }
     const a = await riot(`https://${REGIONAL[region]}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`);

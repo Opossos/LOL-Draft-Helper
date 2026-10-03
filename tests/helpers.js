@@ -14,7 +14,9 @@ async function block(page,db){
 // A tiny stand-in for the Supabase tables: no password, empty notes and champion edits, and a scouts table in memory.
 // Pages opened with the same fakeDb share it, like teammates on the same site.
 // ranks: answers of the riot-rank function by Riot ID; without it the function counts as not deployed (404)
-function fakeDb({ranks}={}){
+// limitOnce: the first rank request answers one player, then reports Riot's rate limit (retry after 1 s)
+function fakeDb({ranks,limitOnce}={}){
+  let limited=false;
   const tables={scouts:new Map(),notes:new Map()},rows=tables.scouts;
   const handler=async route=>{
     const req=route.request(),u=new URL(req.url()),m=req.method();
@@ -22,7 +24,9 @@ function fakeDb({ranks}={}){
     if(u.pathname.endsWith("/rpc/pw_status"))return json("open");
     if(u.pathname.endsWith("/functions/v1/riot-rank")){
       if(!ranks)return route.fulfill({status:404,body:"not found"});
-      return json({ranks:JSON.parse(req.postData()).players.map(p=>({riotId:p.riotId,...(ranks[p.riotId]||{tier:"UNRANKED"})}))});
+      const ps=JSON.parse(req.postData()).players,one=p=>({riotId:p.riotId,...(ranks[p.riotId]||{tier:"UNRANKED"})});
+      if(limitOnce&&!limited){limited=true;return json({ranks:[one(ps[0])],limited:true,retry:1})}
+      return json({ranks:ps.map(p=>({riotId:p.riotId,...(ranks[p.riotId]||{tier:"UNRANKED"})}))});
     }
     const T=tables[u.pathname.split("/").pop()];
     if(T){

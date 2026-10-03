@@ -772,7 +772,7 @@ select option{background:var(--panel);color:var(--ink)}
 <form class="bar" id="tf" hidden><input id="scn" type="text" placeholder="Name of the new team" aria-label="Team name"><button class="btn" id="tok" type="submit">Create</button><button class="btn" id="tcancel" type="button">Cancel</button></form>
 <p class="note" id="tempty" hidden>No scouted team yet. Create one with "+ New team" or import it from Prime League below.</p>
 <div class="plsec"><div class="nl">Prime League</div>
-<div class="bar" id="plrow"><input id="plu" type="url" inputmode="url" placeholder="Prime League team link" aria-label="Prime League team link"><button class="btn" id="plsave" type="button">Save link</button><a class="btn" id="plopen" target="_blank" rel="noopener" hidden>Open on Prime League</a></div>
+<div class="bar" id="plrow"><input id="plu" type="url" inputmode="url" placeholder="Prime League team link" aria-label="Prime League team link"><button class="btn" id="plsave" type="button">Save link</button><button class="btn" id="rkup" type="button" title="Read the solo queue rank of every player with a Riot ID">Update ranks</button><a class="btn" id="plopen" target="_blank" rel="noopener" hidden>Open on Prime League</a></div>
 <details id="plbmd"><summary>Import a whole team with one bookmark</summary>
 <ol class="note plbm">
 <li>Drag this button to your browser's bookmarks bar: <a class="btn" id="plbm" href="#">PL scout</a> On a phone, <button class="lnk" id="plbmc" type="button">copy the code</button> and save it as the address of a new bookmark.</li>
@@ -1118,7 +1118,8 @@ function combos(){
   return uniq.sort((x,y)=>y.s-x.s).slice(0,4);
 }
 const sortP=a=>a.slice().sort((x,y)=>{const o=z=>{const i=RO.indexOf(z.role||derivedRole(z));return i<0?9:i};return o(x)-o(y)||(y.active?1:0)-(x.active?1:0)||x.name.localeCompare(y.name)});
-const actOf=list=>{const a=list.filter(x=>x.active);return a.length?a:list};
+// only players marked active play; with nobody marked, nobody counts as active
+const actOf=list=>list.filter(x=>x.active);
 const activePlayers=()=>actOf(myPlayers());
 // a player with any champion in their lists can pick only their tier list and not confident champions;
 // everything else, learning champions included, counts as can't play
@@ -1411,7 +1412,7 @@ function enemyView(){
   let h=`<div class="tbar" role="group" aria-label="Scouted team">${list.map(x=>`<span class="tchip${x.id===enId?" on":""}"><button class="tn" data-esel="${esc(x.id)}" aria-pressed="${x.id===enId}" title="${esc(x.name)}">${esc(x.name)}</button></span>`).join("")}</div>`;
   if(!t){$("en").innerHTML=h+`<p class="note">Add a scouted team in Teams, then Scout. Their players and champions drive this view.</p>`;return}
   const roster=sortP(actOf(t.data));
-  if(!roster.length){$("en").innerHTML=h+`<p class="note">This team has no profiles yet. Add the enemy players in Teams, then Scout.</p>`;return}
+  if(!roster.length){$("en").innerHTML=h+`<p class="note">${t.data.length?"Nobody in "+esc(t.name)+" is marked active yet. Mark who plays in Teams, then Scout.":"This team has no profiles yet. Add the enemy players in Teams, then Scout."}</p>`;return}
   const foe=EN(),mine=MY(),u=used(),role=x=>x.role||derivedRole(x);
   // which enemy picks belong to which scouted player
   const usedP=new Set(),pm=new Map();
@@ -1555,6 +1556,7 @@ document.addEventListener("click",e=>{
   else if(b.dataset.tdel){scDel();return}
   else if(b.id==="tcancel"){tform=""}
   else if(b.id==="plsave"){plSave();return}
+  else if(b.id==="rkup"){plRanksNow();return}
   else if(b.id==="plgo"){plImport();return}
   else if(b.dataset.plside){plMatchImport(+b.dataset.plside);return}
   else if(b.dataset.plgt){plGroupImport(b.dataset.plgt);return}
@@ -2519,12 +2521,12 @@ async function plImport(){
   if(!PLR)return;
   let t=curTeam();
   if(!t){t={id:uid(),name:PLR.team||"Team "+(SC.length+1),data:[]};SC.push(t);scId=t.id}
-  const hadActive=t.data.some(x=>x.active);
+  const before=plRoles(t);
   const add=PLR.players.filter(x=>x.ok&&!plFind(t,x.riot,x.nick));
   add.forEach(x=>t.data.push(plNewP(t,x.riot,{region:x.region,u:x.u,nick:x.nick})));
   PLR.players.forEach(x=>{const p=x.u&&plFind(t,x.riot,x.nick);if(p&&!p.plu)p.plu=x.u});
   if(!t.pl&&PLR.link&&(plOK||!SB.url))t.pl=PLR.link;
-  plAutoActive(t,hadActive);
+  plRoleActive(t,before);
   PLR=null;$("plsrc").value="";$("plprev").innerHTML="";
   await scPersist(t);
   const rk=await plRanks(t);if(rk.includes("Ranks read"))await scPersist(t);
@@ -2540,15 +2542,17 @@ function plFind(t,riot,nick){
   if(!p&&t.id===MYID){p=t.data.find(x=>!x.riot&&[gn,nk].includes(String(x.name).toLowerCase()));if(p)p.riot=riot}
   return p;
 }
-// after a Prime League import: one active player per role, the one who played that role most (then most recently)
-// in the imported games, everyone else on the bench. A team where someone was already active keeps your choice.
-function plAutoActive(t,hadActive){
-  if(hadActive)return;
-  const cnt={},last={};
-  (t.matches||[]).forEach((m,mi)=>(m.games||[]).forEach(g=>(g.ps||[]).forEach(q=>{const r=RO[q.row-1];if(!r)return;const k=String(q.r).toLowerCase()+"|"+r;cnt[k]=(cnt[k]||0)+1;last[k]=Math.max(last[k]||0,m.date||mi+1)})));
-  const by={};
-  t.data.forEach(p=>{p.active=false;const r=p.role||derivedRole(p);if(r&&!p.former)(by[r]=by[r]||[]).push(p)});
-  Object.entries(by).forEach(([r,L])=>{const k=p=>plKey(p)+"|"+r;L.sort((a,b)=>(cnt[k(b)]||0)-(cnt[k(a)]||0)||(last[k(b)]||0)-(last[k(a)]||0));L[0].active=true});
+// after a Prime League import, for every role the import added a player to or set on a player:
+// exactly one player in that role plays (active), two or more all go to the bench so you choose. Former players never play.
+const plRoles=t=>new Map(t.data.map(p=>[p.id,p.role||""]));
+function plRoleActive(t,before){
+  const touched=new Set();
+  t.data.forEach(p=>{const r=p.role||derivedRole(p);if(r&&(!before.has(p.id)||before.get(p.id)!==(p.role||"")))touched.add(r)});
+  touched.forEach(r=>{
+    const L=t.data.filter(p=>!p.former&&(p.role||derivedRole(p))===r);
+    L.forEach(p=>{p.active=L.length===1});
+  });
+  t.data.forEach(p=>{if(p.former)p.active=false});
 }
 // a new player from Prime League, on the bench; your own team's players get empty tier lists and their nickname
 function plNewP(t,riot,o={}){
@@ -2691,9 +2695,8 @@ async function plMatchImport(k){
   if(!M||M.kind!=="match"||plMissingCol())return;
   const cur=curTeam(),t=cur||plTeamFor(M.sides[k].tid,M.sides[k].name,M.sides[k].link);
   if(!t.pl&&M.sides[k].link&&(plOK||!SB.url))t.pl=M.sides[k].link;
-  const hadActive=t.data.some(x=>x.active);
-  const r=plApply(t,M,k),rec=r.rec,added=r.added,roled=r.roled,had=r.had;
-  plAutoActive(t,hadActive);
+  const before=plRoles(t),r=plApply(t,M,k),rec=r.rec,added=r.added,roled=r.roled,had=r.had;
+  plRoleActive(t,before);
   PLR=null;$("plsrc").value="";$("plprev").innerHTML="";PLC=null;
   await scPersist(t);
   scmsg(`Imported ${rec.games.length} game${rec.games.length>1?"s":""} vs ${rec.opp} for ${t.name}.`+(roled?` Set the role of ${roled} player${roled>1?"s":""} from the match.`:"")+(added?` Added ${added} player${added>1?"s":""} to the bench${had?(added>1?" as former players":" as a former player"):""}.`:""));
@@ -2817,7 +2820,7 @@ async function plBundleImport(){
 }
 // shared by the bundle import: roster, player splits and played matches of team t, starting at its team page
 async function plRun(t,start,get){
-  const tid=plTid(start||t.pl),hadActive=t.data.some(x=>x.active);
+  const tid=plTid(start||t.pl),before=plRoles(t);
   const splitLinks=d=>{
     const o=new Map();if(!d||!tid)return o;
     d.querySelectorAll('a[href*="/teams/'+tid+'"]').forEach(a=>{
@@ -2865,7 +2868,7 @@ async function plRun(t,start,get){
       const k=plSide(t,M,tid);if(k<0)continue;
       const r=plApply(t,M,k);newM++;roled+=r.roled;former+=r.added;
     }
-    plAutoActive(t,hadActive);
+    plRoleActive(t,before);
     PLC=null;await scPersist(t);
     const rk=await plRanks(t,`Updated ${t.name}.`);if(rk.includes("Ranks read"))await scPersist(t);
     scmsg(`Updated ${t.name} from ${got.map(x=>x.name).join(", ")}: ${pages} player split${pages===1?"":"s"}, ${newM} new match${newM===1?"":"es"}`+(added?`, ${added} new player${added>1?"s":""} on the bench`:"")+(former?`, ${former} former player${former>1?"s":""}`:"")+(roled?`, ${roled} role${roled>1?"s":""} set`:"")+"."+(miss?` ${miss} played match${miss>1?"es were":" was"} not in the paste. Drag the new "PL scout" link to your bookmarks again and run it once more.`:"")+rk);
@@ -2880,20 +2883,42 @@ async function plRanks(t,before){
   if(!SB.url)return"";
   const P=t.data.filter(p=>!p.former&&String(p.riot||p.name).includes("#"));
   if(!P.length)return"";
-  scmsg((before?before+" ":"")+"Reading ranks...");
-  let got=0;
+  const say=x=>scmsg((before?before+" ":"")+x);
+  say("Reading ranks...");
+  const miss=[],sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  let got=0,waits=0;
+  const why=e=>e==="not found"?"Riot ID not found":e||"no answer";
   try{
-    for(let i=0;i<P.length;i+=10){
-      const part=P.slice(i,i+10);
-      const r=await fetch(SB.url+"/functions/v1/riot-rank",{method:"POST",headers:fnHead(),body:JSON.stringify({players:part.map(p=>({riotId:p.riot||p.name,region:p.region||"euw"}))})});
+    // 5 players per request keeps each burst under Riot's per-second limit
+    for(let i=0;i<P.length;){
+      const part=P.slice(i,i+5);
+      const r=await fetch(SB.url+"/functions/v1/riot-rank",{method:"POST",headers:fnHead(),body:JSON.stringify({players:part.map(p=>({riotId:String(p.riot||p.name).trim(),region:p.region||"euw"}))})});
       if(r.status===404)return" Ranks were not read: the riot-rank function is not deployed in Supabase yet.";
       const d=await r.json().catch(()=>({}));
       if(!r.ok)return" Ranks were not read: "+(d.error||"error "+r.status)+".";
-      (d.ranks||[]).forEach(k=>{const p=part.find(x=>(x.riot||x.name).toLowerCase()===String(k.riotId).toLowerCase());if(p&&k.tier){p.rank={tier:k.tier,div:k.div||"",lp:k.lp||0,w:k.w||0,l:k.l||0,at:Date.now()};got++}});
-      if(d.limited)return` Read ${got} rank${got===1?"":"s"}, then Riot's rate limit stopped it. Import again in a minute for the rest.`;
+      const done=new Set();
+      (d.ranks||[]).forEach(k=>{
+        const p=part.find(x=>String(x.riot||x.name).trim().toLowerCase()===String(k.riotId).toLowerCase());if(!p)return;
+        done.add(p);
+        if(k.tier){p.rank={tier:k.tier,div:k.div||"",lp:k.lp||0,w:k.w||0,l:k.l||0,at:Date.now()};got++}
+        else miss.push(p.name+" ("+why(k.error)+")");
+      });
+      if(d.limited){
+        // Riot's limit per 2 minutes: wait as long as Riot says and go on with the players not read yet
+        if(++waits>3)return` Read ${got} rank${got===1?"":"s"}; Riot's rate limit stopped the rest. Tap Update ranks in a few minutes.`;
+        for(let w=Math.min(130,d.retry||60);w>0;w--){say(`Reading ranks: ${got} read, Riot's rate limit, going on in ${w} s...`);await sleep(1000)}
+        i+=done.size;continue;
+      }
+      i+=part.length;
     }
   }catch(e){return" Ranks were not read: the riot-rank function could not be reached."}
-  return got?` Ranks read for ${got} player${got===1?"":"s"}.`:"";
+  return(got?` Ranks read for ${got} player${got===1?"":"s"}.`:"")+(miss.length?` No rank for ${miss.join(", ")}.`:"");
+}
+async function plRanksNow(){
+  const t=curTeam();if(!t)return;
+  const rk=await plRanks(t);
+  if(rk.includes("Ranks read"))await scPersist(t);
+  scmsg(rk.trim()||"No player with a Riot ID (Name#TAG) in this team.");render();
 }
 async function plUserImport(){
   const U=PLR,t=curTeam(),p=U&&t?plFind(t,U.riot):null;
@@ -3234,7 +3259,7 @@ function derivedRole(p){
   return Object.keys(w).sort((a,b)=>w[b]-w[a])[0]||"";
 }
 function profCard(p){
-  const my=scId===MYID,key=esc(p.id),tm=curTeam(),isAct=tm?actOf(tm.data).includes(p):false;
+  const my=scId===MYID,key=esc(p.id),tm=curTeam(),isAct=!!p.active;
   const rows=p.champs.slice().sort((a,b)=>b.g-a.g),w=c=>Math.max(1,c.g),tw=rows.reduce((a,c)=>a+w(c),0)||1;
   const tg=rows.reduce((a,c)=>a+c.g,0),wr=rows.reduce((a,c)=>a+w(c)*c.wr,0)/tw,kda=rows.reduce((a,c)=>a+w(c)*c.kda,0)/tw;
   const role=p.role||derivedRole(p),rid=p.riot||p.name,link=rid.includes("#")?"https://www.op.gg/summoners/"+encodeURIComponent(p.region||"euw")+"/"+encodeURIComponent(rid.replace("#","-")):"";
@@ -3326,6 +3351,7 @@ function scAnalysis(P,mine,benchN){
   const th=threats(P);
   const k=mine?"sc-mine":"sc-threat";
   let h=`<details class="card" data-k="${k}" ${op(k)}><summary>${ic(mine?"grid":"target")}<h2>${mine?"Combos your players can play":"Combos to watch out for"}</h2>${th.length?` <span class="tag">${th.length}</span>`:""}</summary>`;
+  if(!P.length)return h+`<p class="note">Nobody is marked active yet. Mark who plays with the Active button on their card.</p></details>`;
   if(!th.length)return h+`<p class="note">No combos found. Add champions to the ${mine?"players":"profiles"} and save team combos in Your notes. A combo appears here when different players can play all of its champions.</p></details>`;
   if(benchN>0)h+=`<p class="note" style="margin:0 0 6px">Based on the active lineup. ${benchN} bench player${benchN>1?"s are":" is"} not included.</p>`;
   h+=th.map((t,idx)=>{
@@ -3353,7 +3379,7 @@ function scView(){
   $("tbar").hidden=my;
   $("tbar").innerHTML=list.map(x=>{const on=x.id===scId;return`<span class="tchip${on?" on":""}"><button class="tn" data-tsel="${esc(x.id)}" aria-pressed="${on}" title="${esc(x.name)}">${esc(x.name)}</button>${on?`<button class="ti" data-tren="1" aria-label="Rename team">\u270E</button><button class="ti" data-tdel="1" aria-label="Delete team">\u00d7</button>`:""}</span>`}).join("")+`<button class="tchip add" data-tnew="1">+ New team</button>`;
   $("tth").textContent=my?"Your team on Prime League":t?"Team: "+t.name:"Team";
-  $("plrow").hidden=!t;
+  $("plrow").hidden=!t;$("rkup").hidden=!SB.url||!t||!t.data.some(p=>String(p.riot||p.name).includes("#"));
   $("tempty").hidden=my||!!t||!!tform;
   $("scn").placeholder=tform==="rename"&&t?"New name for "+t.name:"Name of the new team";
   if(t){if(document.activeElement!==$("plu"))$("plu").value=t.pl||"";$("plopen").hidden=!t.pl;if(t.pl)$("plopen").href=t.pl}
