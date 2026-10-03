@@ -243,7 +243,7 @@ test.describe("your own team",()=>{
     await page.locator("#gmc > summary").click();
     await page.locator("#gpl").selectOption("my-team");
     await expect(page.locator("#gpl option:checked")).toHaveText("Your team");
-    await expect(page.locator("#gmc")).toContainText("Record: 3W 1L");
+    await expect(page.locator("#gmc .gkpi b").first()).toHaveText("3W 1L");
     // the champion page shows your team's record with a champion
     await page.locator('[data-chp="Aatrox"]').first().click();
     await expect(page.locator("#chp")).toContainText("Your team in Prime League");

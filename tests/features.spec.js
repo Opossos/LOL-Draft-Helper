@@ -92,15 +92,15 @@ test.describe("Fearless series and saved games",()=>{
     const card=page.locator("#gmc");
     await card.locator("> summary").click();
     await expect(page.locator("#gmcount")).toHaveText("3");
-    await expect(card).toContainText("Record: 2W 1L");
+    await expect(page.locator("#gmc .gkpi b").first()).toHaveText("2W 1L");
     const row=t=>card.locator(".gst",{hasText:t});
     await expect(row("Aatrox").first()).toContainText("2W 1L");
-    await expect(card.locator(".gst",{hasText:"Aatrox + Lee Sin"})).toContainText("2W 0L");
+    await expect(card.locator(".gbox",{hasText:"Pairs played together"}).locator(".gst",{hasText:"Aatrox"})).toContainText("2W 0L");
     // change a result and delete a game
     const g3=card.locator('details.gm[data-k="gm:g3"]');
     await g3.locator("> summary").click();
     await g3.locator("button",{hasText:"Won"}).click();
-    await expect(card).toContainText("Record: 3W 0L");
+    await expect(page.locator("#gmc .gkpi b").first()).toHaveText("3W 0L");
     await card.locator("details.gm").first().locator("button",{hasText:"Delete"}).click();
     await page.click("#cfm-y");
     await expect(page.locator("#gmcount")).toHaveText("2");
@@ -113,11 +113,11 @@ test.describe("Fearless series and saved games",()=>{
     await openApp(page,{lolGames:[game("g1",["Aatrox"],["Garen"],"w")],lolScouts:[...myTeam([]),pl]});
     const card=page.locator("#gmc");
     await card.locator("> summary").click();
-    await expect(card).toContainText("Record: 1W 0L");
+    await expect(page.locator("#gmc .gkpi b").first()).toHaveText("1W 0L");
     await card.locator("#gpl").selectOption("t1");
-    await expect(card).toContainText("Record: 2W 1L");
+    await expect(page.locator("#gmc .gkpi b").first()).toHaveText("2W 1L");
     await card.locator('[data-gf="pl"]').click();
-    await expect(card).toContainText("Record: 1W 1L");
+    await expect(page.locator("#gmc .gkpi b").first()).toHaveText("1W 1L");
     await expect(card.locator("details.gm")).toHaveCount(0);
   });
 });

@@ -550,19 +550,45 @@ body .cmb-m .cslot{flex-basis:calc(33.33% - 18px);min-width:calc(33.33% - 18px)}
 .slot em.vs{font-style:normal;font-size:11px;color:var(--mute);margin:0;line-height:1.25}
 .slot em.vs.good{color:var(--ok)}.slot em.vs.bad{color:var(--red)}
 /* saved games and the champion page */
-.gsts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:4px 16px}
-.gst{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid var(--line);font-size:14px}
-.gst>span:first-child{min-width:0;overflow-wrap:anywhere}.gst>span:last-child{text-align:right;flex:none;max-width:60%}
-.gst .good,.gst .bad{margin:0}
+.gkpi{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 12px}
+.gkpi>div{border:1px solid var(--line);border-radius:var(--rs,8px);padding:8px 12px;background:var(--bg);display:flex;flex-direction:column;gap:2px;min-width:0}
+.gkpi small{color:var(--mute);font-size:11.5px;font-weight:500}
+.gkpi b{font-size:18px;font-weight:700;line-height:1.2}
+.gkpi b.up{color:var(--ok)}.gkpi b.down{color:var(--red)}
+.gsts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.gbox{border:1px solid var(--line);border-radius:var(--rs,8px);padding:6px 12px 8px;min-width:0}
+.gbh{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mute);margin:4px 0 2px}
+.gst{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.gst:last-child{border-bottom:0}
+.gst .gn{min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:2px 4px}
+.gplus{color:var(--mute);font-size:12px}
+.gst .gr2{display:flex;align-items:center;gap:8px;flex:none}
+.gst .gr2 b{font-weight:600;font-size:12.5px;white-space:nowrap}
+.gst .gr2 small{width:34px;text-align:right;color:var(--mute);font-size:11.5px}
+.gbar{display:block;width:54px;height:5px;border-radius:3px;background:var(--chip);overflow:hidden}
+.gbar i{display:block;height:100%;background:var(--mute)}
+.gst.up .gbar i{background:var(--ok)}.gst.down .gbar i{background:var(--red)}
+.gst.up .gr2 b{color:var(--ok)}.gst.down .gr2 b{color:var(--red)}
 .gst .lnk,.gpk .lnk{color:var(--ink);text-decoration:none;font-weight:600}
-.gst .ico,.gpk .ico{width:20px;height:20px;border-radius:4px;vertical-align:-5px;margin-right:4px}
-.gm{border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:6px 0}
-.gm>summary{cursor:pointer}
-.gm>summary .gr{float:right;margin-left:8px}
-.gm>summary .good,.gm>summary .bad{margin:0}
-.gmb .nl{margin:8px 0 2px}
-.gpk{display:flex;flex-wrap:wrap;gap:4px 10px}
-.gmb .btn[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.gst .ico{width:20px;height:20px;border-radius:4px;vertical-align:-5px;margin-right:5px}
+.gm{border:1px solid var(--line);border-radius:var(--rs,8px);margin:6px 0;background:var(--panel)}
+.gm>summary{display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;color:var(--ink)}
+.gm[open]>summary{border-bottom:1px solid var(--line)}
+.gres{width:26px;height:26px;border-radius:6px;display:grid;place-items:center;font-size:12px;font-weight:700;flex:none;background:var(--chip);color:var(--mute)}
+.gres.w{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}.gres.l{background:color-mix(in srgb,var(--red) 14%,transparent);color:var(--red)}
+.gm .gt{display:flex;flex-direction:column;min-width:0;flex:1}
+.gm .gt b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gm .gt small{color:var(--mute);font-size:12px;display:flex;align-items:center;gap:5px}
+.gm .gt .sdot{width:7px;height:7px;border-radius:50%;display:inline-block;background:var(--blue)}.gm .gt .sdot.r{background:var(--red)}
+.gm .gr{flex:none;font-size:13px;font-weight:600}.gm .gr .good,.gm .gr .bad,.gm .gr .note{margin:0}
+.gmb{padding:4px 12px 12px}
+.gmb .nl{margin:10px 0 4px}
+.gpk{display:flex;flex-wrap:wrap;gap:5px}
+.gpk .chip{font-size:13px;padding:3px 10px}
+.gact{margin-top:12px;gap:6px}
+.gmb .btn[aria-pressed=true]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.gdel:hover{border-color:var(--red);color:var(--red)}
+@media(max-width:600px){.gkpi b{font-size:16px}.gm>summary{padding:8px 10px;gap:8px}.gm .gr{display:none}}
 dialog input[type=text],dialog select{padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit;box-sizing:border-box}
 #chp{width:min(92vw,560px);max-width:none;max-height:85vh;overflow:auto;box-sizing:border-box}
 #chp h3{margin:14px 0 4px;font-size:15px}
@@ -572,6 +598,7 @@ dialog input[type=text],dialog select{padding:8px 10px;border:1px solid var(--li
 #bkf{margin:4px 0 8px}
 .dng{margin:0 0 6px;padding:6px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 #gno{margin-left:8px}#gno:empty{display:none}
+.tag:empty{display:none}
 /* ===== Polish: one calm, consistent look for Light and Dark (GG keeps its own style) ===== */
 :root{--r:10px;--rs:8px;--sh:0 1px 2px rgba(15,27,45,.05),0 1px 1px rgba(15,27,45,.03);--hov:rgba(15,27,45,.045);--acc:#1E5FBF}
 :root[data-theme="dark"]{--sh:0 1px 2px rgba(0,0,0,.35);--hov:rgba(255,255,255,.05);--acc:#5A9BFF}
@@ -3713,16 +3740,18 @@ function gameView(){
   if(plT.length)h+=`<label class="fl" for="gpl">Add Prime League games of</label><select id="gpl"><option value="">No Prime League team</option>${plT.map(t=>`<option value="${esc(t.id)}"${t.id===GV.t?" selected":""}>${t.id===MYID?"Your team":esc(t.name)}</option>`).join("")}</select>`;
   if(GV.t)h+=`<div class="rf" role="group" aria-label="Games to count">${[["all","All games"],["saved","Saved drafts"],["pl","Prime League"]].map(([k,l])=>`<button data-gf="${k}" aria-pressed="${GV.f===k}">${l}</button>`).join("")}</div>`;
   if(!E.length){$("gml").innerHTML=h+`<p class="note">No games yet.</p>`;return}
-  const row=o=>{const n=o.k.split(" + ");return`<div class="gst"><span>${n.map(x=>`<button class="lnk" data-chp="${esc(x)}">${icon(x)}${esc(x)}</button>`).join(" + ")}</span><span class="${o.w>o.l?"good":o.w<o.l?"bad":""}">${rec(o)}</span></div>`};
-  h+=`<p style="margin:8px 0"><b>Record: ${rec({w,l:done.length-w})}</b> <span class="note">${E.length} game${E.length>1?"s":""}${E.length>done.length?", "+(E.length-done.length)+" without result":""}</span></p>`;
-  h+=`<div class="gsts"><div><div class="nl">Your picks</div>${S.P.slice(0,10).map(row).join("")||`<p class="note">No results yet.</p>`}</div>`;
-  h+=`<div><div class="nl">Pairs played together (2+ games)</div>${S.PR.slice(0,6).map(row).join("")||`<p class="note">Play two champions together in two games to see them here.</p>`}</div>`;
-  h+=`<div><div class="nl">Against enemy champions</div>${S.V.slice(0,10).map(row).join("")||`<p class="note">No results yet.</p>`}</div></div>`;
+  // a win rate bar under each record: green above 50%, red below
+  const wr=o=>o.w+o.l?Math.round(o.w/(o.w+o.l)*100):0,cls=o=>o.w>o.l?"up":o.w<o.l?"down":"even";
+  const row=o=>{const n=o.k.split(" + ");return`<div class="gst ${cls(o)}"><span class="gn">${n.map(x=>`<button class="lnk" data-chp="${esc(x)}">${icon(x)}${esc(x)}</button>`).join('<span class="gplus">+</span>')}</span><span class="gr2"><b>${o.w}W ${o.l}L</b><i class="gbar"><i style="width:${wr(o)}%"></i></i><small>${wr(o)}%</small></span></div>`};
+  const box=(t,L,empty)=>`<div class="gbox"><div class="gbh">${t}</div>${L.map(row).join("")||`<p class="note" style="margin:6px 0">${empty}</p>`}</div>`;
+  const W={w,l:done.length-w};
+  h+=`<div class="gkpi"><div><small>Record</small><b>${W.w}W ${W.l}L</b></div><div><small>Win rate</small><b class="${cls(W)}">${wr(W)}%</b></div><div><small>Games</small><b>${E.length}</b>${E.length>done.length?`<small>${E.length-done.length} without result</small>`:""}</div></div>`;
+  h+=`<div class="gsts">${box("Your picks",S.P.slice(0,10),"No results yet.")}${box("Pairs played together",S.PR.slice(0,6),"Two champions played together in two games show up here.")}${box("Against enemy champions",S.V.slice(0,10),"No results yet.")}</div>`;
   if(G.length&&GV.f!=="pl"){
-    const side=(L,cls)=>`<span class="gpk ${cls}">${L.map(x=>`<button class="lnk" data-chp="${esc(x)}" title="${esc(x)}">${icon(x)}<span>${esc(x)}</span></button>`).join("")||`<small>–</small>`}</span>`;
-    h+=`<div class="nl" style="margin-top:10px">Games</div>`+G.map(g=>`<details class="gm" data-k="gm:${esc(g.id)}" ${OPEN["gm:"+g.id]?"open":""}><summary><span class="gr">${resTxt(g.res)}</span><b>${esc(gTitle(g))}</b> <span class="plside ${g.me==="r"?"r":"b"}">${g.me==="r"?"Red":"Blue"}</span></summary>
+    const side=(L,cls)=>`<span class="gpk ${cls}">${L.map(x=>`<button class="chip" data-chp="${esc(x)}" title="${esc(x)}">${icon(x)}${esc(x)}</button>`).join("")||`<small>\u2013</small>`}</span>`;
+    h+=`<div class="gbh" style="margin:14px 0 6px">Games</div>`+G.map(g=>`<details class="gm" data-k="gm:${esc(g.id)}" ${OPEN["gm:"+g.id]?"open":""}><summary><span class="gres ${g.res==="w"?"w":g.res==="l"?"l":""}">${g.res==="w"?"W":g.res==="l"?"L":"\u2013"}</span><span class="gt"><b>Game ${g.n}${g.opp?" vs "+esc(g.opp):""}</b><small>${esc(gDate(g.at))} \u00b7 <i class="sdot ${g.me==="r"?"r":"b"}"></i>${g.me==="r"?"Red":"Blue"} side</small></span><span class="gr">${resTxt(g.res)}</span></summary>
 <div class="gmb"><div class="nl">You</div>${side(gMine(g),"al")}<div class="nl">Enemy</div>${side(gFoe(g),"en")}<div class="nl">Bans</div><span class="note">${esc([...g.st.bb,...g.st.rb].join(", ")||"none")}</span>
-<div class="bar" style="margin-top:8px"><button class="btn" data-gres="${esc(g.id)}|w" aria-pressed="${g.res==="w"}">Won</button> <button class="btn" data-gres="${esc(g.id)}|l" aria-pressed="${g.res==="l"}">Lost</button> <button class="btn" data-gload="${esc(g.id)}">Show on the board</button> <button class="btn" data-gdel="${esc(g.id)}">Delete</button></div></div></details>`).join("");
+<div class="bar gact"><button class="btn" data-gres="${esc(g.id)}|w" aria-pressed="${g.res==="w"}">Won</button><button class="btn" data-gres="${esc(g.id)}|l" aria-pressed="${g.res==="l"}">Lost</button><button class="btn" data-gload="${esc(g.id)}">Show on the board</button><button class="btn gdel" data-gdel="${esc(g.id)}">Delete</button></div></div></details>`).join("");
   }
   $("gml").innerHTML=h;
 }
