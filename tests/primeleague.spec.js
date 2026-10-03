@@ -122,7 +122,7 @@ test.describe("your own team",()=>{
   test("the bookmark paste imports into My team: matches, splits, players found by name",async({context,page})=>{
     await serveSite(context);
     const {data}=await runBookmark(context,PL.teamUrl(PL.SPLITS.spring));
-    const mine=[{id:"a",name:"Alpha",region:"euw",role:"T",champs:[],active:true,pool:["Aatrox"]},
+    const mine=[{id:"a",name:"Alpha",region:"euw",role:"T",champs:[{n:"Garen",g:12,wr:58,kda:2.4}],active:true,pool:["Aatrox"]},
                 {id:"b",name:"Bee",riot:"Beta#EUW",region:"euw",role:"J",champs:[],active:true,pool:["Lee Sin"]}];
     await openApp(page,{lolDr:{so:true},lolScouts:[{id:"my-team",name:"My team",data:mine}]});
     await expect(page.locator('[data-stab="my"]')).toHaveAttribute("aria-pressed","true");
@@ -148,6 +148,9 @@ test.describe("your own team",()=>{
     const card=page.locator('#scp details.pc[data-k="sp:a"]');
     await expect(card.locator("details.psec").first().locator("> summary")).toContainText("Prime League");
     await expect(card.locator(".plt").first()).toContainText("Aatrox");
+    // like scouted players: Prime League above, Ranked below
+    await expect(card.locator("details.psec > summary")).toHaveText([/^Prime League/,/^Ranked/]);
+    await expect(card.locator('details.psec[data-k="prk:a"]')).toContainText("Garen");
     // saved games can count your team's Prime League games
     await page.click("#so");
     await page.locator("#gmc > summary").click();
