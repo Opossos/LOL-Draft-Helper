@@ -2384,7 +2384,7 @@ async function scPersist(t){try{await scSave(t)}catch(e){scmsg(errText(e))}}
 const plLink=v=>{try{const u=new URL(v);return u.protocol==="https:"&&/(^|\.)primeleague\.gg$/.test(u.hostname)?u.href:""}catch(e){return""}};
 async function plSave(){
   const t=curTeam(),v=$("plu").value.trim();
-  if(!t||t.id===MYID)return;
+  if(!t)return;
   const link=v?plLink(v):"";
   if(v&&!link){scmsg("Paste a link to a team page on primeleague.gg.");return}
   if(SB.url&&!(sb&&scOK)){scmsg("Could not reach the shared teams, so the link was not saved. Try again later.");return}
@@ -2420,7 +2420,7 @@ function plParseDoc(d){
   const a=d.querySelector('.content-portrait-head-info a[href*="/leagues/teams/"]');
   return{kind:"team",team:a?a.textContent.trim():"",link:a?plLink(a.getAttribute("href")):"",players,season:plSeason(d),ms:plTeamMs(d)};
 }
-function plKnown(){const t=curTeam();return new Set((t&&t.id!==MYID?t.data:[]).map(p=>(p.riot||p.name).toLowerCase()))}
+function plKnown(){const t=curTeam();return new Set((t?t.data:[]).flatMap(p=>t.id===MYID&&!p.riot?[p.name.toLowerCase()]:[plKey(p)]))}
 function plPrev(){
   const el=$("plprev");
   if(!PLR){el.innerHTML="";return}
@@ -2430,16 +2430,16 @@ function plPrev(){
   if(PLR.kind==="bundle"){el.innerHTML=plBundlePrev();return}
   if(!PLR.players.length){el.innerHTML=`<p class="note">No players found. Make sure you copied the whole page source of a Prime League team page.</p>`;return}
   const known=plKnown(),add=PLR.players.filter(x=>x.ok&&!known.has(x.riot.toLowerCase())),skip=PLR.players.filter(x=>!x.ok);
-  const t=curTeam(),target=t&&t.id!==MYID?t.name:(PLR.team||"a new team");
+  const t=curTeam(),target=t?t.name:(PLR.team||"a new team");
   el.innerHTML=`<p class="note" style="margin:0">${esc(PLR.team||"Team")}: ${PLR.players.length} players, ${PLR.players.filter(x=>x.ok).length} confirmed.</p><div class="plp">${PLR.players.map(x=>`<span class="chip${x.ok&&!known.has(x.riot.toLowerCase())?"":" dim"}" title="${esc(x.nick)}">${esc(x.riot)}</span>`).join("")}</div>${skip.length?`<p class="note" style="margin:0 0 6px">Not added (not confirmed): ${skip.map(x=>esc(x.riot)).join(", ")}</p>`:""}${add.length?`<button class="btn" id="plgo" type="button">Add ${add.length} player${add.length>1?"s":""} to ${esc(target)}</button>`:`<p class="note" style="margin:0">All confirmed players are already in the team.</p>`}`;
 }
 async function plImport(){
   if(!PLR)return;
   let t=curTeam();
-  if(!t||t.id===MYID){t={id:uid(),name:PLR.team||"Team "+(SC.length+1),data:[]};SC.push(t);scId=t.id}
-  const known=plKnown(),add=PLR.players.filter(x=>x.ok&&!known.has(x.riot.toLowerCase()));
-  add.forEach(x=>t.data.push({id:uid(),name:x.riot,region:x.region,role:"",champs:[],active:false,...(x.u?{plu:x.u}:{})}));
-  PLR.players.forEach(x=>{const p=x.u&&t.data.find(y=>plKey(y)===x.riot.toLowerCase());if(p&&!p.plu)p.plu=x.u});
+  if(!t){t={id:uid(),name:PLR.team||"Team "+(SC.length+1),data:[]};SC.push(t);scId=t.id}
+  const add=PLR.players.filter(x=>x.ok&&!plFind(t,x.riot,x.nick));
+  add.forEach(x=>t.data.push(plNewP(t,x.riot,{region:x.region,u:x.u,nick:x.nick})));
+  PLR.players.forEach(x=>{const p=x.u&&plFind(t,x.riot,x.nick);if(p&&!p.plu)p.plu=x.u});
   if(!t.pl&&PLR.link&&(plOK||!SB.url))t.pl=PLR.link;
   PLR=null;$("plsrc").value="";$("plprev").innerHTML="";
   await scPersist(t);scmsg("Added "+add.length+" player"+(add.length===1?"":"s")+" to "+t.name+" on the bench. Set their roles, mark who plays, and use the Riot import to read their champions.");render();
@@ -2447,6 +2447,19 @@ async function plImport(){
 // Prime League matches: champions, bans and roles from pasted match pages, match list from the group page
 const plTid=u=>{const m=/\/teams\/(\d+)/.exec(u||"");return m?m[1]:""};
 const plKey=x=>(x.riot||x.name).toLowerCase();
+// a Prime League player in team t: by Riot ID, and in your own team also by name for players without a Riot ID yet
+function plFind(t,riot,nick){
+  const r=String(riot).toLowerCase(),gn=r.split("#")[0],nk=String(nick||"").toLowerCase();
+  let p=t.data.find(x=>plKey(x)===r);
+  if(!p&&t.id===MYID){p=t.data.find(x=>!x.riot&&[gn,nk].includes(String(x.name).toLowerCase()));if(p)p.riot=riot}
+  return p;
+}
+// a new player from Prime League, on the bench; your own team's players get empty tier lists and their nickname
+function plNewP(t,riot,o={}){
+  const p={id:uid(),name:riot,region:o.region||"euw",role:"",champs:[],active:false,...(o.u?{plu:o.u}:{}),...(o.former?{former:true}:{})};
+  if(t.id===MYID){p.name=o.nick||String(riot).split("#")[0];p.riot=riot;p.pool=[]}
+  return p;
+}
 let PLN=null;
 function plChamp(n){
   if(!PLN)PLN=Object.fromEntries(D.map(c=>[c.n.toLowerCase().replace(/[^a-z0-9]/g,""),c.n]));
@@ -2529,7 +2542,7 @@ function plParseGroup(d){
 }
 // which side of a match page is the scouted team: saved link, then known players, then name
 function plSide(t,M,xt){
-  if(!t||t.id===MYID)return -1;
+  if(!t)return -1;
   const tid=plTid(t.pl)||xt,ids=new Set(t.data.map(plKey)),n=t.name.toLowerCase();
   const v=M.sides.map((s,k)=>(tid&&s.tid===tid?1000:0)+(s.name.toLowerCase()===n||s.short.toLowerCase()===n?100:0)+M.games.reduce((a,g)=>a+g[k].ps.filter(p=>ids.has(p.r.toLowerCase())).length,0));
   return v[0]===v[1]?-1:v[0]>v[1]?0:1;
@@ -2545,12 +2558,12 @@ function plMatchPrev(){
     h+=`<div class="plp">${P.map(r=>`<span class="chip">${esc(r)}</span>`).join("")}</div>`;
     h+=`<button class="btn" data-plside="${k}" type="button">${done?"Import again for":"Import for"} ${esc(t.name)}${t.name===M.sides[k].name?"":" ("+nm(k)+")"}</button>`;
   }else{
-    h+=`<p class="note" style="margin:4px 0">${t&&t.id!==MYID?"Which side is "+esc(t.name)+"?":"Which team do you want to scout?"}</p><div class="plchoose">${[0,1].map(i=>`<button class="btn" data-plside="${i}" type="button">${nm(i)}</button>`).join("")}</div>`;
+    h+=`<p class="note" style="margin:4px 0">${t?"Which side is "+esc(t.name)+"?":"Which team do you want to scout?"}</p><div class="plchoose">${[0,1].map(i=>`<button class="btn" data-plside="${i}" type="button">${nm(i)}</button>`).join("")}</div>`;
   }
   return h;
 }
 function plGroupTeam(t,G){
-  if(!t||t.id===MYID)return null;
+  if(!t)return null;
   const tid=plTid(t.pl),n=t.name.toLowerCase();
   return G.teams.find(x=>tid&&x.tid===tid)||G.teams.find(x=>x.name.toLowerCase()===n)||null;
 }
@@ -2567,7 +2580,7 @@ function plGroupPrev(){
 // find or create the scouted team that belongs to a Prime League team
 function plTeamFor(tid,name,link){
   const t=curTeam(),n=(name||"").toLowerCase();
-  if(t&&t.id!==MYID)return t;
+  if(t)return t;
   let f=SC.find(x=>x.id!==MYID&&tid&&plTid(x.pl)===tid)||SC.find(x=>x.id!==MYID&&x.name.toLowerCase()===n);
   if(!f){f={id:uid(),name:name||"Team "+SC.length,data:[],pl:"",matches:[]};SC.push(f)}
   if(!f.pl&&link&&(plOK||!SB.url))f.pl=link;
@@ -2580,7 +2593,7 @@ function plMissingCol(){
 async function plMatchImport(k){
   const M=PLR;
   if(!M||M.kind!=="match"||plMissingCol())return;
-  const cur=curTeam(),t=cur&&cur.id!==MYID?cur:plTeamFor(M.sides[k].tid,M.sides[k].name,M.sides[k].link);
+  const cur=curTeam(),t=cur||plTeamFor(M.sides[k].tid,M.sides[k].name,M.sides[k].link);
   if(!t.pl&&M.sides[k].link&&(plOK||!SB.url))t.pl=M.sides[k].link;
   const r=plApply(t,M,k),rec=r.rec,added=r.added,roled=r.roled,had=r.had;
   PLR=null;$("plsrc").value="";$("plprev").innerHTML="";PLC=null;
@@ -2600,8 +2613,8 @@ function plApply(t,M,k){
   rec.games.forEach(g=>g.ps.forEach(q=>{(rows[q.r]=rows[q.r]||[]).push(q.row)}));
   let added=0,roled=0;
   Object.entries(rows).forEach(([r,rs])=>{
-    let p=by.get(r.toLowerCase());
-    if(!p){p={id:uid(),name:r,region:"euw",role:"",champs:[],active:false,...(had?{former:true}:{})};t.data.push(p);by.set(r.toLowerCase(),p);added++}
+    let p=by.get(r.toLowerCase())||plFind(t,r);
+    if(!p){p=plNewP(t,r,{former:had>0});t.data.push(p);by.set(r.toLowerCase(),p);added++}
     if(!p.role){
       const cnt={};rs.forEach(x=>{cnt[x]=(cnt[x]||0)+1});
       const row=+Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0],role=RO[row-1];
@@ -2612,10 +2625,10 @@ function plApply(t,M,k){
 }
 // a pasted player page: champions of one split for a scouted player
 function plUserPrev(){
-  const U=PLR,t=curTeam(),p=t&&t.id!==MYID?t.data.find(x=>plKey(x)===U.riot.toLowerCase()):null;
+  const U=PLR,t=curTeam(),p=t?plFind(t,U.riot):null;
   if(!U.season)return`<p class="note">No split found. Make sure you copied the whole page source of a Prime League player page.</p>`;
   const list=U.champs.map(c=>`<span class="chip">${esc(c.n)} ${c.g}\u00d7</span>`).join("");
-  return`<p class="note" style="margin:0">${esc(U.riot||"Player")} \u00b7 ${esc(U.season.name)}: ${U.champs.length?U.champs.reduce((a,c)=>a+c.g,0)+" games":"no games"}.</p>${list?`<div class="plp">${list}</div>`:""}${p?`<button class="btn" id="plgu" type="button">Save for ${esc(p.name)}</button>`:`<p class="note" style="margin:0">${t&&t.id!==MYID?esc(U.riot)+" is not in "+esc(t.name)+". Import the team page first.":"Choose the scouted team first."}</p>`}`;
+  return`<p class="note" style="margin:0">${esc(U.riot||"Player")} \u00b7 ${esc(U.season.name)}: ${U.champs.length?U.champs.reduce((a,c)=>a+c.g,0)+" games":"no games"}.</p>${list?`<div class="plp">${list}</div>`:""}${p?`<button class="btn" id="plgu" type="button">Save for ${esc(p.name)}</button>`:`<p class="note" style="margin:0">${t?esc(U.riot)+" is not in "+esc(t.name)+". Import the team page first.":"Choose the scouted team first."}</p>`}`;
 }
 // Prime League bundle: the bookmarklet (plBm) runs on primeleague.gg in the user's own browser,
 // loads the team's player and match pages there and hands them over as one paste
@@ -2691,14 +2704,14 @@ function plBundlePrev(){
   const B=PLR,d=B.doc(B.team),T=d?plParseDoc(d):null;
   if(!T||T.kind!=="team")return`<p class="note">The pasted data has no team page. Run the bookmark on the team's page on primeleague.gg.</p>`;
   const users=[...B.pages.keys()].filter(k=>/\/users\//.test(k)).length,ms=[...B.pages.keys()].filter(k=>/\/matches\//.test(k)).length;
-  const tid=plTid(B.team),t=SC.find(x=>x.id!==MYID&&tid&&plTid(x.pl)===tid);
-  return`<p class="note" style="margin:0">${esc(T.team||"Team")}: ${T.players.length} players, ${users} player pages, ${ms} played matches.</p><button class="btn" id="plgb" type="button">${t?"Update "+esc(t.name):"Add "+esc(T.team||"team")+" as a scouted team"}</button>`;
+  const tid=plTid(B.team),t=scMode==="my"?curTeam():SC.find(x=>x.id!==MYID&&tid&&plTid(x.pl)===tid);
+  return`<p class="note" style="margin:0">${esc(T.team||"Team")}: ${T.players.length} players, ${users} player pages, ${ms} played matches.</p><button class="btn" id="plgb" type="button">${scMode==="my"?"Import into your team":t?"Update "+esc(t.name):"Add "+esc(T.team||"team")+" as a scouted team"}</button>`;
 }
 async function plBundleImport(){
   const B=PLR;if(!B||B.kind!=="bundle"||plMissingCol())return;
   const d=B.doc(B.team),T=d&&plParseDoc(d);if(!T||T.kind!=="team")return;
   const tid=plTid(B.team),n=(T.team||"").toLowerCase();
-  let t=SC.find(x=>x.id!==MYID&&tid&&plTid(x.pl)===tid)||SC.find(x=>x.id!==MYID&&!x.pl&&x.name.toLowerCase()===n);
+  let t=scMode==="my"?curTeam():SC.find(x=>x.id!==MYID&&tid&&plTid(x.pl)===tid)||SC.find(x=>x.id!==MYID&&!x.pl&&x.name.toLowerCase()===n);
   if(!t){t={id:uid(),name:T.team||"Team "+SC.length,data:[],pl:"",matches:[]};SC.push(t)}
   if(!t.pl&&(plOK||!SB.url))t.pl=plLink(B.team)||T.link;
   scId=t.id;PLR=null;$("plsrc").value="";$("plprev").innerHTML="";
@@ -2729,11 +2742,10 @@ async function plRun(t,start,get){
       if(!d)continue;
       const T=plParseDoc(d);if(T.kind!=="team")continue;
       S.ok=true;S.name=T.season&&T.season.name||"Split "+S.id;
-      const by=new Map(t.data.map(x=>[plKey(x),x]));
       T.players.forEach(x=>{
-        const p=by.get(x.riot.toLowerCase());
+        const p=plFind(t,x.riot,x.nick);
         if(p){if(x.u&&!p.plu)p.plu=x.u}
-        else if(i===0&&x.ok){t.data.push({id:uid(),name:x.riot,region:x.region,role:"",champs:[],active:false,...(x.u?{plu:x.u}:{})});added++}
+        else if(i===0&&x.ok){t.data.push(plNewP(t,x.riot,{region:x.region,u:x.u,nick:x.nick}));added++}
       });
       T.ms.filter(m=>m.played).forEach(m=>{if(!ms.has(m.id))ms.set(m.id,m)});
     }
@@ -2761,7 +2773,7 @@ async function plRun(t,start,get){
   render();
 }
 async function plUserImport(){
-  const U=PLR,t=curTeam(),p=U&&t&&t.id!==MYID?t.data.find(x=>plKey(x)===U.riot.toLowerCase()):null;
+  const U=PLR,t=curTeam(),p=U&&t?plFind(t,U.riot):null;
   if(!p||!U.season)return;
   p.pls=p.pls||{};p.pls[U.season.id]={name:U.season.name,c:U.champs};
   PLR=null;$("plsrc").value="";$("plprev").innerHTML="";PLC=null;
@@ -2800,7 +2812,6 @@ function plOf(p){
   if(!PLC){
     PLC=new Map();
     SC.forEach(t=>{
-      if(t.id===MYID)return;
       const sp=plSplits(t),W=new Map(sp.map(x=>[x.id,x])),by=new Map(t.data.map(x=>[plKey(x),x]));
       const add=(x,n,g,w,kr,wt,sn)=>{
         let a=PLC.get(x);if(!a)PLC.set(x,a={});
@@ -3213,14 +3224,16 @@ function scView(){
   $("prid").hidden=!my;$("ordhint").hidden=!my;$("pcadd").textContent=my?"Save stats":"Save champion";$("acT").textContent=my?"Imported stats":"Champion data";
   $("itabs").innerHTML=[["manual","Type in"],["paste","Paste table"],["riot","Riot import"]].map(([k,l])=>`<button data-itab="${k}" aria-pressed="${itab===k}">${l}</button>`).join("");
   ["manual","paste","riot"].forEach(k=>{$("ip-"+k).hidden=itab!==k});
-  if(!P.length)$("apc").open=true;$("sctc").hidden=my;
+  if(!P.length)$("apc").open=true;
+  // in My team the card only holds the Prime League import for your own team
+  $("tbar").hidden=my;
   $("tbar").innerHTML=list.map(x=>{const on=x.id===scId;return`<span class="tchip${on?" on":""}"><button class="tn" data-tsel="${esc(x.id)}" aria-pressed="${on}" title="${esc(x.name)}">${esc(x.name)}</button>${on?`<button class="ti" data-tren="1" aria-label="Rename team">\u270E</button><button class="ti" data-tdel="1" aria-label="Delete team">\u00d7</button>`:""}</span>`}).join("")+`<button class="tchip add" data-tnew="1">+ New team</button>`;
-  $("tth").textContent=!my&&t?"Team: "+t.name:"Team";
+  $("tth").textContent=my?"Your team on Prime League":t?"Team: "+t.name:"Team";
   $("plrow").hidden=!t;
-  $("tempty").hidden=!!t||!!tform;
+  $("tempty").hidden=my||!!t||!!tform;
   $("scn").placeholder=tform==="rename"&&t?"New name for "+t.name:"Name of the new team";
-  if(t&&!my){if(document.activeElement!==$("plu"))$("plu").value=t.pl||"";$("plopen").hidden=!t.pl;if(t.pl)$("plopen").href=t.pl}
-  $("tf").hidden=!tform;$("tok").textContent=tform==="rename"?"Save":"Create";
+  if(t){if(document.activeElement!==$("plu"))$("plu").value=t.pl||"";$("plopen").hidden=!t.pl;if(t.pl)$("plopen").href=t.pl}
+  $("tf").hidden=my||!tform;$("tok").textContent=tform==="rename"?"Save":"Create";
   $("scmode").textContent=sb&&scOK?"Teams are saved in the shared database.":"Teams are saved in this browser only. Create the scouts table in Supabase to share them.";
   if(!P.find(p=>p.id===scSel))scSel=P[0]?P[0].id:"";
   $("psel").innerHTML=P.length?P.map(p=>`<option value="${esc(p.id)}"${p.id===scSel?" selected":""}>${esc(pl(p))}</option>`).join(""):`<option value="">${my?"No player yet":"No profile yet"}</option>`;
@@ -3228,7 +3241,7 @@ function scView(){
   $("scp").innerHTML=P.length?P.map(profCard).join(""):`<p class="note">${my?"Add your players to see their pools and get pick suggestions that fit them.":"Add a profile to start scouting."}</p>`;
   $("sca").innerHTML=P.length?scAnalysis(actOf(P),my,P.length-actOf(P).length):"";
   $("sclu").innerHTML=!my?lineupHtml(P):"";
-  $("scpl").innerHTML=!my&&t?plCard(t):"";
+  $("scpl").innerHTML=t?plCard(t):"";
   if(PLR&&PLR.kind!=="team")plPrev();
   const mr=actOf(P).map(x=>({r:x.riot||x.name,g:x.region||"euw"})).filter(x=>x.r.includes("#"));
   if(mr.length){
@@ -3526,7 +3539,7 @@ const rec=o=>`${o.w}W ${o.l}L${o.w+o.l?` <small>(${Math.round(o.w/(o.w+o.l)*100)
 function gEntries(){
   const out=[];
   if(GV.f!=="pl")games().forEach(g=>out.push({res:g.res,mine:gMine(g),foe:gFoe(g),src:"saved"}));
-  const t=SC.find(x=>x.id===GV.t&&x.id!==MYID);
+  const t=SC.find(x=>x.id===GV.t);
   if(t&&GV.f!=="saved")(t.matches||[]).forEach(m=>(m.games||[]).forEach(g=>out.push({res:g.w?"w":"l",mine:(g.ps||[]).map(q=>q.c),foe:(g.ops||[]).map(q=>q.c),src:"pl"})));
   return out;
 }
@@ -3541,13 +3554,13 @@ function gStats(E){
   return{P:by(P,1),PR:by(PR,2).sort((a,b)=>b.w/(b.w+b.l)-a.w/(a.w+a.l)||(b.w+b.l)-(a.w+a.l)),V:by(V,1)};
 }
 function gameView(){
-  const G=games(),plT=SC.filter(t=>t.id!==MYID&&(t.matches||[]).some(m=>(m.games||[]).length));
+  const G=games(),plT=SC.filter(t=>(t.matches||[]).some(m=>(m.games||[]).length));
   if(GV.t&&!plT.some(t=>t.id===GV.t))GV.t="";
   if(!GV.t&&GV.f==="pl")GV.f="all";
   $("gmcount").textContent=G.length?G.length:"";
   const E=gEntries(),done=E.filter(e=>e.res),w=done.filter(e=>e.res==="w").length,S=gStats(E);
   let h=`<p class="note" style="margin:0 0 8px">Tap Next game on the draft board to save a finished draft with its result. ${gShared()?"Saved games are shared with everyone using this site.":"Saved games are kept in this browser."}</p>`;
-  if(plT.length)h+=`<label class="fl" for="gpl">Add Prime League games of</label><select id="gpl"><option value="">No Prime League team</option>${plT.map(t=>`<option value="${esc(t.id)}"${t.id===GV.t?" selected":""}>${esc(t.name)}</option>`).join("")}</select>`;
+  if(plT.length)h+=`<label class="fl" for="gpl">Add Prime League games of</label><select id="gpl"><option value="">No Prime League team</option>${plT.map(t=>`<option value="${esc(t.id)}"${t.id===GV.t?" selected":""}>${t.id===MYID?"Your team":esc(t.name)}</option>`).join("")}</select>`;
   if(GV.t)h+=`<div class="rf" role="group" aria-label="Games to count">${[["all","All games"],["saved","Saved drafts"],["pl","Prime League"]].map(([k,l])=>`<button data-gf="${k}" aria-pressed="${GV.f===k}">${l}</button>`).join("")}</div>`;
   if(!E.length){$("gml").innerHTML=h+`<p class="note">No games yet.</p>`;return}
   const row=o=>{const n=o.k.split(" + ");return`<div class="gst"><span>${n.map(x=>`<button class="lnk" data-chp="${esc(x)}">${icon(x)}${esc(x)}</button>`).join(" + ")}</span><span class="${o.w>o.l?"good":o.w<o.l?"bad":""}">${rec(o)}</span></div>`};
@@ -3586,7 +3599,7 @@ function champPage(n){
   // your players
   const P=sortP(myPlayers()).map(x=>{
     const i=(x.pool||[]).indexOf(n),st_=i>=0?"Tier list #"+(i+1):(x.unsure||[]).includes(n)?"Not confident":(x.learn||[]).includes(n)?"Learning":hasLists(x)?"Can't play":"";
-    const s=(x.champs||[]).find(y=>y.n===n),stat=s&&(s.g||s.wr)?[s.g?s.g+" games":"",s.wr?s.wr+"% WR":""].filter(Boolean).join(", "):"";
+    const s=(x.champs||[]).find(y=>y.n===n),q=plOf(x).find(y=>y.n===n),stat=[q?"PL "+q.g+"\u00d7 "+q.w+"W "+(q.g-q.w)+"L":"",s&&s.g?s.g+" games":"",s&&s.wr?s.wr+"% WR":""].filter(Boolean).join(", ");
     return st_||stat?`<div class="gst"><span>${esc(pl(x))}${x.active?"":" <small class=\"note\">bench</small>"}</span><span class="${i>=0?"good":st_==="Can't play"?"bad":"note"}">${[st_,stat].filter(Boolean).join(" · ")}</span></div>`:"";
   }).join("");
   h+=`<h3>Your players</h3>${P||`<p class="note" style="margin:0">None of your players has it in a list.</p>`}`;
@@ -3598,6 +3611,9 @@ function champPage(n){
   });
   E.sort((a,b)=>b.e.plg-a.e.plg||b.e.g-a.e.g);
   h+=`<h3>Enemy players who play it</h3>${E.length?E.slice(0,12).map(({t,x,e})=>`<div class="gst"><span>${esc(x.name)} <small class="note">${esc(t.name)}</small></span><span>${[e.plg?`<span class="plx">PL ${e.plg}× ${e.plw}W ${e.plg-e.plw}L</span>`:"",e.g?e.g+" games"+(e.wr?", "+e.wr+"%":""):""].filter(Boolean).join(" · ")}</span></div>`).join(""):`<p class="note" style="margin:0">No scouted player has played it.</p>`}`;
+  const MT=SC.find(t=>t.id===MYID),ML={n:0,g:0,w:0,vs:0,vw:0};
+  ((MT&&MT.matches)||[]).forEach(m=>(m.games||[]).forEach(g=>{ML.n++;if((g.ps||[]).some(q=>q.c===n)){ML.g++;if(g.w)ML.w++}if((g.ops||[]).some(q=>q.c===n)){ML.vs++;if(g.w)ML.vw++}}));
+  if(ML.g||ML.vs)h+=`<h3>Your team in Prime League</h3><p style="margin:0">${ML.g?"Played: "+rec({w:ML.w,l:ML.g-ML.w}):""}${ML.g&&ML.vs?"<br>":""}${ML.vs?"Against you: "+rec({w:ML.vw,l:ML.vs-ML.vw})+" for you":""}</p>`;
   if(L.n)h+=`<h3>Prime League</h3><p style="margin:0">In ${L.n} imported game${L.n>1?"s":""} of your scouted teams: picked ${L.g}×${L.g?" ("+L.w+"W "+(L.g-L.w)+"L)":""}, banned by them ${L.b}×, banned against them ${L.vs}×.</p>`;
   const G=games().filter(g=>g.res),gw=G.filter(g=>gMine(g).includes(n)),gv=G.filter(g=>gFoe(g).includes(n)),wr=a=>({w:a.filter(g=>g.res==="w").length,l:a.filter(g=>g.res==="l").length});
   if(gw.length||gv.length)h+=`<h3>Your saved games</h3><p style="margin:0">${gw.length?"Played by you: "+rec(wr(gw)):""}${gw.length&&gv.length?"<br>":""}${gv.length?"Against you: "+rec(wr(gv)):""}</p>`;

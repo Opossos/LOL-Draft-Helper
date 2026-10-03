@@ -113,3 +113,46 @@ test("an old paste without match pages explains how to get them",async({page})=>
   await importPaste(page,data);
   await expect(page.locator("#scmsg")).toContainText("2 played matches were not in the paste");
 });
+
+test.describe("your own team",()=>{
+  test.beforeEach(async({context})=>{
+    await context.grantPermissions(["clipboard-read","clipboard-write"],{origin:"https://www.primeleague.gg"});
+  });
+
+  test("the bookmark paste imports into My team: matches, splits, players found by name",async({context,page})=>{
+    await serveSite(context);
+    const {data}=await runBookmark(context,PL.teamUrl(PL.SPLITS.spring));
+    const mine=[{id:"a",name:"Alpha",region:"euw",role:"T",champs:[],active:true,pool:["Aatrox"]},
+                {id:"b",name:"Bee",riot:"Beta#EUW",region:"euw",role:"J",champs:[],active:true,pool:["Lee Sin"]}];
+    await openApp(page,{lolDr:{so:true},lolScouts:[{id:"my-team",name:"My team",data:mine}]});
+    await expect(page.locator('[data-stab="my"]')).toHaveAttribute("aria-pressed","true");
+    await expect(page.locator("#tth")).toHaveText("Your team on Prime League");
+    await expect(page.locator("#tbar")).toBeHidden();
+    await page.evaluate(s=>{document.getElementById("plimp").open=true;const e=document.getElementById("plsrc");e.value=s;e.dispatchEvent(new Event("input"))},data);
+    await expect(page.locator("#plgb")).toHaveText("Import into your team");
+    await page.click("#plgb");
+    await expect(page.locator("#scmsg")).toContainText("Updated My team");
+    const teams=await page.evaluate(()=>JSON.parse(localStorage.getItem("lolScouts")));
+    expect(teams.map(t=>t.id)).toEqual(["my-team"]); // no scouted team was made
+    const my=teams[0];
+    expect(my.matches.filter(m=>!m.stub).map(m=>m.id).sort()).toEqual(["900001","900002"]);
+    const alpha=my.data.find(p=>p.id==="a");
+    expect(alpha.riot).toBe("Alpha#EUW");          // matched by name and given the Riot ID
+    expect(alpha.pool).toEqual(["Aatrox"]);        // tier list kept
+    expect(alpha.pls["3220"].c.map(c=>c.n)).toContain("Aatrox");
+    const gamma=my.data.find(p=>p.riot==="Gamma#EUW");
+    expect(gamma).toMatchObject({name:"Gamma",active:false,pool:[]});
+    // the match list shows in My team
+    await expect(page.locator('#scpl [data-k="sc-pl"]')).toBeVisible();
+    // saved games can count your team's Prime League games
+    await page.click("#so");
+    await page.locator("#gmc > summary").click();
+    await page.locator("#gpl").selectOption("my-team");
+    await expect(page.locator("#gpl option:checked")).toHaveText("Your team");
+    await expect(page.locator("#gmc")).toContainText("Record: 3W 1L");
+    // the champion page shows your team's record with a champion
+    await page.locator('[data-chp="Aatrox"]').first().click();
+    await expect(page.locator("#chp")).toContainText("Your team in Prime League");
+    await expect(page.locator("#chp")).toContainText("Played: 3W 0L");
+  });
+});
